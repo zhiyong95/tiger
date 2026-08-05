@@ -321,3 +321,40 @@ export async function fetchLogs(): Promise<LogRecord[]> {
     { id: '6', user: '张明', module: '知识问答', action: '反馈', detail: '标记答案"有用"', time: '2024-08-04 14:30:22' },
   ]
 }
+
+// ============ 登录认证 ============
+export async function login(username: string, _password: string, role: 'staff' | 'admin'): Promise<{ token: string; user: { name: string; department: string; role: string; avatar: string } }> {
+  await delay(500)
+  // 模拟登录验证（任意用户名密码均可登录）
+  const staffUsers: Record<string, { name: string; department: string; role: string }> = {
+    admin: { name: '赵强', department: '系统管理', role: '系统管理员' },
+    zhangming: { name: '张明', department: '就业促进科', role: '业务科室人员' },
+    lihua: { name: '李华', department: '社会保险科', role: '业务科室人员' },
+    wangfang: { name: '王芳', department: '人才开发科', role: '窗口经办人员' },
+  }
+
+  const userKey = username.toLowerCase()
+  const userInfo = staffUsers[userKey] || { name: username, department: '人社服务大厅', role: '窗口经办人员' }
+
+  if (role === 'admin') {
+    return {
+      token: 'mock-admin-token-' + Date.now(),
+      user: {
+        name: userInfo.name,
+        department: userInfo.department,
+        role: '系统管理员',
+        avatar: '',
+      },
+    }
+  }
+
+  return {
+    token: 'mock-staff-token-' + Date.now(),
+    user: {
+      name: userInfo.name,
+      department: userInfo.department,
+      role: userInfo.role,
+      avatar: '',
+    },
+  }
+}

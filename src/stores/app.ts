@@ -1,13 +1,26 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 
+export interface UserInfo {
+  name: string
+  department: string
+  role: string
+  avatar: string
+  employeeId?: string
+  phone?: string
+  email?: string
+}
+
 export const useAppStore = defineStore('app', () => {
   const sidebarCollapsed = ref(false)
   const currentModule = ref<'pc' | 'admin'>('pc')
-  const userInfo = ref({
-    name: '张明',
-    department: '就业促进科',
-    role: '业务科室人员',
+  const isLoggedIn = ref(false)
+  const token = ref('')
+  const userRole = ref<'staff' | 'admin'>('staff')
+  const userInfo = ref<UserInfo>({
+    name: '',
+    department: '',
+    role: '',
     avatar: '',
   })
 
@@ -17,6 +30,28 @@ export const useAppStore = defineStore('app', () => {
 
   const switchModule = (module: 'pc' | 'admin') => {
     currentModule.value = module
+  }
+
+  const setUserInfo = (info: UserInfo) => {
+    userInfo.value = info
+  }
+
+  const setToken = (t: string) => {
+    token.value = t
+    isLoggedIn.value = true
+  }
+
+  const setRole = (role: 'staff' | 'admin') => {
+    userRole.value = role
+    currentModule.value = role === 'admin' ? 'admin' : 'pc'
+  }
+
+  const logout = () => {
+    isLoggedIn.value = false
+    token.value = ''
+    userInfo.value = { name: '', department: '', role: '', avatar: '' }
+    userRole.value = 'staff'
+    currentModule.value = 'pc'
   }
 
   const pcMenuItems = computed(() => [
@@ -43,9 +78,16 @@ export const useAppStore = defineStore('app', () => {
   return {
     sidebarCollapsed,
     currentModule,
+    isLoggedIn,
+    token,
+    userRole,
     userInfo,
     toggleSidebar,
     switchModule,
+    setUserInfo,
+    setToken,
+    setRole,
+    logout,
     pcMenuItems,
     adminMenuItems,
   }

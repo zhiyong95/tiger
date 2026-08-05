@@ -1,7 +1,14 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
+import { useAppStore } from '@/stores/app'
 
 const routes: RouteRecordRaw[] = [
+  {
+    path: '/login',
+    name: 'Login',
+    component: () => import('@/views/login/index.vue'),
+    meta: { title: '登录', requiresAuth: false },
+  },
   {
     path: '/',
     redirect: '/dashboard',
@@ -53,6 +60,12 @@ const routes: RouteRecordRaw[] = [
     name: 'Task',
     component: () => import('@/views/task/index.vue'),
     meta: { title: '风险预警与任务待办', icon: 'Bell' },
+  },
+  {
+    path: '/profile',
+    name: 'Profile',
+    component: () => import('@/views/profile/index.vue'),
+    meta: { title: '个人中心', icon: 'User' },
   },
   // 后台管理端
   {
@@ -108,6 +121,37 @@ const routes: RouteRecordRaw[] = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
+})
+
+// 导航守卫
+router.beforeEach((to, _from, next) => {
+  const appStore = useAppStore()
+
+  // 登录页不需要认证
+  if (to.meta.requiresAuth === false) {
+    next()
+    return
+  }
+
+  // 未登录则跳转登录页
+  if (!appStore.isLoggedIn) {
+    next({ path: '/login', query: { redirect: to.fullPath } })
+    return
+  }
+
+  // 工作人员不能访问后台管理页面
+  if (appStore.userRole === 'staff' && to.path.startsWith('/admin')) {
+    next({ path: '/dashboard' })
+    return
+  }
+
+  // 管理员不能访问PC工作台页面（除了个人中心）
+  if (appStore.userRole === 'admin' && !to.path.startsWith('/admin') && to.path !== '/profile') {
+    next({ path: '/admin/users' })
+    return
+  }
+
+  next()
 })
 
 export default router

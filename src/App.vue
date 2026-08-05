@@ -1,6 +1,10 @@
 <template>
   <div id="app-layout">
-    <el-container style="height: 100vh">
+    <!-- 未登录时显示登录页 -->
+    <router-view v-if="!appStore.isLoggedIn" />
+
+    <!-- 已登录时显示主布局 -->
+    <el-container v-else style="height: 100vh">
       <!-- 侧边栏 -->
       <el-aside :width="appStore.sidebarCollapsed ? '64px' : '240px'" class="sidebar">
         <div class="sidebar-header">
@@ -11,8 +15,8 @@
           <div v-else class="logo-icon-small">政</div>
         </div>
 
-        <!-- 模块切换 -->
-        <div class="module-switch" v-if="!appStore.sidebarCollapsed">
+        <!-- 模块切换（仅管理员可见） -->
+        <div class="module-switch" v-if="!appStore.sidebarCollapsed && appStore.userRole === 'admin'">
           <el-radio-group v-model="appStore.currentModule" size="small" @change="onModuleChange">
             <el-radio-button value="pc">PC工作台</el-radio-button>
             <el-radio-button value="admin">后台管理</el-radio-button>
@@ -26,14 +30,14 @@
           router
           class="sidebar-menu"
         >
-          <template v-if="appStore.currentModule === 'pc'">
-            <el-menu-item v-for="item in appStore.pcMenuItems" :key="item.path" :index="item.path">
+          <template v-if="appStore.userRole === 'admin' && appStore.currentModule === 'admin'">
+            <el-menu-item v-for="item in appStore.adminMenuItems" :key="item.path" :index="item.path">
               <el-icon><component :is="item.icon" /></el-icon>
               <template #title>{{ item.title }}</template>
             </el-menu-item>
           </template>
           <template v-else>
-            <el-menu-item v-for="item in appStore.adminMenuItems" :key="item.path" :index="item.path">
+            <el-menu-item v-for="item in appStore.pcMenuItems" :key="item.path" :index="item.path">
               <el-icon><component :is="item.icon" /></el-icon>
               <template #title>{{ item.title }}</template>
             </el-menu-item>
@@ -49,7 +53,9 @@
               <component :is="appStore.sidebarCollapsed ? 'Expand' : 'Fold'" />
             </el-icon>
             <el-breadcrumb separator="/" class="breadcrumb">
-              <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
+              <el-breadcrumb-item :to="{ path: appStore.userRole === 'admin' ? '/admin/users' : '/dashboard' }">
+                {{ appStore.userRole === 'admin' ? '管理后台' : '首页' }}
+              </el-breadcrumb-item>
               <el-breadcrumb-item>{{ currentTitle }}</el-breadcrumb-item>
             </el-breadcrumb>
           </div>
@@ -57,17 +63,18 @@
             <el-badge :value="3" :max="99" class="header-badge">
               <el-icon :size="20" style="cursor: pointer"><Bell /></el-icon>
             </el-badge>
-            <el-dropdown>
+            <el-dropdown @command="handleDropdownCommand">
               <div class="user-info">
                 <el-avatar :size="32" class="user-avatar">{{ appStore.userInfo.name[0] }}</el-avatar>
                 <span class="user-name">{{ appStore.userInfo.name }}</span>
+                <el-icon class="el-icon--right"><ArrowDown /></el-icon>
               </div>
               <template #dropdown>
                 <el-dropdown-menu>
                   <el-dropdown-item>{{ appStore.userInfo.department }}</el-dropdown-item>
                   <el-dropdown-item>{{ appStore.userInfo.role }}</el-dropdown-item>
-                  <el-dropdown-item divided>个人中心</el-dropdown-item>
-                  <el-dropdown-item>退出登录</el-dropdown-item>
+                  <el-dropdown-item divided command="profile">个人中心</el-dropdown-item>
+                  <el-dropdown-item command="logout">退出登录</el-dropdown-item>
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
@@ -91,6 +98,7 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
+import { ElMessageBox } from 'element-plus'
 
 const route = useRoute()
 const router = useRouter()
@@ -108,6 +116,24 @@ const onModuleChange = (module: string | number | boolean | undefined) => {
     router.push('/dashboard')
   } else {
     router.push('/admin/users')
+  }
+}
+
+const handleDropdownCommand = async (command: string) => {
+  if (command === 'profile') {
+    router.push('/profile')
+  } else if (command === 'logout') {
+    try {
+      await ElMessageBox.confirm('确定要退出登录吗？', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning',
+      })
+      appStore.logout()
+      router.push('/login')
+    } catch {
+      // 用户取消
+    }
   }
 }
 </script>
