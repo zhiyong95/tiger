@@ -119,15 +119,17 @@ const filteredUsers = computed(() => {
   })
 })
 
-const handleEdit = (user: User) => {
-  editingUser.value = user
-  form.value = { name: user.name, department: user.department, role: user.role, phone: user.phone }
+const handleEdit = (user: any) => {
+  const u = user as User
+  editingUser.value = u
+  form.value = { name: u.name, department: u.department, role: u.role, phone: u.phone }
   showAddDialog.value = true
 }
 
-const handleToggle = (user: User) => {
-  user.status = user.status === 'active' ? 'inactive' : 'active'
-  ElMessage.success(`已${user.status === 'active' ? '启用' : '停用'}用户 ${user.name}`)
+const handleToggle = (user: any) => {
+  const u = user as User
+  u.status = u.status === 'active' ? 'inactive' : 'active'
+  ElMessage.success(`已${u.status === 'active' ? '启用' : '停用'}用户 ${u.name}`)
 }
 
 const handleSave = () => {

@@ -104,9 +104,10 @@ const filteredDocs = computed(() => {
   return docs.value.filter((d) => d.category === filterCategory.value)
 })
 
-const togglePublish = (doc: KnowledgeDoc) => {
-  doc.status = doc.status === 'published' ? 'draft' : 'published'
-  ElMessage.success(`已${doc.status === 'published' ? '发布' : '下架'}文档`)
+const togglePublish = (doc: any) => {
+  const d = doc as KnowledgeDoc
+  d.status = d.status === 'published' ? 'draft' : 'published'
+  ElMessage.success(`已${d.status === 'published' ? '发布' : '下架'}文档`)
 }
 
 const handleUpload = () => {

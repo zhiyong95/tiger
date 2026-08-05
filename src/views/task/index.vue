@@ -176,33 +176,36 @@ const handleFilter = () => {
   // filtered by computed
 }
 
-const handleView = (task: RiskTask) => {
-  currentTask.value = task
+const handleView = (task: any) => {
+  currentTask.value = task as RiskTask
   dialogVisible.value = true
 }
 
-const handleProcess = (task: RiskTask) => {
-  currentTask.value = task
+const handleProcess = (task: any) => {
+  currentTask.value = task as RiskTask
   dialogVisible.value = true
 }
 
-const handleConfirm = async (task: RiskTask) => {
-  await handleRiskTask(task.id, 'confirm', processComment.value)
-  task.status = 'completed'
+const handleConfirm = async (task: any) => {
+  const t = task as RiskTask
+  await handleRiskTask(t.id, 'confirm', processComment.value)
+  t.status = 'completed'
   dialogVisible.value = false
   ElMessage.success('处理完成')
 }
 
-const handleTransfer = async (task: RiskTask) => {
-  await handleRiskTask(task.id, 'transfer', processComment.value)
-  task.status = 'processing'
+const handleTransfer = async (task: any) => {
+  const t = task as RiskTask
+  await handleRiskTask(t.id, 'transfer', processComment.value)
+  t.status = 'processing'
   dialogVisible.value = false
   ElMessage.success('已转办')
 }
 
-const handleArchive = async (task: RiskTask) => {
-  await handleRiskTask(task.id, 'archive', processComment.value)
-  task.status = 'completed'
+const handleArchive = async (task: any) => {
+  const t = task as RiskTask
+  await handleRiskTask(t.id, 'archive', processComment.value)
+  t.status = 'completed'
   dialogVisible.value = false
   ElMessage.success('已归档')
 }
