@@ -24,7 +24,7 @@ export default defineConfig({
     },
   },
   server: {
-    port: 5000,
+    port: parseInt(process.env.DEPLOY_RUN_PORT || '5000'),
     host: true,
   },
 })
