@@ -3,7 +3,7 @@
     <!-- 统计卡片 -->
     <el-row :gutter="20" class="stat-row">
       <el-col :span="6">
-        <div class="stat-card" style="border-left: 4px solid #1a56db">
+        <div class="stat-card" style="border-left: 4px solid #2563eb">
           <div class="stat-value">{{ dashboardData.todoCount.pending }}</div>
           <div class="stat-label">待处理任务</div>
           <div class="stat-trend up">

@@ -194,9 +194,10 @@ const handleDropdownCommand = async (command: string) => {
 
 <style scoped>
 .sidebar {
-  background: #001529;
+  background: linear-gradient(180deg, #0f2a78 0%, #0d1f5f 100%);
   transition: width 0.3s ease;
   overflow: hidden;
+  border-right: 1px solid rgba(255,255,255,0.05);
 }
 
 .sidebar-header {
@@ -234,9 +235,9 @@ const handleDropdownCommand = async (command: string) => {
 }
 
 .module-switch :deep(.el-radio-button__original-radio:checked + .el-radio-button__inner) {
-  background: #1a56db;
+  background: #2563eb;
   color: white;
-  border-color: #1a56db;
+  border-color: #2563eb;
 }
 
 .sidebar-menu {
@@ -254,8 +255,9 @@ const handleDropdownCommand = async (command: string) => {
 }
 
 .sidebar-menu :deep(.el-menu-item.is-active) {
-  background: #1a56db;
+  background: rgba(37, 99, 235, 0.4);
   color: white;
+  border-left: 3px solid #3b82f6;
 }
 
 .header {

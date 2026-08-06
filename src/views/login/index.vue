@@ -204,7 +204,7 @@ const handleLogin = async () => {
 /* 左侧品牌展示区 */
 .brand-section {
   flex: 1;
-  background: linear-gradient(135deg, #1a56db 0%, #0d3a8c 100%);
+  background: linear-gradient(180deg, #0a2472 0%, #001a66 50%, #001055 100%);
   padding: 60px 50px;
   display: flex;
   align-items: center;

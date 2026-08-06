@@ -18,7 +18,7 @@
         <!-- 大家都在问 - 热门服务 -->
         <div class="hot-section">
           <div class="section-header">
-            <el-icon :size="20" color="#c41e3a"><QuestionFilled /></el-icon>
+            <el-icon :size="20" color="#2563eb"><QuestionFilled /></el-icon>
             <span class="section-title">大家都在问</span>
           </div>
           <div class="hot-tags">
@@ -43,7 +43,7 @@
             :class="msg.role"
           >
             <div class="msg-avatar">
-              <el-icon v-if="msg.role === 'ai'" :size="22" color="#c41e3a"><ChatDotRound /></el-icon>
+              <el-icon v-if="msg.role === 'ai'" :size="22" color="#2563eb"><ChatDotRound /></el-icon>
               <el-icon v-else :size="20" color="#1a56db"><UserFilled /></el-icon>
             </div>
             <div class="msg-content">
@@ -68,7 +68,7 @@
           </div>
           <div v-if="loading" class="message-item ai">
             <div class="msg-avatar">
-              <el-icon :size="22" color="#c41e3a"><ChatDotRound /></el-icon>
+              <el-icon :size="22" color="#2563eb"><ChatDotRound /></el-icon>
             </div>
             <div class="msg-content">
               <div class="msg-bubble ai-bubble loading-dots">
@@ -107,11 +107,11 @@
         <div class="sidebar-card">
           <div class="card-header">
             <div class="card-title">
-              <el-icon :size="18" color="#c41e3a"><ChatLineSquare /></el-icon>
+              <el-icon :size="18" color="#2563eb"><ChatLineSquare /></el-icon>
               <span>常见问题</span>
             </div>
             <div class="card-action" @click="refreshFAQ">
-              <el-icon :size="16" color="#c41e3a"><Refresh /></el-icon>
+              <el-icon :size="16" color="#2563eb"><Refresh /></el-icon>
               <span>换一换</span>
             </div>
           </div>
@@ -132,7 +132,7 @@
         <div class="sidebar-card">
           <div class="card-header">
             <div class="card-title">
-              <el-icon :size="18" color="#c41e3a"><Clock /></el-icon>
+              <el-icon :size="18" color="#2563eb"><Clock /></el-icon>
               <span>历史记录</span>
             </div>
             <div class="card-action" @click="clearHistory" v-if="historyList.length > 0">
@@ -306,11 +306,11 @@ onMounted(() => {
   height: 48px;
   border-radius: 50%;
   background: white;
-  border: 2px solid #c41e3a;
+  border: 2px solid #2563eb;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #c41e3a;
+  color: #2563eb;
   box-shadow: 0 2px 8px rgba(196, 30, 58, 0.08);
 }
 
@@ -379,7 +379,7 @@ onMounted(() => {
 }
 
 .hot-tag:hover {
-  background: #c41e3a !important;
+  background: #2563eb !important;
   color: white !important;
 }
 
@@ -518,7 +518,7 @@ onMounted(() => {
 
 .dot {
   font-size: 24px;
-  color: #c41e3a;
+  color: #2563eb;
   animation: bounce 1.4s infinite;
 }
 
@@ -574,8 +574,8 @@ onMounted(() => {
   padding: 0 28px;
   font-size: 14px;
   border-radius: 8px;
-  background: #c41e3a !important;
-  border-color: #c41e3a !important;
+  background: #2563eb !important;
+  border-color: #2563eb !important;
   font-weight: 500;
   letter-spacing: 1px;
 }
@@ -634,7 +634,7 @@ onMounted(() => {
   align-items: center;
   gap: 4px;
   font-size: 12px;
-  color: #c41e3a;
+  color: #2563eb;
   cursor: pointer;
   transition: opacity 0.2s;
 }
@@ -665,7 +665,7 @@ onMounted(() => {
 }
 
 .faq-item:hover {
-  color: #c41e3a;
+  color: #2563eb;
 }
 
 .faq-dot {
@@ -673,7 +673,7 @@ onMounted(() => {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #c41e3a;
+  background: #2563eb;
   margin-top: 7px;
 }
 
@@ -684,7 +684,7 @@ onMounted(() => {
 }
 
 .faq-item:hover .faq-text {
-  color: #c41e3a;
+  color: #2563eb;
 }
 
 /* 历史记录 */
@@ -724,7 +724,7 @@ onMounted(() => {
 }
 
 .history-item:hover {
-  color: #c41e3a;
+  color: #2563eb;
 }
 
 .history-text {
@@ -743,6 +743,6 @@ onMounted(() => {
 }
 
 .history-item:hover .history-text {
-  color: #c41e3a;
+  color: #2563eb;
 }
 </style>

@@ -1,9 +1,13 @@
 :root {
-  --primary-color: #1a56db;
+  --primary-color: #2563eb;
+  --primary-dark: #0a2480;
   --primary-light: #e8f0fe;
+  --sidebar-gradient-start: #0a1a5f;
+  --sidebar-gradient-end: #0b3296;
+  --header-dark: #0f172a;
   --sidebar-width: 240px;
   --header-height: 56px;
-  --bg-color: #f0f2f5;
+  --bg-color: #f8f9fa;
   --card-bg: #ffffff;
   --text-primary: #1f2937;
   --text-secondary: #6b7280;
@@ -11,7 +15,10 @@
   --success-color: #10b981;
   --warning-color: #f59e0b;
   --danger-color: #ef4444;
+  --accent-orange: #ff7c00;
+  --yellow-highlight: #eab308;
   --info-color: #3b82f6;
+  --white: #ffffff;
 }
 
 * {
@@ -47,9 +54,9 @@ html, body, #app {
 /* 通用卡片样式 */
 .page-card {
   background: var(--card-bg);
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 /* 页面标题 */
@@ -75,19 +82,19 @@ html, body, #app {
 /* 统计卡片 */
 .stat-card {
   background: var(--card-bg);
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  border-radius: 12px;
+  padding: 24px 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
   transition: all 0.3s ease;
 }
 
 .stat-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   transform: translateY(-2px);
 }
 
 .stat-value {
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 700;
   color: var(--text-primary);
   line-height: 1.2;
@@ -151,12 +158,12 @@ html, body, #app {
 }
 
 .chat-message.ai .chat-avatar {
-  background: var(--primary-color);
+  background: var(--primary-dark);
   color: white;
 }
 
 .chat-message.user .chat-avatar {
-  background: #6366f1;
+  background: var(--primary-color);
   color: white;
 }
 
