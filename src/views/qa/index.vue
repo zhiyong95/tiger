@@ -1,92 +1,160 @@
 <template>
   <div class="qa-page">
-    <div class="page-card qa-container">
-      <!-- 聊天消息区 -->
-      <div class="chat-messages" ref="messagesRef">
-        <div v-if="messages.length === 0" class="empty-state">
-          <el-icon :size="48" color="#c0c4cc"><ChatDotRound /></el-icon>
-          <p class="empty-title">人社政策知识问答</p>
-          <p class="empty-desc">输入您的问题，我将基于政策知识库为您解答</p>
-          <div class="quick-questions">
+    <div class="qa-layout">
+      <!-- 左侧主交互区 -->
+      <div class="qa-main">
+        <!-- 机器人问候栏 -->
+        <div class="greeting-section">
+          <div class="greeting-avatar">
+            <div class="robot-icon">
+              <el-icon :size="28"><ChatDotRound /></el-icon>
+            </div>
+          </div>
+          <div class="greeting-bubble">
+            <span>您好，我是您的政务智能问答助手，人社相关政策、办事指南等问题可以咨询我哟！</span>
+          </div>
+        </div>
+
+        <!-- 大家都在问 - 热门服务 -->
+        <div class="hot-section">
+          <div class="section-header">
+            <el-icon :size="20" color="#c41e3a"><QuestionFilled /></el-icon>
+            <span class="section-title">大家都在问</span>
+          </div>
+          <div class="hot-tags">
             <el-tag
-              v-for="q in quickQuestions"
-              :key="q"
-              class="quick-q"
-              @click="handleQuickQuestion(q)"
+              v-for="topic in hotTopics"
+              :key="topic"
+              class="hot-tag"
+              :class="{ 'tag-wide': topic.length > 18 }"
+              @click="askQuestion(topic)"
             >
-              {{ q }}
+              {{ topic }}
             </el-tag>
           </div>
         </div>
 
-        <div
-          v-for="(msg, index) in messages"
-          :key="index"
-          class="chat-message"
-          :class="msg.role"
-        >
-          <div class="chat-avatar">
-            {{ msg.role === 'ai' ? 'AI' : '我' }}
-          </div>
-          <div class="chat-bubble-wrapper">
-            <div class="chat-bubble" v-html="formatContent(msg.content)"></div>
-            <!-- 来源引用 -->
-            <div v-if="msg.sources && msg.sources.length > 0" class="source-refs">
-              <div v-for="source in msg.sources" :key="source.id" class="source-ref">
-                <div class="source-ref-title">
-                  <el-icon><Document /></el-icon> {{ source.docName }} - {{ source.chapter }}
+        <!-- 对话消息区 -->
+        <div class="chat-messages" ref="chatRef" v-show="messages.length > 0">
+          <div
+            v-for="(msg, idx) in messages"
+            :key="idx"
+            class="message-item"
+            :class="msg.role"
+          >
+            <div class="msg-avatar">
+              <el-icon v-if="msg.role === 'ai'" :size="22" color="#c41e3a"><ChatDotRound /></el-icon>
+              <el-icon v-else :size="20" color="#1a56db"><UserFilled /></el-icon>
+            </div>
+            <div class="msg-content">
+              <div class="msg-bubble" v-if="msg.role === 'user'">{{ msg.content }}</div>
+              <div class="msg-bubble ai-bubble" v-else>
+                <div class="ai-answer">{{ msg.content }}</div>
+                <div class="answer-footer" v-if="msg.sources">
+                  <div class="sources">
+                    <span class="source-label">来源：</span>
+                    <span v-for="(s, si) in msg.sources" :key="si" class="source-item">
+                      《{{ s.name }}》
+                    </span>
+                  </div>
+                  <div class="ai-tag">AI生成，仅供业务参考</div>
                 </div>
-                <div class="source-ref-content">{{ source.content }}</div>
+                <div class="feedback-actions" v-if="msg.sources">
+                  <el-tag size="small" :type="msg.feedback === 'useful' ? 'success' : undefined" @click="giveFeedback(idx, 'useful')" class="feedback-btn">有用</el-tag>
+                  <el-tag size="small" :type="msg.feedback === 'useless' ? 'danger' : undefined" @click="giveFeedback(idx, 'useless')" class="feedback-btn">无用</el-tag>
+                </div>
               </div>
             </div>
-            <!-- 反馈按钮 -->
-            <div v-if="msg.role === 'ai'" class="feedback-actions">
-              <el-button size="small" text @click="msg.feedback = 'useful'">
-                <el-icon v-if="msg.feedback === 'useful'" color="#10b981"><CircleCheck /></el-icon>
-                <el-icon v-else><CircleCheck /></el-icon> 有用
-              </el-button>
-              <el-button size="small" text @click="msg.feedback = 'useless'">
-                <el-icon v-if="msg.feedback === 'useless'" color="#ef4444"><CircleClose /></el-icon>
-                <el-icon v-else><CircleClose /></el-icon> 无用
-              </el-button>
+          </div>
+          <div v-if="loading" class="message-item ai">
+            <div class="msg-avatar">
+              <el-icon :size="22" color="#c41e3a"><ChatDotRound /></el-icon>
+            </div>
+            <div class="msg-content">
+              <div class="msg-bubble ai-bubble loading-dots">
+                <span class="dot">.</span><span class="dot">.</span><span class="dot">.</span>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- 加载中 -->
-        <div v-if="loading" class="chat-message ai">
-          <div class="chat-avatar">AI</div>
-          <div class="chat-bubble">
-            <div class="typing-indicator">
-              <span></span><span></span><span></span>
-            </div>
+        <!-- 底部输入区 -->
+        <div class="input-area">
+          <div class="input-wrapper">
+            <el-input
+              v-model="inputMessage"
+              placeholder="请输入您想咨询的问题，例如：身份证补办"
+              :disabled="loading"
+              class="qa-input"
+              @keyup.enter="sendMessage"
+            />
+            <el-button
+              type="primary"
+              class="send-btn"
+              :loading="loading"
+              :disabled="!inputMessage.trim()"
+              @click="sendMessage"
+            >
+              发送
+            </el-button>
           </div>
         </div>
       </div>
 
-      <!-- 输入区 -->
-      <div class="chat-input-area">
-        <div class="ai-notice">
-          <el-icon><InfoFilled /></el-icon>
-          AI生成内容仅供业务参考，具体以最新政策文件为准
+      <!-- 右侧辅助信息区 -->
+      <div class="qa-sidebar">
+        <!-- 常见问题 -->
+        <div class="sidebar-card">
+          <div class="card-header">
+            <div class="card-title">
+              <el-icon :size="18" color="#c41e3a"><ChatLineSquare /></el-icon>
+              <span>常见问题</span>
+            </div>
+            <div class="card-action" @click="refreshFAQ">
+              <el-icon :size="16" color="#c41e3a"><Refresh /></el-icon>
+              <span>换一换</span>
+            </div>
+          </div>
+          <div class="faq-list">
+            <div
+              v-for="(q, idx) in faqList"
+              :key="idx"
+              class="faq-item"
+              @click="askQuestion(q)"
+            >
+              <span class="faq-dot"></span>
+              <span class="faq-text">{{ q }}</span>
+            </div>
+          </div>
         </div>
-        <div class="input-row">
-          <el-input
-            v-model="inputMessage"
-            placeholder="请输入您的问题，例如：失业保险金领取条件是什么？"
-            @keyup.enter="sendMessage"
-            :disabled="loading"
-            class="qa-input"
-          />
-          <el-button
-            type="primary"
-            @click="sendMessage"
-            :loading="loading"
-            :disabled="!inputMessage.trim()"
-            class="send-btn"
-          >
-            <el-icon><Promotion /></el-icon> 发送
-          </el-button>
+
+        <!-- 历史记录 -->
+        <div class="sidebar-card">
+          <div class="card-header">
+            <div class="card-title">
+              <el-icon :size="18" color="#c41e3a"><Clock /></el-icon>
+              <span>历史记录</span>
+            </div>
+            <div class="card-action" @click="clearHistory" v-if="historyList.length > 0">
+              <el-icon :size="16" color="#999"><Delete /></el-icon>
+              <span>清除</span>
+            </div>
+          </div>
+          <div class="history-list">
+            <div v-if="historyList.length === 0" class="empty-tip">
+              暂无历史记录数据
+            </div>
+            <div
+              v-for="(item, idx) in historyList"
+              :key="idx"
+              class="history-item"
+              @click="askQuestion(item.question)"
+            >
+              <el-icon :size="14" color="#666"><Clock /></el-icon>
+              <span class="history-text">{{ item.question }}</span>
+              <span class="history-time">{{ item.time }}</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -94,278 +162,587 @@
 </template>
 
 <script setup lang="ts">
-import { ref, nextTick } from 'vue'
-import { fetchQAAnswer } from '@/api/mock'
-import type { QASource } from '@/types'
+import { ref, onMounted } from 'vue'
+import { ChatDotRound, QuestionFilled, UserFilled, ChatLineSquare, Refresh, Clock, Delete } from '@element-plus/icons-vue'
+import { fetchQAAnswer, faqQuestions } from '@/api/mock'
 
-interface Message {
+interface QAMessage {
   role: 'user' | 'ai'
   content: string
-  sources?: QASource[]
-  feedback?: 'useful' | 'useless' | null
+  sources?: { name: string; content: string }[]
+  feedback?: 'useful' | 'useless'
 }
 
-const messages = ref<Message[]>([])
+interface HistoryItem {
+  question: string
+  time: string
+}
+
 const inputMessage = ref('')
+const messages = ref<QAMessage[]>([])
 const loading = ref(false)
-const messagesRef = ref<HTMLElement>()
+const chatRef = ref<HTMLElement | null>(null)
+const faqList = ref<string[]>([...faqQuestions])
+const historyList = ref<HistoryItem[]>([])
 
-const quickQuestions = [
-  '失业保险金领取条件是什么？',
-  '灵活就业社保补贴标准是多少？',
-  '稳岗返还政策最新规定',
-  '就业困难人员认定条件',
-]
+const hotTopics = ref([
+  '教师资格证',
+  '生育服务',
+  '老年人办事服务',
+  '军人退役',
+  '公积金提取',
+  '医疗保险登记',
+  '育儿补贴制度政策问答',
+  '中共中央办公厅 国务院办公厅印发《育儿补贴制度实施方案》',
+])
 
-const handleQuickQuestion = (question: string) => {
-  inputMessage.value = question
+function refreshFAQ() {
+  const shuffled = [...faqQuestions].sort(() => Math.random() - 0.5)
+  faqList.value = shuffled.slice(0, 5)
+}
+
+function askQuestion(q: string) {
+  inputMessage.value = q
   sendMessage()
 }
 
-const formatContent = (content: string) => {
-  return content
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\n/g, '<br>')
-    .replace(/&gt; (.*)/g, '<em style="color:#6b7280;font-size:12px">$1</em>')
-}
+async function sendMessage() {
+  const text = inputMessage.value.trim()
+  if (!text || loading.value) return
 
-const sendMessage = async () => {
-  const question = inputMessage.value.trim()
-  if (!question || loading.value) return
-
-  messages.value.push({ role: 'user', content: question })
+  messages.value.push({ role: 'user', content: text })
+  addHistory(text)
   inputMessage.value = ''
   loading.value = true
 
-  await nextTick()
-  scrollToBottom()
-
   try {
-    const history = messages.value.map((m) => ({ role: m.role, content: m.content }))
-    const result = await fetchQAAnswer(question, history)
+    const res = await fetchQAAnswer(text, messages.value)
     messages.value.push({
       role: 'ai',
-      content: result.answer,
-      sources: result.sources,
-      feedback: null,
+      content: res.answer,
+      sources: res.sources,
     })
   } catch {
-    messages.value.push({ role: 'ai', content: '抱歉，服务暂时不可用，请稍后重试。' })
+    messages.value.push({
+      role: 'ai',
+      content: '抱歉，暂时无法回答您的问题，请稍后重试。',
+    })
   } finally {
     loading.value = false
-    await nextTick()
     scrollToBottom()
   }
 }
 
-const scrollToBottom = () => {
-  if (messagesRef.value) {
-    messagesRef.value.scrollTop = messagesRef.value.scrollHeight
+function addHistory(question: string) {
+  const now = new Date()
+  const time = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`
+  historyList.value = historyList.value.filter(h => h.question !== question)
+  historyList.value.unshift({ question, time })
+  if (historyList.value.length > 10) historyList.value.pop()
+}
+
+function clearHistory() {
+  historyList.value = []
+}
+
+function giveFeedback(idx: number, type: 'useful' | 'useless') {
+  const msg = messages.value[idx]
+  if (msg && msg.role === 'ai') {
+    msg.feedback = msg.feedback === type ? undefined : type
   }
 }
+
+function scrollToBottom() {
+  setTimeout(() => {
+    if (chatRef.value) {
+      chatRef.value.scrollTop = chatRef.value.scrollHeight
+    }
+  }, 100)
+}
+
+onMounted(() => {
+  refreshFAQ()
+})
 </script>
 
 <style scoped>
 .qa-page {
-  height: calc(100vh - 96px);
-}
-
-.qa-container {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  padding: 0;
+  height: calc(100vh - 100px);
+  background: linear-gradient(135deg, #fdf6f0 0%, #fefefe 50%, #f5f0eb 100%);
+  border-radius: 12px;
+  padding: 20px;
+  box-sizing: border-box;
   overflow: hidden;
 }
 
-.chat-messages {
-  flex: 1;
-  overflow-y: auto;
-  padding: 20px;
+.qa-layout {
+  display: flex;
+  gap: 20px;
+  height: 100%;
 }
 
-.empty-state {
+/* 左侧主区域 */
+.qa-main {
+  flex: 2;
   display: flex;
   flex-direction: column;
+  gap: 16px;
+  overflow: hidden;
+}
+
+/* 问候栏 */
+.greeting-section {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.greeting-avatar {
+  flex-shrink: 0;
+}
+
+.robot-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: white;
+  border: 2px solid #c41e3a;
+  display: flex;
   align-items: center;
   justify-content: center;
-  height: 100%;
-  color: #9ca3af;
+  color: #c41e3a;
+  box-shadow: 0 2px 8px rgba(196, 30, 58, 0.08);
 }
 
-.empty-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: #374151;
-  margin-top: 16px;
-}
-
-.empty-desc {
+.greeting-bubble {
+  background: white;
+  border-radius: 4px 12px 12px 12px;
+  padding: 14px 18px;
   font-size: 14px;
-  margin-top: 8px;
+  color: #555;
+  line-height: 1.6;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  position: relative;
+  max-width: 85%;
 }
 
-.quick-questions {
+.greeting-bubble::before {
+  content: '';
+  position: absolute;
+  left: -6px;
+  top: 14px;
+  width: 0;
+  height: 0;
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+  border-right: 6px solid white;
+}
+
+/* 热门服务 */
+.hot-section {
+  background: white;
+  border-radius: 12px;
+  padding: 16px 20px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.section-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.hot-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 20px;
-  justify-content: center;
+  gap: 10px;
 }
 
-.quick-q {
+.hot-tag {
+  background: #f5f5f5 !important;
+  border: none !important;
+  color: #333 !important;
+  font-size: 13px;
+  padding: 0 14px;
+  height: 32px;
+  line-height: 32px;
+  border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s;
 }
 
-.quick-q:hover {
-  background: #1a56db;
-  color: white;
-  border-color: #1a56db;
+.hot-tag:hover {
+  background: #c41e3a !important;
+  color: white !important;
 }
 
-.chat-message {
+.tag-wide {
+  width: 100%;
+}
+
+/* 对话消息区 */
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 4px;
   display: flex;
-  margin-bottom: 16px;
-  gap: 12px;
+  flex-direction: column;
+  gap: 16px;
+  scroll-behavior: smooth;
 }
 
-.chat-message.user {
+.chat-messages::-webkit-scrollbar {
+  width: 4px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+  background: #ddd;
+  border-radius: 2px;
+}
+
+.message-item {
+  display: flex;
+  gap: 10px;
+  max-width: 90%;
+}
+
+.message-item.user {
+  align-self: flex-end;
   flex-direction: row-reverse;
 }
 
-.chat-avatar {
+.msg-avatar {
+  flex-shrink: 0;
   width: 36px;
   height: 36px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
-  font-weight: 600;
-  flex-shrink: 0;
 }
 
-.chat-message.ai .chat-avatar {
-  background: #1a56db;
-  color: white;
+.message-item.ai .msg-avatar {
+  background: #fef0ef;
 }
 
-.chat-message.user .chat-avatar {
-  background: #6366f1;
-  color: white;
+.message-item.user .msg-avatar {
+  background: #e8f0fe;
 }
 
-.chat-bubble-wrapper {
-  max-width: 70%;
-}
-
-.chat-bubble {
+.msg-bubble {
   padding: 12px 16px;
   border-radius: 12px;
   font-size: 14px;
-  line-height: 1.8;
+  line-height: 1.6;
+  word-break: break-word;
 }
 
-.chat-message.ai .chat-bubble {
-  background: #f3f4f6;
-  border-bottom-left-radius: 4px;
-}
-
-.chat-message.user .chat-bubble {
+.message-item.user .msg-bubble {
   background: #1a56db;
   color: white;
   border-bottom-right-radius: 4px;
 }
 
-.source-refs {
+.message-item.ai .msg-bubble {
+  background: white;
+  color: #333;
+  border-bottom-left-radius: 4px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.ai-answer {
+  margin-bottom: 8px;
+  line-height: 1.7;
+}
+
+.answer-footer {
+  border-top: 1px solid #f0f0f0;
+  padding-top: 8px;
   margin-top: 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
 }
 
-.source-ref {
-  padding: 10px 14px;
-  background: #f0f7ff;
-  border-left: 3px solid #1a56db;
-  border-radius: 4px;
-}
-
-.source-ref-title {
-  font-weight: 600;
-  color: #1a56db;
-  font-size: 13px;
-  margin-bottom: 4px;
+.sources {
   display: flex;
-  align-items: center;
+  flex-wrap: wrap;
   gap: 4px;
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 6px;
 }
 
-.source-ref-content {
-  color: #6b7280;
-  font-size: 12px;
-  line-height: 1.6;
+.source-label {
+  color: #999;
+}
+
+.source-item {
+  color: #1a56db;
+  cursor: pointer;
+}
+
+.source-item:hover {
+  text-decoration: underline;
+}
+
+.ai-tag {
+  font-size: 11px;
+  color: #999;
+  font-style: italic;
 }
 
 .feedback-actions {
   display: flex;
   gap: 8px;
-  margin-top: 6px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #f5f5f5;
 }
 
-.typing-indicator {
-  display: flex;
-  gap: 4px;
-  padding: 4px 0;
-}
-
-.typing-indicator span {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #9ca3af;
-  animation: typing 1.4s infinite;
-}
-
-.typing-indicator span:nth-child(2) {
-  animation-delay: 0.2s;
-}
-
-.typing-indicator span:nth-child(3) {
-  animation-delay: 0.4s;
-}
-
-@keyframes typing {
-  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
-  30% { transform: translateY(-8px); opacity: 1; }
-}
-
-.chat-input-area {
-  padding: 16px 20px;
-  border-top: 1px solid #e5e7eb;
-  background: white;
-}
-
-.ai-notice {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+.feedback-btn {
+  cursor: pointer;
+  border-radius: 4px;
   font-size: 12px;
-  color: #9ca3af;
-  margin-bottom: 10px;
 }
 
-.input-row {
+.loading-dots {
+  display: flex;
+  gap: 2px;
+  padding: 12px 20px;
+}
+
+.dot {
+  font-size: 24px;
+  color: #c41e3a;
+  animation: bounce 1.4s infinite;
+}
+
+.dot:nth-child(2) { animation-delay: 0.2s; }
+.dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes bounce {
+  0%, 80%, 100% { opacity: 0.3; transform: translateY(0); }
+  40% { opacity: 1; transform: translateY(-4px); }
+}
+
+/* 输入区 */
+.input-area {
+  flex-shrink: 0;
+  padding-top: 8px;
+}
+
+.input-wrapper {
   display: flex;
   gap: 12px;
+  background: white;
+  border-radius: 12px;
+  padding: 12px 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  border: 1px solid #eee;
 }
 
 .qa-input {
   flex: 1;
 }
 
+.qa-input :deep(.el-input__wrapper) {
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 4px;
+  background: transparent;
+}
+
+.qa-input :deep(.el-input__inner) {
+  border: none;
+  font-size: 14px;
+  color: #333;
+  height: 40px;
+}
+
+.qa-input :deep(.el-input__inner::placeholder) {
+  color: #bbb;
+}
+
 .send-btn {
-  min-width: 100px;
+  flex-shrink: 0;
+  height: 40px;
+  padding: 0 28px;
+  font-size: 14px;
+  border-radius: 8px;
+  background: #c41e3a !important;
+  border-color: #c41e3a !important;
+  font-weight: 500;
+  letter-spacing: 1px;
+}
+
+.send-btn:hover {
+  background: #a81830 !important;
+  border-color: #a81830 !important;
+}
+
+/* 右侧侧边栏 */
+.qa-sidebar {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 240px;
+  max-width: 320px;
+}
+
+.sidebar-card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px 18px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+.sidebar-card:first-child {
+  flex-shrink: 0;
+}
+
+.sidebar-card:last-child {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.card-action {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #c41e3a;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.card-action:hover {
+  opacity: 0.7;
+}
+
+/* 常见问题列表 */
+.faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.faq-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 0;
+  cursor: pointer;
+  border-bottom: 1px solid #f5f5f5;
+  transition: color 0.2s;
+}
+
+.faq-item:last-child {
+  border-bottom: none;
+}
+
+.faq-item:hover {
+  color: #c41e3a;
+}
+
+.faq-dot {
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #c41e3a;
+  margin-top: 7px;
+}
+
+.faq-text {
+  font-size: 13px;
+  color: #444;
+  line-height: 1.5;
+}
+
+.faq-item:hover .faq-text {
+  color: #c41e3a;
+}
+
+/* 历史记录 */
+.history-list {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.history-list::-webkit-scrollbar {
+  width: 3px;
+}
+
+.history-list::-webkit-scrollbar-thumb {
+  background: #ddd;
+  border-radius: 2px;
+}
+
+.empty-tip {
+  text-align: center;
+  color: #bbb;
+  font-size: 13px;
+  padding: 30px 0;
+}
+
+.history-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  cursor: pointer;
+  border-bottom: 1px solid #f5f5f5;
+  transition: color 0.2s;
+}
+
+.history-item:last-child {
+  border-bottom: none;
+}
+
+.history-item:hover {
+  color: #c41e3a;
+}
+
+.history-text {
+  flex: 1;
+  font-size: 13px;
+  color: #444;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.history-time {
+  font-size: 11px;
+  color: #bbb;
+  flex-shrink: 0;
+}
+
+.history-item:hover .history-text {
+  color: #c41e3a;
 }
 </style>

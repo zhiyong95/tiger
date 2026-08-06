@@ -1,7 +1,7 @@
 // ============ 知识问答 ============
 export interface QASource {
   id: string
-  title: string
+  name: string
   content: string
   docName: string
   chapter: string

@@ -23,21 +23,21 @@ const delay = (ms = 300) => new Promise((resolve) => setTimeout(resolve, ms))
 const mockQASources: QASource[] = [
   {
     id: '1',
-    title: '《就业促进法》第二十五条',
+    name: '《就业促进法》第二十五条',
     content: '各级人民政府创造就业条件，扩大就业规模，改善就业环境，完善就业服务，加强职业教育和培训，提供就业援助。',
     docName: '中华人民共和国就业促进法',
     chapter: '第二章 政策支持',
   },
   {
     id: '2',
-    title: '《失业保险条例》第十四条',
+    name: '《失业保险条例》第十四条',
     content: '具备下列条件的失业人员，可以领取失业保险金：（一）按照规定参加失业保险，所在单位和本人已按照规定履行缴费义务满1年的；（二）非因本人意愿中断就业的；（三）已办理失业登记，并有求职要求的。',
     docName: '失业保险条例',
     chapter: '第三章 失业保险金',
   },
   {
     id: '3',
-    title: '《关于延续实施部分减负稳岗扩就业政策措施的通知》',
+    name: '《关于延续实施部分减负稳岗扩就业政策措施的通知》',
     content: '继续实施失业保险稳岗返还政策，对不裁员少裁员的参保企业，返还其上年度实际缴纳失业保险费的60%。',
     docName: '人社部发〔2024〕15号',
     chapter: '一、稳岗返还',
@@ -426,6 +426,26 @@ export async function fetchLogs(): Promise<LogRecord[]> {
     { id: '6', user: '张明', module: '知识问答', action: '反馈', detail: '标记答案"有用"', time: '2024-08-04 14:30:22' },
   ]
 }
+
+// ============ 知识问答 FAQ 和热门问题 ============
+export const faqQuestions = [
+  '车辆进京通行证核发',
+  '残疾人两项补贴查询',
+  '申请开具有无犯罪记录证明',
+  '如何申请高龄老年人津贴?',
+  '企业注册时，提示"统一社会信用代码已被其他企业注册使用"如何处理?',
+]
+
+export const hotTopics = [
+  '教师资格证',
+  '生育服务',
+  '老年人办事服务',
+  '军人退役',
+  '公积金提取',
+  '医疗保险登记',
+  '育儿补贴制度政策问答',
+  '中共中央办公厅 国务院办公厅印发《育儿补贴制度实施方案》',
+]
 
 // ============ 登录认证 ============
 export async function login(username: string, _password: string, role: 'staff' | 'admin'): Promise<{ token: string; user: { name: string; department: string; role: string; avatar: string } }> {
