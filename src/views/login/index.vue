@@ -8,7 +8,7 @@
       <div class="brand-section">
         <div class="brand-content">
           <div class="brand-logo">
-            <div class="logo-icon">政</div>
+            <img src="/logo.png" alt="DATUM 达途" class="brand-logo-image" />
           </div>
           <h1 class="brand-title">政途 · AI政务办公工作台</h1>
           <p class="brand-subtitle">DATUM 达途</p>
@@ -240,20 +240,13 @@ const handleLogin = async () => {
   margin-bottom: 24px;
 }
 
-.brand-logo .logo-icon {
-  width: 72px;
-  height: 72px;
-  background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(10px);
-  border-radius: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-weight: 700;
-  font-size: 32px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+.brand-logo-image {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  display: block;
   margin: 0 auto;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.15));
 }
 
 .brand-title {

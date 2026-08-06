@@ -8,11 +8,10 @@
       <!-- 侧边栏 -->
       <el-aside :width="appStore.sidebarCollapsed ? '64px' : '240px'" class="sidebar">
         <div class="sidebar-header">
-          <div v-if="!appStore.sidebarCollapsed" class="logo-text">
-            <span class="logo-icon">政</span>
-            <span class="logo-name">政途工作台</span>
+          <div class="logo-container">
+            <img src="/logo.png" alt="DATUM 达途" class="logo-image" />
+            <span v-if="!appStore.sidebarCollapsed" class="logo-name">政途工作台</span>
           </div>
-          <div v-else class="logo-icon-small">政</div>
         </div>
 
         <!-- 模块切换（仅管理员可见） -->
@@ -153,43 +152,26 @@ const handleDropdownCommand = async (command: string) => {
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.logo-text {
+.logo-container {
   display: flex;
   align-items: center;
   gap: 10px;
+  padding: 0 16px;
 }
 
-.logo-icon {
-  width: 32px;
-  height: 32px;
-  background: linear-gradient(135deg, #1a56db, #4f8ef7);
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-weight: 700;
-  font-size: 16px;
-}
-
-.logo-icon-small {
-  width: 32px;
-  height: 32px;
-  background: linear-gradient(135deg, #1a56db, #4f8ef7);
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-weight: 700;
-  font-size: 16px;
+.logo-image {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  flex-shrink: 0;
 }
 
 .logo-name {
   color: white;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
   letter-spacing: 1px;
+  white-space: nowrap;
 }
 
 .module-switch {
