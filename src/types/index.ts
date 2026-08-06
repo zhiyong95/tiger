@@ -40,6 +40,34 @@ export interface DocumentIssue {
   position: string
 }
 
+// ============ 公文助手 - 新模板卡片 ============
+export interface TemplateCard {
+  id: string
+  name: string
+  subtitle: string
+  docType: '请示' | '通知' | '报告' | '函件' | '批复' | '约谈通知'
+  businessField: string
+  iconColor: string
+  badge?: { text: string; type: 'hot' | 'new' }
+  tags: { text: string; color: string }[]
+  usageCount: number
+  rating?: number
+  ratingCount?: number
+  description?: string
+  isFavorite: boolean
+}
+
+export interface DocStats {
+  monthlyGenerated: number
+  monthlyGrowth: number
+  approvalRate: number
+  aiSavedHours: number
+  inProgress: number
+  totalArchived: number
+}
+
+export type DocTab = 'template' | 'review' | 'archive' | 'supervise'
+
 // ============ 智能问数 ============
 export interface MetricData {
   id: string

@@ -12,6 +12,8 @@ import type {
   KnowledgeDoc,
   User,
   LogRecord,
+  DocStats,
+  TemplateCard,
 } from '@/types'
 
 // 模拟延迟
@@ -114,6 +116,109 @@ ${params.date || new Date().toLocaleDateString('zh-CN')}`,
       { type: 'sensitive', message: '请确认涉政表述是否准确', position: '正文第2段' },
     ],
   }
+}
+
+// ============ 公文助手 - 模板卡片数据 ============
+export const mockDocStats: DocStats = {
+  monthlyGenerated: 387,
+  monthlyGrowth: 32,
+  approvalRate: 98.6,
+  aiSavedHours: 156,
+  inProgress: 24,
+  totalArchived: 12438,
+}
+
+export const mockTemplateCards: TemplateCard[] = [
+  {
+    id: 't1', name: '请示模板·向上级请示事项', subtitle: '综合管理·请示', docType: '请示',
+    businessField: '综合管理', iconColor: '#3b82f6',
+    badge: { text: '热门', type: 'hot' },
+    tags: [{ text: '人社专用', color: '#3b82f6' }, { text: '含套红', color: '#d97706' }],
+    usageCount: 28, isFavorite: true,
+  },
+  {
+    id: 't2', name: '会议通知模板', subtitle: '综合管理·通知', docType: '通知',
+    businessField: '综合管理', iconColor: '#10b981',
+    badge: { text: '新增', type: 'new' },
+    tags: [{ text: '人社专用', color: '#3b82f6' }, { text: '2026新版', color: '#10b981' }],
+    usageCount: 15, isFavorite: true,
+  },
+  {
+    id: 't3', name: '就业工作报告模板', subtitle: '就业促进·报告', docType: '报告',
+    businessField: '就业促进', iconColor: '#8b5cf6',
+    badge: { text: '热门', type: 'hot' },
+    tags: [{ text: '含数据图表', color: '#8b5cf6' }],
+    usageCount: 42, isFavorite: true,
+  },
+  {
+    id: 't4', name: '约谈通知模板', subtitle: '劳动关系·通知', docType: '约谈通知',
+    businessField: '劳动关系', iconColor: '#f59e0b',
+    tags: [{ text: '人社专用', color: '#3b82f6' }],
+    usageCount: 8, isFavorite: true,
+  },
+  {
+    id: 't5', name: '社保补贴审批函', subtitle: '社会保险·函件', docType: '函件',
+    businessField: '社会保险', iconColor: '#ec4899',
+    tags: [{ text: '含套红', color: '#d97706' }, { text: '2026新版', color: '#10b981' }],
+    usageCount: 21, isFavorite: false,
+  },
+  {
+    id: 't6', name: '人才引进工作批复', subtitle: '人才开发·批复', docType: '批复',
+    businessField: '人才开发', iconColor: '#6366f1',
+    tags: [{ text: '人社专用', color: '#3b82f6' }],
+    usageCount: 12, isFavorite: false,
+  },
+]
+
+export const mockHotTemplateCards: TemplateCard[] = [
+  {
+    id: 'h1', name: '季度工作总结报告模板', subtitle: '综合管理·报告', docType: '报告',
+    businessField: '综合管理', iconColor: '#8b5cf6',
+    badge: { text: '热门', type: 'hot' },
+    tags: [{ text: '含数据图表', color: '#8b5cf6' }, { text: '2026新版', color: '#10b981' }],
+    usageCount: 186, rating: 4.8, ratingCount: 142,
+    description: '结构化呈现季度工作完成情况，自动关联关键指标数据，支持同比环比分析。',
+    isFavorite: false,
+  },
+  {
+    id: 'h2', name: '就业补贴申请报告模板', subtitle: '就业促进·报告', docType: '报告',
+    businessField: '就业促进', iconColor: '#8b5cf6',
+    tags: [{ text: '人社专用', color: '#3b82f6' }, { text: '含套红', color: '#d97706' }],
+    usageCount: 153, rating: 4.7, ratingCount: 128,
+    description: '适用于就业困难人员社保补贴、灵活就业补贴等各类补贴申请报告。',
+    isFavorite: false,
+  },
+  {
+    id: 'h3', name: '请示函·专项资金申请', subtitle: '规划财务·请示', docType: '请示',
+    businessField: '规划财务', iconColor: '#3b82f6',
+    tags: [{ text: '含数据图表', color: '#8b5cf6' }],
+    usageCount: 97, rating: 4.6, ratingCount: 85,
+    description: '向上级部门申请专项资金的请示函模板，包含预算明细和项目说明。',
+    isFavorite: false,
+  },
+  {
+    id: 'h4', name: '政策解读通知模板', subtitle: '政策法规·通知', docType: '通知',
+    businessField: '政策法规', iconColor: '#10b981',
+    tags: [{ text: '人社专用', color: '#3b82f6' }, { text: '2026新版', color: '#10b981' }],
+    usageCount: 78, rating: 4.5, ratingCount: 63,
+    description: '用于发布新政策解读文件，包含政策背景、核心条款、实施要点等模块。',
+    isFavorite: false,
+  },
+]
+
+export async function fetchDocStats(): Promise<DocStats> {
+  await delay(300)
+  return mockDocStats
+}
+
+export async function fetchTemplateCards(): Promise<TemplateCard[]> {
+  await delay(300)
+  return mockTemplateCards
+}
+
+export async function fetchHotTemplateCards(): Promise<TemplateCard[]> {
+  await delay(300)
+  return mockHotTemplateCards
 }
 
 // ============ 智能问数 ============
