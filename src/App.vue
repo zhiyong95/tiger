@@ -59,9 +59,45 @@
             </el-breadcrumb>
           </div>
           <div class="header-right">
-            <el-badge :value="3" :max="99" class="header-badge">
-              <el-icon :size="20" style="cursor: pointer"><Bell /></el-icon>
-            </el-badge>
+            <el-popover
+              placement="bottom-end"
+              :width="360"
+              trigger="click"
+              popper-class="notification-popover"
+            >
+              <template #reference>
+                <el-badge :value="notifications.filter(n => !n.read).length" :max="99" class="header-badge">
+                  <el-icon :size="20" style="cursor: pointer"><Bell /></el-icon>
+                </el-badge>
+              </template>
+              <div class="notification-panel">
+                <div class="notification-header">
+                  <span class="notification-title">站内消息</span>
+                  <el-button text size="small" @click="markAllRead">全部已读</el-button>
+                </div>
+                <el-divider style="margin: 8px 0" />
+                <div class="notification-list">
+                  <div
+                    v-for="(item, index) in notifications"
+                    :key="index"
+                    class="notification-item"
+                    :class="{ unread: !item.read }"
+                    @click="handleNotificationClick(item)"
+                  >
+                    <div class="notification-dot" v-if="!item.read" />
+                    <div class="notification-content">
+                      <div class="notification-text">{{ item.content }}</div>
+                      <div class="notification-time">{{ item.time }}</div>
+                    </div>
+                    <el-tag v-if="item.type" :type="item.type === 'risk' ? 'danger' : item.type === 'task' ? 'warning' : 'info'" size="small" class="notification-tag">{{ item.typeLabel }}</el-tag>
+                  </div>
+                </div>
+                <el-divider style="margin: 8px 0" />
+                <div class="notification-footer">
+                  <el-button text size="small" @click="router.push('/task')">查看全部</el-button>
+                </div>
+              </div>
+            </el-popover>
             <el-dropdown @command="handleDropdownCommand">
               <div class="user-info">
                 <el-avatar :size="32" class="user-avatar">{{ appStore.userInfo.name[0] }}</el-avatar>
@@ -94,7 +130,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { ElMessageBox } from 'element-plus'
@@ -102,6 +138,26 @@ import { ElMessageBox } from 'element-plus'
 const route = useRoute()
 const router = useRouter()
 const appStore = useAppStore()
+
+// 站内通知数据
+const notifications = ref([
+  { content: '您有3条待办审核任务待处理', time: '2026-08-06 09:30', read: false, type: 'task', typeLabel: '待办' },
+  { content: '就业补贴数据异常预警：灵活就业社保补贴发放人数异常增长', time: '2026-08-06 09:15', read: false, type: 'risk', typeLabel: '风险' },
+  { content: '系统公告：知识库已更新最新社保政策文件', time: '2026-08-06 08:00', read: false, type: 'info', typeLabel: '公告' },
+  { content: '公文"关于2026年就业促进工作的报告"已完成审校', time: '2026-08-05 16:45', read: true, type: 'info', typeLabel: '消息' },
+  { content: '智能分析报告2026年7月月报已生成', time: '2026-08-05 14:20', read: true, type: 'info', typeLabel: '消息' },
+])
+
+const markAllRead = () => {
+  notifications.value.forEach(n => n.read = true)
+}
+
+const handleNotificationClick = (item: { content: string; time: string; read: boolean; type: string; typeLabel: string }) => {
+  item.read = true
+  if (item.type === 'task' || item.type === 'risk') {
+    router.push('/task')
+  }
+}
 
 const activeMenu = computed(() => route.path)
 
@@ -148,8 +204,9 @@ const handleDropdownCommand = async (command: string) => {
   height: 56px;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0 16px;
 }
 
 .logo-container {
@@ -271,5 +328,88 @@ const handleDropdownCommand = async (command: string) => {
   background: var(--bg-color);
   padding: 20px;
   overflow-y: auto;
+}
+
+/* 通知面板样式 */
+.notification-panel {
+  padding: 0;
+}
+
+.notification-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 4px;
+}
+
+.notification-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: #333;
+}
+
+.notification-list {
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.notification-item {
+  display: flex;
+  align-items: flex-start;
+  padding: 10px 8px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.2s;
+  gap: 8px;
+  position: relative;
+}
+
+.notification-item:hover {
+  background: #f5f7fa;
+}
+
+.notification-item.unread {
+  background: #f0f5ff;
+}
+
+.notification-item.unread:hover {
+  background: #e6f0ff;
+}
+
+.notification-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #1a56db;
+  flex-shrink: 0;
+  margin-top: 6px;
+}
+
+.notification-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.notification-text {
+  font-size: 13px;
+  color: #333;
+  line-height: 1.5;
+  word-break: break-all;
+}
+
+.notification-time {
+  font-size: 12px;
+  color: #999;
+  margin-top: 4px;
+}
+
+.notification-tag {
+  flex-shrink: 0;
+  margin-left: 4px;
+}
+
+.notification-footer {
+  text-align: center;
+  padding: 0 4px;
 }
 </style>
