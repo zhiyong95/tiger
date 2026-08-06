@@ -9,8 +9,7 @@
       <el-aside :width="appStore.sidebarCollapsed ? '64px' : '240px'" class="sidebar">
         <div class="sidebar-header">
           <div class="logo-container">
-            <img src="/logo.png" alt="DATUM 达途" class="logo-image" />
-            <span v-if="!appStore.sidebarCollapsed" class="logo-name">政途工作台</span>
+            <span v-if="!appStore.sidebarCollapsed" class="logo-name">DATUM·政途</span>
           </div>
         </div>
 
@@ -212,21 +211,13 @@ const handleDropdownCommand = async (command: string) => {
 .logo-container {
   display: flex;
   align-items: center;
-  gap: 10px;
   padding: 0 16px;
-}
-
-.logo-image {
-  width: 36px;
-  height: 36px;
-  object-fit: contain;
-  flex-shrink: 0;
 }
 
 .logo-name {
   color: white;
-  font-size: 15px;
-  font-weight: 600;
+  font-size: 20px;
+  font-weight: 700;
   letter-spacing: 1px;
   white-space: nowrap;
 }
