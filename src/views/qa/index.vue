@@ -12,7 +12,7 @@
               v-for="q in quickQuestions"
               :key="q"
               class="quick-q"
-              @click="inputMessage = q"
+              @click="handleQuickQuestion(q)"
             >
               {{ q }}
             </el-tag>
@@ -116,6 +116,11 @@ const quickQuestions = [
   '稳岗返还政策最新规定',
   '就业困难人员认定条件',
 ]
+
+const handleQuickQuestion = (question: string) => {
+  inputMessage.value = question
+  sendMessage()
+}
 
 const formatContent = (content: string) => {
   return content
