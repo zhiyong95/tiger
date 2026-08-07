@@ -1,11 +1,7 @@
 <template>
   <div class="admin-page">
     <div class="page-card">
-      <div class="page-header">
-        <div>
-          <div class="page-title">指标口径管理</div>
-          <div class="page-subtitle">管理业务指标定义、口径和数据来源</div>
-        </div>
+      <div style="display:flex; justify-content:flex-end; margin-bottom:16px;">
         <el-button type="primary" @click="showAddDialog = true">
           <el-icon><Plus /></el-icon> 新增指标
         </el-button>

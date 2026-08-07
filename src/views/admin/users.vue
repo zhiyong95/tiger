@@ -1,14 +1,5 @@
 <template>
   <div class="user-permission-page">
-    <el-page-header @back="router.back()" content="返回" class="page-back-header">
-      <template #content>
-        <div class="page-title-wrap">
-          <div class="page-title">用户 / 角色 / 部门权限管理</div>
-          <div class="page-subtitle">建立统一身份管理和权限控制体系，满足最小权限原则和分级授权</div>
-        </div>
-      </template>
-    </el-page-header>
-
     <!-- 顶部统计卡片 -->
     <div class="stat-cards-row">
       <div class="stat-card stat-1">

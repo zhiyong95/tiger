@@ -1,14 +1,5 @@
 <template>
   <div class="knowledge-page">
-    <el-page-header @back="router.back()" class="page-back-header">
-      <template #content>
-        <div class="page-title-wrap">
-          <div class="page-title">知识库管理</div>
-          <div class="page-subtitle">构建覆盖人社全业务领域的动态知识库，为智能问答、公文引用、审核依据提供知识支撑</div>
-        </div>
-      </template>
-    </el-page-header>
-
     <!-- 顶部统计卡片 -->
     <div class="stat-cards-row">
       <div class="stat-card stat-1">
