@@ -257,7 +257,7 @@
           <el-tree-select
             v-model="uploadForm.categoryId"
             :data="categoryTreeFlat"
-            :props="{ label: 'name', value: 'id' }"
+            :props="{ label: 'name', value: 'id' } as any"
             placeholder="请选择知识分类"
             clearable
             style="width: 100%"

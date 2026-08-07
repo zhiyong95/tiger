@@ -250,7 +250,7 @@
           <el-tree-select
             v-model="userForm.deptId"
             :data="deptTreeData"
-            :props="{ label: 'name', value: 'id' }"
+            :props="{ label: 'name', value: 'id' } as any"
             placeholder="选择所属部门"
             check-strictly
             style="width: 100%"
