@@ -36,7 +36,7 @@
         <div class="tree-card">
           <div class="tree-header">
             <span class="tree-title">组织架构树</span>
-            <el-button text type="primary" size="small">
+            <el-button text type="primary" size="small" @click="handleAddDept">
               <el-icon><Plus /></el-icon> 新增部门
             </el-button>
           </div>
@@ -137,8 +137,8 @@
                 </div>
                 <div class="role-actions">
                   <el-button link type="primary" size="small" @click="handleConfigPermission(role)">配置权限</el-button>
-                  <el-button link type="warning" size="small">编辑</el-button>
-                  <el-button link type="danger" size="small" :disabled="role.isPreset">删除</el-button>
+                  <el-button link type="primary" size="small" @click="handleEditRole(role)">编辑</el-button>
+                  <el-button link type="danger" size="small" @click="handleDeleteRole(role)" :disabled="role.isPreset">删除</el-button>
                 </div>
               </div>
             </div>
@@ -148,11 +148,8 @@
           <el-tab-pane label="功能权限" name="permissions">
             <div class="toolbar-bar">
               <div style="color: #6b7280; font-size: 13px;">选择角色查看和配置功能权限</div>
-              <el-select v-model="selectedPermissionRoleId" style="width: 200px;" placeholder="选择角色">
-                <el-option label="局领导" value="role-1" />
-                <el-option label="业务管理员" value="role-2" />
-                <el-option label="普通用户" value="role-3" />
-                <el-option label="访客" value="role-4" />
+              <el-select v-model="selectedPermissionRoleId" style="width: 200px;" placeholder="选择角色" @change="onRolePermissionChange">
+                <el-option v-for="r in roleList" :key="r.id" :label="r.name" :value="r.id" />
               </el-select>
             </div>
             <div class="permission-matrix-wrap">
@@ -200,8 +197,13 @@
               <div style="color: #6b7280; font-size: 13px;">配置角色的数据可见范围和密级限制</div>
             </div>
             <el-form label-width="140px" style="max-width: 700px;">
+              <el-form-item label="所属角色">
+                <el-select v-model="dataPermForm.roleId" style="width:100%" disabled>
+                  <el-option :label="currentPermissionRole?.name || ''" :value="currentPermissionRole?.id || ''" />
+                </el-select>
+              </el-form-item>
               <el-form-item label="数据范围">
-                <el-radio-group>
+                <el-radio-group v-model="dataPermForm.scopeType">
                   <el-radio label="all">全部数据</el-radio>
                   <el-radio label="dept">本部门及下级</el-radio>
                   <el-radio label="self">仅本人数据</el-radio>
@@ -209,7 +211,7 @@
                 </el-radio-group>
               </el-form-item>
               <el-form-item label="区域范围">
-                <el-select style="width: 100%;" multiple placeholder="选择可访问的区域">
+                <el-select v-model="dataPermForm.regions" style="width: 100%;" multiple placeholder="选择可访问的区域">
                   <el-option label="全市" value="all" />
                   <el-option label="天河区" value="tianhe" />
                   <el-option label="越秀区" value="yuexiu" />
@@ -218,7 +220,7 @@
                 </el-select>
               </el-form-item>
               <el-form-item label="密级限制">
-                <el-checkbox-group>
+                <el-checkbox-group v-model="dataPermForm.secretLevels">
                   <el-checkbox label="public" /> 公开数据
                   <el-checkbox label="internal" /> 内部数据
                   <el-checkbox label="confidential" /> 机密数据
@@ -226,7 +228,7 @@
                 </el-checkbox-group>
               </el-form-item>
               <el-form-item>
-                <el-button type="primary">保存数据权限配置</el-button>
+                <el-button type="primary" @click="handleSaveDataPerm">保存数据权限配置</el-button>
               </el-form-item>
             </el-form>
           </el-tab-pane>
@@ -270,6 +272,64 @@
         <el-button type="primary" @click="confirmAddUser">确定保存</el-button>
       </template>
     </el-dialog>
+
+    <!-- 新增部门弹窗 -->
+    <el-dialog v-model="deptDialogVisible" title="新增部门" width="480px">
+      <el-form :model="deptForm" label-width="100px">
+        <el-form-item label="上级部门">
+          <el-tree-select
+            v-model="deptForm.parentId"
+            :data="deptTreeData"
+            :props="{ label: 'name', value: 'id' } as any"
+            placeholder="不选则为根级部门"
+            check-strictly
+            clearable
+            style="width: 100%"
+          />
+        </el-form-item>
+        <el-form-item label="部门名称">
+          <el-input v-model="deptForm.name" placeholder="请输入部门名称" />
+        </el-form-item>
+        <el-form-item label="负责人">
+          <el-input v-model="deptForm.leader" placeholder="请输入负责人姓名" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="deptDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="confirmAddDept">确定保存</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 新增/编辑角色弹窗 -->
+    <el-dialog v-model="roleDialogVisible" :title="roleDialogTitle" width="520px">
+      <el-form :model="roleForm" label-width="100px">
+        <el-form-item label="角色名称">
+          <el-input v-model="roleForm.name" placeholder="请输入角色名称" />
+        </el-form-item>
+        <el-form-item label="角色描述">
+          <el-input v-model="roleForm.description" type="textarea" :rows="3" placeholder="请输入角色描述" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="roleDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="confirmSaveRole">确定保存</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 批量导入弹窗 -->
+    <el-dialog v-model="importDialogVisible" title="批量导入用户" width="500px">
+      <el-upload drag action="" :auto-upload="false" :on-change="handleImportFileChange">
+        <el-icon class="el-icon--upload"><UploadFilled /></el-icon>
+        <div class="el-upload__text">拖放 Excel / CSV 文件到此处，或 <em>点击上传</em></div>
+        <template #tip>
+          <div class="el-upload__tip text-center">支持 xlsx / csv 格式，模板可在系统设置中下载</div>
+        </template>
+      </el-upload>
+      <template #footer>
+        <el-button @click="importDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="confirmBatchImport">开始导入</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -277,7 +337,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Search, Upload, Check, OfficeBuilding, User as UserIcon } from '@element-plus/icons-vue'
+import { Plus, Search, Upload, Check, OfficeBuilding, User as UserIcon, UploadFilled } from '@element-plus/icons-vue'
 import { fetchUsers } from '@/api/mock'
 import type { User } from '@/types'
 
@@ -289,6 +349,12 @@ const selectedDeptId = ref('all')
 const selectedPermissionRoleId = ref('role-1')
 const selectedRows = ref<User[]>([])
 const userDialogVisible = ref(false)
+const deptDialogVisible = ref(false)
+const roleDialogVisible = ref(false)
+const importDialogVisible = ref(false)
+const roleDialogTitle = ref('新增角色')
+const editingRoleId = ref<string | null>(null)
+const importingFile = ref<any>(null)
 
 const userForm = ref({
   username: '',
@@ -298,6 +364,26 @@ const userForm = ref({
   roleId: '',
   password: ''
 })
+
+const deptForm = ref({
+  parentId: '',
+  name: '',
+  leader: ''
+})
+
+const roleForm = ref({
+  name: '',
+  description: ''
+})
+
+const dataPermForm = ref({
+  roleId: 'role-1',
+  scopeType: 'dept',
+  regions: ['all'] as string[],
+  secretLevels: ['public', 'internal'] as string[]
+})
+
+const currentPermissionRole = computed(() => roleList.value.find(r => r.id === selectedPermissionRoleId.value) || null)
 
 // 部门组织架构树数据
 const deptTreeData = ref([
@@ -386,23 +472,36 @@ function handleSelectionChange(selection: User[]) {
 }
 
 function handleAddUser() {
+  userForm.value = { username: '', name: '', employeeNo: '', deptId: '', roleId: '', password: '' }
   userDialogVisible.value = true
 }
 
 function confirmAddUser() {
+  if (!userForm.value.username.trim() || !userForm.value.name.trim()) {
+    ElMessage.warning('请填写用户名和姓名')
+    return
+  }
   ElMessage.success('用户创建成功')
   userDialogVisible.value = false
   loadData()
 }
 
 function handleEditUser(row: any) {
-  const user = row as User
-  ElMessage.info(`编辑用户：${user.name}`)
+  userForm.value = {
+    username: row.username,
+    name: row.name,
+    employeeNo: row.employeeNo || '',
+    deptId: 'dept-1-2',
+    roleId: 'role-3',
+    password: ''
+  }
+  userDialogVisible.value = true
+  ElMessage.info(`正在编辑用户：${row.name}`)
 }
 
 function handleResetPassword(row: any) {
   const user = row as User
-  ElMessageBox.confirm(`确定要重置用户 ${user.name} 的密码吗？`, '提示', {
+  ElMessageBox.confirm(`确定要重置用户 ${user.name} 的密码吗？重置后新密码将发送至用户手机。`, '提示', {
     type: 'warning'
   }).then(() => {
     ElMessage.success('密码重置成功，新密码已发送至用户手机')
@@ -416,29 +515,96 @@ function handleToggleStatus(row: any) {
 }
 
 function handleBatchImport() {
-  ElMessage.info('打开批量导入窗口')
+  importingFile.value = null
+  importDialogVisible.value = true
+}
+
+function handleImportFileChange(file: any) {
+  importingFile.value = file.raw
+}
+
+function confirmBatchImport() {
+  ElMessage.success('用户批量导入任务已提交，共识别 12 条有效记录')
+  importDialogVisible.value = false
+  loadData()
+}
+
+function handleAddDept() {
+  deptForm.value = { parentId: '', name: '', leader: '' }
+  deptDialogVisible.value = true
+}
+
+function confirmAddDept() {
+  if (!deptForm.value.name.trim()) {
+    ElMessage.warning('请输入部门名称')
+    return
+  }
+  ElMessage.success(`部门「${deptForm.value.name}」已新增`)
+  deptDialogVisible.value = false
 }
 
 function handleAddRole() {
-  ElMessage.info('打开新增角色窗口')
+  editingRoleId.value = null
+  roleDialogTitle.value = '新增角色'
+  roleForm.value = { name: '', description: '' }
+  roleDialogVisible.value = true
+}
+
+function handleEditRole(roleItem: any) {
+  editingRoleId.value = roleItem.id
+  roleDialogTitle.value = '编辑角色'
+  roleForm.value = { name: roleItem.name, description: roleItem.description }
+  roleDialogVisible.value = true
+}
+
+function confirmSaveRole() {
+  if (!roleForm.value.name.trim()) {
+    ElMessage.warning('请输入角色名称')
+    return
+  }
+  ElMessage.success(editingRoleId.value ? `角色「${roleForm.value.name}」已更新` : `角色「${roleForm.value.name}」已创建`)
+  roleDialogVisible.value = false
+}
+
+function handleDeleteRole(roleItem: any) {
+  if (roleItem.isPreset) {
+    ElMessage.warning('预置角色不允许删除')
+    return
+  }
+  if (roleItem.userCount > 0) {
+    ElMessage.warning('该角色下有关联用户，无法直接删除，请先移除关联用户')
+    return
+  }
+  ElMessageBox.confirm(`确定要删除自定义角色「${roleItem.name}」吗？`, '删除确认', {
+    type: 'warning'
+  }).then(() => {
+    const idx = roleList.value.findIndex(r => r.id === roleItem.id)
+    if (idx !== -1) roleList.value.splice(idx, 1)
+    ElMessage.success('角色已删除')
+  }).catch(() => {})
 }
 
 function handleConfigPermission(role: any) {
   activeTab.value = 'permissions'
   selectedPermissionRoleId.value = role.id
+  dataPermForm.value.roleId = role.id
   ElMessage.info(`配置角色【${role.name}】的权限`)
 }
 
+function onRolePermissionChange() {
+  const r = roleList.value.find(item => item.id === selectedPermissionRoleId.value)
+  dataPermForm.value.roleId = selectedPermissionRoleId.value
+  if (r) {
+    ElMessage.info(`当前已切换至角色：${r.name}`)
+  }
+}
+
 function handleSavePermissions() {
-  ElMessage.success('权限配置已保存')
+  ElMessage.success('权限配置已成功保存')
 }
 
-function handleDeleteDept() {
-  ElMessage.warning('请先移除该部门下的所有子部门和用户后再删除')
-}
-
-function handleDeleteRole() {
-  ElMessage.warning('该角色下有关联用户，无法直接删除')
+function handleSaveDataPerm() {
+  ElMessage.success('数据权限配置已保存')
 }
 
 onMounted(() => {
