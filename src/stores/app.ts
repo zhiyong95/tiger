@@ -104,11 +104,11 @@ export const useAppStore = defineStore('app', () => {
       { path: '/admin/knowledge', title: '知识库管理', icon: 'Collection' },
       { path: '/admin/feedback', title: '知识反馈运营', icon: 'ChatLineSquare' },
       { path: '/admin/templates', title: '公文模板管理', icon: 'Tickets' },
-      { path: '/admin/policy-tags', title: '政策标签管理', icon: 'PriceTag' },
+      { path: '/admin/policytags', title: '政策标签管理', icon: 'PriceTag' },
       { path: '/admin/metrics', title: '指标口径管理', icon: 'DataLine' },
       { path: '/admin/rules', title: '审核规则管理', icon: 'List' },
       { path: '/admin/datasource', title: '数据源管理', icon: 'Connection' },
-      { path: '/admin/task-flow', title: '任务流配置', icon: 'SetUp' },
+      { path: '/admin/taskflow', title: '任务流配置', icon: 'SetUp' },
       { path: '/admin/logs', title: '日志审计', icon: 'Document' },
       { path: '/admin/settings', title: '系统参数', icon: 'Setting' },
     ]
