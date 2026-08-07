@@ -417,13 +417,6 @@ const handleLogin = async () => {
   box-shadow: 0 0 0 2px #1a56db;
 }
 
-
-}
-
-.role-option .el-icon {
-  font-size: 18px;
-}
-
 .login-btn {
   width: 100%;
   height: 48px;
