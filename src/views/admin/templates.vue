@@ -1,7 +1,11 @@
 <template>
   <div class="admin-page">
     <div class="page-card">
-      <div style="display:flex; justify-content:flex-end; margin-bottom:16px;">
+      <div class="page-header">
+        <div>
+          <div class="page-title">公文模板管理</div>
+          <div class="page-subtitle">管理公文模板和写作规范</div>
+        </div>
         <el-button type="primary" @click="showAddDialog = true">
           <el-icon><Plus /></el-icon> 新增模板
         </el-button>
