@@ -387,21 +387,21 @@ export async function fetchDashboardData() {
 export async function fetchUsers(): Promise<User[]> {
   await delay()
   return [
-    { id: '1', name: '张明', department: '就业促进科', role: '业务科室人员', status: 'active', phone: '138****1234' },
-    { id: '2', name: '李华', department: '社会保险科', role: '业务科室人员', status: 'active', phone: '139****5678' },
-    { id: '3', name: '王芳', department: '人才开发科', role: '窗口经办人员', status: 'active', phone: '137****9012' },
-    { id: '4', name: '赵强', department: '系统管理', role: '系统管理员', status: 'active', phone: '136****3456' },
-    { id: '5', name: '陈静', department: '劳动关系科', role: '业务科室人员', status: 'inactive', phone: '135****7890' },
+    { id: '1', username: 'zhangming', name: '张明', deptName: '就业促进科', department: '就业促进科', roleName: '业务科室人员', role: '业务科室人员', employeeNo: 'RZ-001', status: 'active', phone: '138****1234', lastLoginAt: '2024-08-05 14:30' },
+    { id: '2', username: 'lihua', name: '李华', deptName: '社会保险科', department: '社会保险科', roleName: '业务科室人员', role: '业务科室人员', employeeNo: 'RZ-002', status: 'active', phone: '139****5678', lastLoginAt: '2024-08-05 10:15' },
+    { id: '3', username: 'wangfang', name: '王芳', deptName: '人才开发科', department: '人才开发科', roleName: '窗口经办人员', role: '窗口经办人员', employeeNo: 'RZ-003', status: 'active', phone: '137****9012', lastLoginAt: '2024-08-04 16:45' },
+    { id: '4', username: 'admin', name: '赵强', deptName: '系统管理', department: '系统管理', roleName: '系统管理员', role: '系统管理员', employeeNo: 'RZ-000', status: 'active', phone: '136****3456', lastLoginAt: '2024-08-05 09:00' },
+    { id: '5', username: 'chenjing', name: '陈静', deptName: '劳动关系科', department: '劳动关系科', roleName: '业务科室人员', role: '业务科室人员', employeeNo: 'RZ-004', status: 'inactive', phone: '135****7890', lastLoginAt: '2024-07-20 11:20' },
   ]
 }
 
 export async function fetchKnowledgeDocs(): Promise<KnowledgeDoc[]> {
   await delay()
   return [
-    { id: '1', title: '《就业促进法》全文', category: '政策', status: 'published', uploader: '赵强', uploadTime: '2024-07-01', version: 'v1.0' },
-    { id: '2', title: '失业保险办事指南', category: '办事指南', status: 'published', uploader: '张明', uploadTime: '2024-07-15', version: 'v2.1' },
-    { id: '3', title: '就业补贴业务口径', category: '业务口径', status: 'published', uploader: '李华', uploadTime: '2024-08-01', version: 'v1.3' },
-    { id: '4', title: '公文写作规范手册', category: '公文规范', status: 'draft', uploader: '王芳', uploadTime: '2024-08-03', version: 'v1.0' },
+    { id: '1', title: '《就业促进法》全文', category: '政策', type: '政策文件', status: 'published', uploader: '赵强', uploadTime: '2024-07-01', version: 'v1.0' },
+    { id: '2', title: '失业保险办事指南', category: '办事指南', type: '办事指南', status: 'published', uploader: '张明', uploadTime: '2024-07-15', version: 'v2.1' },
+    { id: '3', title: '就业补贴业务口径', category: '业务口径', type: '业务规范', status: 'published', uploader: '李华', uploadTime: '2024-08-01', version: 'v1.3' },
+    { id: '4', title: '公文写作规范手册', category: '公文规范', type: '业务规范', status: 'draft', uploader: '王芳', uploadTime: '2024-08-03', version: 'v1.0' },
   ]
 }
 

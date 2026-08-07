@@ -132,10 +132,15 @@ export interface RiskTask {
 // ============ 后台管理 ============
 export interface User {
   id: string
+  username: string
   name: string
+  deptName: string
   department: string
   role: string
+  roleName: string
+  employeeNo: string
   status: 'active' | 'inactive'
+  lastLoginAt: string
   phone: string
 }
 
@@ -143,6 +148,7 @@ export interface KnowledgeDoc {
   id: string
   title: string
   category: '政策' | '办事指南' | '业务口径' | '公文规范'
+  type: '政策文件' | '办事指南' | '业务规范' | '常见问题' | '案例解析'
   status: 'published' | 'draft' | 'archived'
   uploader: string
   uploadTime: string
