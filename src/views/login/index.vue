@@ -74,28 +74,33 @@
             </el-form-item>
 
             <el-form-item prop="role">
-              <div class="role-selector role-selector-grid">
-                <div class="role-option" :class="{ active: loginForm.role === 'staff' }" @click="loginForm.role = 'staff'">
-                  <el-icon><UserFilled /></el-icon>
+              <el-select
+                v-model="loginForm.role"
+                placeholder="请选择登录身份"
+                size="large"
+                class="role-select"
+              >
+                <el-option label="工作人员" value="staff">
+                  <el-icon style="margin-right: 8px"><UserFilled /></el-icon>
                   <span>工作人员</span>
-                </div>
-                <div class="role-option" :class="{ active: loginForm.role === 'leader' }" @click="loginForm.role = 'leader'">
-                  <el-icon><Histogram /></el-icon>
-                  <span>领导/负责人</span>
-                </div>
-                <div class="role-option" :class="{ active: loginForm.role === 'sysadmin' }" @click="loginForm.role = 'sysadmin'">
-                  <el-icon><Setting /></el-icon>
+                </el-option>
+                <el-option label="科室负责人/领导" value="leader">
+                  <el-icon style="margin-right: 8px"><Histogram /></el-icon>
+                  <span>科室负责人/领导</span>
+                </el-option>
+                <el-option label="系统管理员" value="sysadmin">
+                  <el-icon style="margin-right: 8px"><Setting /></el-icon>
                   <span>系统管理员</span>
-                </div>
-                <div class="role-option" :class="{ active: loginForm.role === 'bizadmin' }" @click="loginForm.role = 'bizadmin'">
-                  <el-icon><Management /></el-icon>
+                </el-option>
+                <el-option label="业务管理员" value="bizadmin">
+                  <el-icon style="margin-right: 8px"><Management /></el-icon>
                   <span>业务管理员</span>
-                </div>
-                <div class="role-option" :class="{ active: loginForm.role === 'auditor' }" @click="loginForm.role = 'auditor'">
-                  <el-icon><View /></el-icon>
+                </el-option>
+                <el-option label="审计人员" value="auditor">
+                  <el-icon style="margin-right: 8px"><View /></el-icon>
                   <span>审计人员</span>
-                </div>
-              </div>
+                </el-option>
+              </el-select>
             </el-form-item>
 
             <el-form-item>
@@ -159,6 +164,7 @@ const handleLogin = async () => {
         roleType: loginForm.role,
         avatar: ''
       })
+      appStore.setRole(loginForm.role)
       appStore.setToken(res.token)
       ElMessage.success(`欢迎回来，${res.user.name}！`)
       // 根据角色跳转到不同页面
@@ -392,39 +398,26 @@ const handleLogin = async () => {
   font-size: 18px;
 }
 
-.role-selector {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 8px;
+.role-select {
   width: 100%;
 }
 
-.role-option {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 14px 20px;
-  border: 2px solid #e5e7eb;
+.role-select :deep(.el-select__wrapper) {
+  height: 48px;
   border-radius: 8px;
-  cursor: pointer;
+  box-shadow: 0 0 0 1px #e5e7eb;
   transition: all 0.3s;
-  font-size: 14px;
-  color: #6b7280;
-  background: white;
 }
 
-.role-option:hover {
-  border-color: #1a56db;
-  color: #1a56db;
+.role-select :deep(.el-select__wrapper:hover) {
+  box-shadow: 0 0 0 1px #1a56db;
 }
 
-.role-option.active {
-  border-color: #1a56db;
-  background: #e8f0fe;
-  color: #1a56db;
-  font-weight: 500;
+.role-select :deep(.el-select__wrapper.is-focus) {
+  box-shadow: 0 0 0 2px #1a56db;
+}
+
+
 }
 
 .role-option .el-icon {
