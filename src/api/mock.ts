@@ -448,7 +448,7 @@ export const hotTopics = [
 ]
 
 // ============ 登录认证 ============
-export async function login(username: string, _password: string, role: 'staff' | 'admin'): Promise<{ token: string; user: { name: string; department: string; role: string; avatar: string } }> {
+export async function login(username: string, _password: string, role: 'staff' | 'leader' | 'sysadmin' | 'bizadmin' | 'auditor'): Promise<{ token: string; user: { name: string; department: string; role: string; avatar: string } }> {
   await delay(500)
   // 模拟登录验证（任意用户名密码均可登录）
   const staffUsers: Record<string, { name: string; department: string; role: string }> = {
@@ -461,24 +461,21 @@ export async function login(username: string, _password: string, role: 'staff' |
   const userKey = username.toLowerCase()
   const userInfo = staffUsers[userKey] || { name: username, department: '人社服务大厅', role: '窗口经办人员' }
 
-  if (role === 'admin') {
-    return {
-      token: 'mock-admin-token-' + Date.now(),
-      user: {
-        name: userInfo.name,
-        department: userInfo.department,
-        role: '系统管理员',
-        avatar: '',
-      },
-    }
+  // 根据角色映射显示名称
+  const roleNames: Record<string, string> = {
+    staff: '工作人员',
+    leader: '科室负责人/领导',
+    sysadmin: '系统管理员',
+    bizadmin: '业务管理员',
+    auditor: '审计人员',
   }
 
   return {
-    token: 'mock-staff-token-' + Date.now(),
+    token: `mock-${role}-token-` + Date.now(),
     user: {
       name: userInfo.name,
-      department: userInfo.department,
-      role: userInfo.role,
+      department: role === 'sysadmin' || role === 'bizadmin' || role === 'auditor' ? '系统管理' : userInfo.department,
+      role: roleNames[role] || userInfo.role,
       avatar: '',
     },
   }

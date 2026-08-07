@@ -13,8 +13,8 @@
           </div>
         </div>
 
-        <!-- 模块切换（仅管理员可见） -->
-        <div class="module-switch" v-if="!appStore.sidebarCollapsed && appStore.userRole === 'admin'">
+        <!-- 模块切换（仅管理员身份可见） -->
+        <div class="module-switch" v-if="!appStore.sidebarCollapsed && appStore.isAdminRole && appStore.currentModule === 'admin'">
           <el-radio-group v-model="appStore.currentModule" size="small" @change="onModuleChange">
             <el-radio-button value="pc">PC工作台</el-radio-button>
             <el-radio-button value="admin">后台管理</el-radio-button>
@@ -28,7 +28,7 @@
           router
           class="sidebar-menu"
         >
-          <template v-if="appStore.userRole === 'admin' && appStore.currentModule === 'admin'">
+          <template v-if="appStore.isAdminRole && appStore.currentModule === 'admin'">
             <el-menu-item v-for="item in appStore.adminMenuItems" :key="item.path" :index="item.path">
               <el-icon><component :is="item.icon" /></el-icon>
               <template #title>{{ item.title }}</template>
@@ -51,8 +51,8 @@
               <component :is="appStore.sidebarCollapsed ? 'Expand' : 'Fold'" />
             </el-icon>
             <el-breadcrumb separator="/" class="breadcrumb">
-              <el-breadcrumb-item :to="{ path: appStore.userRole === 'admin' ? '/admin/users' : '/dashboard' }">
-                {{ appStore.userRole === 'admin' ? '管理后台' : '首页' }}
+              <el-breadcrumb-item :to="{ path: appStore.isAdminRole ? '/admin/dashboard' : '/dashboard' }">
+                {{ appStore.isAdminRole ? '管理后台' : '首页' }}
               </el-breadcrumb-item>
               <el-breadcrumb-item>{{ currentTitle }}</el-breadcrumb-item>
             </el-breadcrumb>

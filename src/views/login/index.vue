@@ -74,14 +74,26 @@
             </el-form-item>
 
             <el-form-item prop="role">
-              <div class="role-selector">
+              <div class="role-selector role-selector-grid">
                 <div class="role-option" :class="{ active: loginForm.role === 'staff' }" @click="loginForm.role = 'staff'">
-                  <el-icon><User /></el-icon>
+                  <el-icon><UserFilled /></el-icon>
                   <span>工作人员</span>
                 </div>
-                <div class="role-option" :class="{ active: loginForm.role === 'admin' }" @click="loginForm.role = 'admin'">
+                <div class="role-option" :class="{ active: loginForm.role === 'leader' }" @click="loginForm.role = 'leader'">
+                  <el-icon><Histogram /></el-icon>
+                  <span>领导/负责人</span>
+                </div>
+                <div class="role-option" :class="{ active: loginForm.role === 'sysadmin' }" @click="loginForm.role = 'sysadmin'">
                   <el-icon><Setting /></el-icon>
-                  <span>管理员</span>
+                  <span>系统管理员</span>
+                </div>
+                <div class="role-option" :class="{ active: loginForm.role === 'bizadmin' }" @click="loginForm.role = 'bizadmin'">
+                  <el-icon><Management /></el-icon>
+                  <span>业务管理员</span>
+                </div>
+                <div class="role-option" :class="{ active: loginForm.role === 'auditor' }" @click="loginForm.role = 'auditor'">
+                  <el-icon><View /></el-icon>
+                  <span>审计人员</span>
                 </div>
               </div>
             </el-form-item>
@@ -124,7 +136,7 @@ const loading = ref(false)
 const loginForm = reactive({
   username: '',
   password: '',
-  role: 'staff' as 'staff' | 'admin',
+  role: 'staff' as 'staff' | 'leader' | 'sysadmin' | 'bizadmin' | 'auditor',
 })
 
 const rules: FormRules = {
@@ -140,12 +152,18 @@ const handleLogin = async () => {
     loading.value = true
     try {
       const res = await mockLogin(loginForm.username, loginForm.password, loginForm.role)
-      appStore.setUserInfo(res.user)
+      appStore.setUserInfo({
+        name: res.user.name,
+        department: res.user.department,
+        role: res.user.role,
+        roleType: loginForm.role,
+        avatar: ''
+      })
       appStore.setToken(res.token)
       ElMessage.success(`欢迎回来，${res.user.name}！`)
       // 根据角色跳转到不同页面
-      if (loginForm.role === 'admin') {
-        router.push('/admin/users')
+      if (loginForm.role === 'sysadmin' || loginForm.role === 'bizadmin' || loginForm.role === 'auditor') {
+        router.push('/admin/dashboard')
       } else {
         router.push('/dashboard')
       }
@@ -375,8 +393,9 @@ const handleLogin = async () => {
 }
 
 .role-selector {
-  display: flex;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
   width: 100%;
 }
 

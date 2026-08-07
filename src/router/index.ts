@@ -7,123 +7,150 @@ const routes: RouteRecordRaw[] = [
     path: '/login',
     name: 'Login',
     component: () => import('@/views/login/index.vue'),
-    meta: { title: '登录', requiresAuth: false },
+    meta: { requiresAuth: false }
   },
   {
     path: '/',
-    redirect: '/dashboard',
+    redirect: '/dashboard'
   },
   {
     path: '/dashboard',
     name: 'Dashboard',
     component: () => import('@/views/dashboard/index.vue'),
-    meta: { title: '工作台首页', icon: 'HomeFilled' },
+    meta: { requiresAuth: true, roles: ['staff', 'leader'] }
   },
   {
     path: '/qa',
     name: 'QA',
     component: () => import('@/views/qa/index.vue'),
-    meta: { title: '人社知识智能问答', icon: 'ChatDotRound' },
+    meta: { requiresAuth: true, roles: ['staff', 'leader'] }
   },
   {
     path: '/document',
     name: 'Document',
     component: () => import('@/views/document/index.vue'),
-    meta: { title: 'AI公文助手', icon: 'Document' },
+    meta: { requiresAuth: true, roles: ['staff', 'leader'] }
   },
   {
     path: '/data',
     name: 'Data',
     component: () => import('@/views/data/index.vue'),
-    meta: { title: '智能问数', icon: 'DataAnalysis' },
+    meta: { requiresAuth: true, roles: ['staff', 'leader'] }
   },
   {
     path: '/report',
     name: 'Report',
     component: () => import('@/views/report/index.vue'),
-    meta: { title: '智能分析报告', icon: 'TrendCharts' },
+    meta: { requiresAuth: true, roles: ['staff', 'leader'] }
   },
   {
     path: '/policy',
     name: 'Policy',
     component: () => import('@/views/policy/index.vue'),
-    meta: { title: '政策快研', icon: 'Reading' },
+    meta: { requiresAuth: true, roles: ['staff', 'leader'] }
   },
   {
     path: '/audit',
     name: 'Audit',
     component: () => import('@/views/audit/index.vue'),
-    meta: { title: '业务智能审核', icon: 'Checked' },
+    meta: { requiresAuth: true, roles: ['staff', 'leader'] }
   },
   {
     path: '/task',
     name: 'Task',
     component: () => import('@/views/task/index.vue'),
-    meta: { title: '风险预警与任务待办', icon: 'Bell' },
+    meta: { requiresAuth: true, roles: ['staff', 'leader'] }
   },
   {
     path: '/profile',
     name: 'Profile',
     component: () => import('@/views/profile/index.vue'),
-    meta: { title: '个人中心', icon: 'User' },
+    meta: { requiresAuth: true }
   },
-  // 后台管理端
+  // 后台管理端路由
   {
     path: '/admin',
-    name: 'Admin',
-    redirect: '/admin/users',
-    meta: { title: '后台管理', icon: 'Setting' },
+    redirect: '/admin/dashboard'
+  },
+  {
+    path: '/admin/dashboard',
+    name: 'AdminDashboard',
+    component: () => import('@/views/admin/dashboard.vue'),
+    meta: { requiresAuth: true, roles: ['sysadmin', 'bizadmin', 'auditor'] }
   },
   {
     path: '/admin/users',
     name: 'AdminUsers',
     component: () => import('@/views/admin/users.vue'),
-    meta: { title: '用户权限管理', icon: 'User' },
+    meta: { requiresAuth: true, roles: ['sysadmin'] }
   },
   {
     path: '/admin/knowledge',
     name: 'AdminKnowledge',
     component: () => import('@/views/admin/knowledge.vue'),
-    meta: { title: '知识库管理', icon: 'Collection' },
+    meta: { requiresAuth: true, roles: ['sysadmin', 'bizadmin'] }
+  },
+  {
+    path: '/admin/feedback',
+    name: 'AdminFeedback',
+    component: () => import('@/views/admin/feedback.vue'),
+    meta: { requiresAuth: true, roles: ['sysadmin', 'bizadmin'] }
   },
   {
     path: '/admin/templates',
     name: 'AdminTemplates',
     component: () => import('@/views/admin/templates.vue'),
-    meta: { title: '公文模板管理', icon: 'Tickets' },
+    meta: { requiresAuth: true, roles: ['sysadmin', 'bizadmin'] }
+  },
+  {
+    path: '/admin/policytags',
+    name: 'AdminPolicyTags',
+    component: () => import('@/views/admin/policytags.vue'),
+    meta: { requiresAuth: true, roles: ['sysadmin', 'bizadmin'] }
   },
   {
     path: '/admin/metrics',
     name: 'AdminMetrics',
     component: () => import('@/views/admin/metrics.vue'),
-    meta: { title: '指标口径管理', icon: 'DataLine' },
+    meta: { requiresAuth: true, roles: ['sysadmin', 'bizadmin'] }
   },
   {
     path: '/admin/rules',
     name: 'AdminRules',
     component: () => import('@/views/admin/rules.vue'),
-    meta: { title: '审核规则管理', icon: 'List' },
+    meta: { requiresAuth: true, roles: ['sysadmin', 'bizadmin'] }
   },
   {
     path: '/admin/datasource',
     name: 'AdminDatasource',
     component: () => import('@/views/admin/datasource.vue'),
-    meta: { title: '数据源管理', icon: 'Connection' },
+    meta: { requiresAuth: true, roles: ['sysadmin'] }
+  },
+  {
+    path: '/admin/taskflow',
+    name: 'AdminTaskFlow',
+    component: () => import('@/views/admin/taskflow.vue'),
+    meta: { requiresAuth: true, roles: ['sysadmin', 'bizadmin'] }
   },
   {
     path: '/admin/logs',
     name: 'AdminLogs',
     component: () => import('@/views/admin/logs.vue'),
-    meta: { title: '日志审计', icon: 'Document' },
+    meta: { requiresAuth: true, roles: ['sysadmin', 'bizadmin', 'auditor'] }
   },
+  {
+    path: '/admin/system',
+    name: 'AdminSystem',
+    component: () => import('@/views/admin/system.vue'),
+    meta: { requiresAuth: true, roles: ['sysadmin'] }
+  }
 ]
 
 const router = createRouter({
   history: createWebHashHistory(),
-  routes,
+  routes
 })
 
-// 导航守卫
 router.beforeEach((to, _from, next) => {
   const appStore = useAppStore()
 
@@ -139,15 +166,22 @@ router.beforeEach((to, _from, next) => {
     return
   }
 
-  // 工作人员不能访问后台管理页面
-  if (appStore.userRole === 'staff' && to.path.startsWith('/admin')) {
-    next({ path: '/dashboard' })
-    return
-  }
+  const role = appStore.userRole
+  const routeRoles = to.meta.roles as string[] | undefined
 
-  // 管理员不能访问PC工作台页面（除了个人中心）
-  if (appStore.userRole === 'admin' && !to.path.startsWith('/admin') && to.path !== '/profile') {
-    next({ path: '/admin/users' })
+  // 检查路由角色权限
+  if (routeRoles && !routeRoles.includes(role)) {
+    // 工作人员角色进入PC工作台首页
+    if (['staff', 'leader'].includes(role)) {
+      next({ path: '/dashboard' })
+      return
+    }
+    // 管理员角色进入后台首页
+    if (['sysadmin', 'bizadmin', 'auditor'].includes(role)) {
+      next({ path: '/admin/dashboard' })
+      return
+    }
+    next({ path: '/login' })
     return
   }
 
