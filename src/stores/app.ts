@@ -75,19 +75,78 @@ export const useAppStore = defineStore('app', () => {
     currentModule.value = 'pc'
   }
 
+  // 菜单层级数据（用于面包屑自动推导）
+  interface MenuItemMeta {
+    path: string
+    title: string
+    icon: string
+    parentId: string // 父级路径，空字符串表示根
+  }
+
+  // 所有PC端菜单项（含 parentId 层级关系）
+  const pcMenuMeta: MenuItemMeta[] = [
+    { path: '/dashboard', title: '工作台首页', icon: 'HomeFilled', parentId: '/' },
+    { path: '/qa', title: '人社知识智能问答', icon: 'ChatDotRound', parentId: '/' },
+    { path: '/document', title: 'AI公文助手', icon: 'Document', parentId: '/' },
+    { path: '/data', title: '智能问数', icon: 'DataAnalysis', parentId: '/' },
+    { path: '/report', title: '智能分析报告', icon: 'TrendCharts', parentId: '/' },
+    { path: '/policy', title: '政策快研', icon: 'Reading', parentId: '/' },
+    { path: '/audit', title: '业务智能审核', icon: 'Checked', parentId: '/' },
+    { path: '/task', title: '风险预警与任务待办', icon: 'Bell', parentId: '/' },
+  ]
+
+  // 所有后台管理端菜单项（含 parentId 层级关系）
+  const adminMenuMeta: MenuItemMeta[] = [
+    { path: '/admin/dashboard', title: '后台首页', icon: 'DataBoard', parentId: '/admin' },
+    { path: '/admin/users', title: '用户权限管理', icon: 'User', parentId: '/admin' },
+    { path: '/admin/knowledge', title: '知识库管理', icon: 'Collection', parentId: '/admin' },
+    { path: '/admin/feedback', title: '知识反馈运营', icon: 'ChatLineSquare', parentId: '/admin' },
+    { path: '/admin/templates', title: '公文模板管理', icon: 'Tickets', parentId: '/admin' },
+    { path: '/admin/policytags', title: '政策标签管理', icon: 'PriceTag', parentId: '/admin' },
+    { path: '/admin/metrics', title: '指标口径管理', icon: 'DataLine', parentId: '/admin' },
+    { path: '/admin/rules', title: '审核规则管理', icon: 'List', parentId: '/admin' },
+    { path: '/admin/datasource', title: '数据源管理', icon: 'Connection', parentId: '/admin' },
+    { path: '/admin/taskflow', title: '任务流配置', icon: 'SetUp', parentId: '/admin' },
+    { path: '/admin/logs', title: '日志审计', icon: 'Document', parentId: '/admin' },
+    { path: '/admin/settings', title: '系统参数', icon: 'Setting', parentId: '/admin' },
+  ]
+
+  // 父级节点定义（用于面包屑中间层）
+  const parentNodeMap: Record<string, { path: string; title: string }> = {
+    '/': { path: '/', title: '工作台' },
+    '/admin': { path: '/admin', title: '管理后台' },
+  }
+
+  // 根据当前路由路径自动推导面包屑（不硬编码，基于 menu parentId 反向追溯）
+  const getBreadcrumb = (path: string): { path: string; title: string }[] => {
+    const crumbs: { path: string; title: string }[] = [{ path: '', title: '首页' }]
+
+    // 先在PC菜单中查找
+    let item = pcMenuMeta.find(m => m.path === path)
+    // 再在后台菜单中查找
+    if (!item) {
+      item = adminMenuMeta.find(m => m.path === path)
+    }
+
+    if (item && item.parentId && parentNodeMap[item.parentId]) {
+      crumbs.push(parentNodeMap[item.parentId])
+    }
+
+    // 当前页面包屑（最后一项）
+    if (item) {
+      crumbs.push({ path: item.path, title: item.title })
+    } else {
+      // 未匹配菜单时取路由 meta.title
+      crumbs.push({ path, title: '' })
+    }
+
+    return crumbs
+  }
+
   // PC工作台权限矩阵
   const pcMenuItems = computed(() => {
     const role = userRole.value
-    const items = [
-      { path: '/dashboard', title: '工作台首页', icon: 'HomeFilled' },
-      { path: '/qa', title: '人社知识智能问答', icon: 'ChatDotRound' },
-      { path: '/document', title: 'AI公文助手', icon: 'Document' },
-      { path: '/data', title: '智能问数', icon: 'DataAnalysis' },
-      { path: '/report', title: '智能分析报告', icon: 'TrendCharts' },
-      { path: '/policy', title: '政策快研', icon: 'Reading' },
-      { path: '/audit', title: '业务智能审核', icon: 'Checked' },
-      { path: '/task', title: '风险预警与任务待办', icon: 'Bell' },
-    ]
+    const items = pcMenuMeta.map(({ path, title, icon }) => ({ path, title, icon }))
     // 根据角色过滤菜单
     if (role === 'staff') return items
     if (role === 'leader') return items
@@ -98,20 +157,7 @@ export const useAppStore = defineStore('app', () => {
   // 后台管理端权限矩阵
   const adminMenuItems = computed(() => {
     const role = userRole.value
-    const allItems = [
-      { path: '/admin/dashboard', title: '后台首页', icon: 'DataBoard' },
-      { path: '/admin/users', title: '用户权限管理', icon: 'User' },
-      { path: '/admin/knowledge', title: '知识库管理', icon: 'Collection' },
-      { path: '/admin/feedback', title: '知识反馈运营', icon: 'ChatLineSquare' },
-      { path: '/admin/templates', title: '公文模板管理', icon: 'Tickets' },
-      { path: '/admin/policytags', title: '政策标签管理', icon: 'PriceTag' },
-      { path: '/admin/metrics', title: '指标口径管理', icon: 'DataLine' },
-      { path: '/admin/rules', title: '审核规则管理', icon: 'List' },
-      { path: '/admin/datasource', title: '数据源管理', icon: 'Connection' },
-      { path: '/admin/taskflow', title: '任务流配置', icon: 'SetUp' },
-      { path: '/admin/logs', title: '日志审计', icon: 'Document' },
-      { path: '/admin/settings', title: '系统参数', icon: 'Setting' },
-    ]
+    const allItems = adminMenuMeta.map(({ path, title, icon }) => ({ path, title, icon }))
     switch (role) {
       case 'sysadmin':
         return allItems // 系统管理员可见全部
@@ -145,5 +191,6 @@ export const useAppStore = defineStore('app', () => {
     logout,
     pcMenuItems,
     adminMenuItems,
+    getBreadcrumb,
   }
 })

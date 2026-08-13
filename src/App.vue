@@ -51,10 +51,15 @@
               <component :is="appStore.sidebarCollapsed ? 'Expand' : 'Fold'" />
             </el-icon>
             <el-breadcrumb separator="/" class="breadcrumb">
-              <el-breadcrumb-item :to="{ path: appStore.isAdminRole ? '/admin/dashboard' : '/dashboard' }">
-                {{ appStore.isAdminRole ? '管理后台' : '首页' }}
+              <el-breadcrumb-item
+                v-for="(crumb, idx) in breadcrumbs"
+                :key="idx"
+                :to="idx < breadcrumbs.length - 1 ? { path: crumb.path } : undefined"
+              >
+                <span :class="{ 'crumb-current': idx === breadcrumbs.length - 1, 'crumb-link': idx < breadcrumbs.length - 1 }">
+                  {{ crumb.title }}
+                </span>
               </el-breadcrumb-item>
-              <el-breadcrumb-item>{{ currentTitle }}</el-breadcrumb-item>
             </el-breadcrumb>
           </div>
           <div class="header-right">
@@ -160,8 +165,9 @@ const handleNotificationClick = (item: { content: string; time: string; read: bo
 
 const activeMenu = computed(() => route.path)
 
-const currentTitle = computed(() => {
-  return (route.meta.title as string) || '工作台'
+// 面包屑：基于菜单 pid 反向推导，不硬编码
+const breadcrumbs = computed(() => {
+  return appStore.getBreadcrumb(route.path)
 })
 
 const onModuleChange = (module: string | number | boolean | undefined) => {
@@ -255,9 +261,10 @@ const handleDropdownCommand = async (command: string) => {
 }
 
 .sidebar-menu :deep(.el-menu-item.is-active) {
-  background: rgba(37, 99, 235, 0.4);
-  color: white;
-  border-left: 3px solid #3b82f6;
+  background: rgba(37, 99, 235, 0.35);
+  color: #ffffff;
+  border-left: 3px solid #60a5fa;
+  font-weight: 600;
 }
 
 .header {
@@ -288,6 +295,20 @@ const handleDropdownCommand = async (command: string) => {
 
 .breadcrumb :deep(.el-breadcrumb__inner) {
   color: #666;
+}
+
+.breadcrumb :deep(.crumb-current) {
+  color: #1f2937;
+  font-weight: 700;
+}
+
+.breadcrumb :deep(.crumb-link) {
+  color: #6b7280;
+  cursor: pointer;
+}
+
+.breadcrumb :deep(.crumb-link:hover) {
+  color: #2563eb;
 }
 
 .header-right {
