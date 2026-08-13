@@ -91,6 +91,30 @@
               </div>
             </div>
           </div>
+
+          <!-- 区块3：最近生成（从右侧移入左侧边栏） -->
+          <div class="section-card history-section">
+            <div class="history-header">
+              <span class="history-title"><el-icon><Clock /></el-icon> 最近生成</span>
+              <el-button text type="danger" size="small" @click="handleClearHistory">清空历史</el-button>
+            </div>
+            <div class="history-list" v-if="historyList.length > 0">
+              <div
+                v-for="(h, i) in historyList"
+                :key="i"
+                class="history-item"
+                @click="handleLoadHistory(h)"
+              >
+                <div class="h-info">
+                  <span class="h-type">{{ h.type }}</span>
+                  <span class="h-period">{{ h.period }}</span>
+                  <span class="h-time">{{ h.genTime }}</span>
+                </div>
+                <el-button text size="small" type="primary" @click.stop="handleDeleteHistory(i)">删除</el-button>
+              </div>
+            </div>
+            <div v-else class="history-empty">暂无生成历史记录</div>
+          </div>
         </div>
       </el-col>
 
@@ -185,27 +209,7 @@
             </div>
           </div>
 
-          <!-- 左下角历史记录 -->
-          <div class="history-footer">
-            <div class="history-header">
-              <span class="history-title"><el-icon><Clock /></el-icon> 最近生成（最多保留10条）</span>
-              <el-button text type="danger" size="small" @click="handleClearHistory">清空历史</el-button>
-            </div>
-            <div class="history-list" v-if="historyList.length > 0">
-              <div
-                v-for="(h, i) in historyList"
-                :key="i"
-                class="history-item"
-                @click="handleLoadHistory(h)"
-              >
-                <span class="h-type">{{ h.type }}</span>
-                <span class="h-period">{{ h.period }}</span>
-                <span class="h-time">{{ h.genTime }}</span>
-                <el-button text size="small" type="primary" @click.stop="handleDeleteHistory(i)">删除</el-button>
-              </div>
-            </div>
-            <div v-else class="history-empty">暂无生成历史记录</div>
-          </div>
+          <!-- 右侧底部不再保留历史记录 -->
         </div>
       </el-col>
     </el-row>
@@ -716,7 +720,7 @@ const handleClearHistory = () => {
 .history-item {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
   padding: 10px 12px;
   border-radius: 8px;
   background: #f9fafb;
@@ -726,25 +730,35 @@ const handleClearHistory = () => {
 .history-item:hover {
   background: #eff6ff;
 }
-.h-type {
+.h-info {
   flex: 1;
+  min-width: 0;
+}
+.h-type {
+  display: block;
   font-size: 14px;
   font-weight: 500;
   color: #1f2937;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .h-period {
-  font-size: 13px;
+  font-size: 12px;
   color: #6b7280;
+  margin-right: 6px;
 }
 .h-time {
-  font-size: 13px;
+  font-size: 12px;
   color: #9ca3af;
-  margin-right: 4px;
 }
 .history-empty {
   font-size: 13px;
   color: #9ca3af;
   text-align: center;
   padding: 12px;
+}
+.history-section {
+  background: #fafafa;
 }
 </style>
