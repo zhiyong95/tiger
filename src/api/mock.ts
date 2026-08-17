@@ -458,8 +458,38 @@ export async function login(username: string, _password: string, role: 'staff' |
     wangfang: { name: '王芳', department: '人才开发科', role: '窗口经办人员' },
   }
 
-  const userKey = username.toLowerCase()
-  const userInfo = staffUsers[userKey] || { name: username, department: '人社服务大厅', role: '窗口经办人员' }
+  // 手机验证码登录自动识别
+  const isPhoneLogin = /^1[3-9]\d{9}$/.test(username)
+  // 电子社保卡号登录（以62开头18位数字模拟）
+  const isSscardLogin = /^62\d{16}$/.test(username)
+
+  let userKey = username.toLowerCase()
+  let userInfo: { name: string; department: string; role: string }
+
+  if (isPhoneLogin) {
+    // 手机号登录：验证码为 123456 可登录
+    if (_password !== '123456') {
+      throw new Error('验证码错误')
+    }
+    // 根据手机号映射用户
+    const phoneUsers: Record<string, { name: string; department: string; role: string }> = {
+      '13800138000': { name: '张明', department: '就业促进科', role: '业务科室人员' },
+      '13900139000': { name: '李华', department: '社会保险科', role: '业务科室人员' },
+    }
+    userInfo = phoneUsers[username] || { name: username.slice(-4) + '用户', department: '人社服务大厅', role: '窗口经办人员' }
+  } else if (isSscardLogin) {
+    // 电子社保码登录：密码为 888888 可登录
+    if (_password !== '888888') {
+      throw new Error('社保卡密码错误')
+    }
+    const sscardUsers: Record<string, { name: string; department: string; role: string }> = {
+      '620000000000000001': { name: '张明', department: '就业促进科', role: '业务科室人员' },
+      '620000000000000002': { name: '李华', department: '社会保险科', role: '业务科室人员' },
+    }
+    userInfo = sscardUsers[username] || { name: '社保用户', department: '人社服务大厅', role: '窗口经办人员' }
+  } else {
+    userInfo = staffUsers[userKey] || { name: username, department: '人社服务大厅', role: '窗口经办人员' }
+  }
 
   // 根据角色映射显示名称
   const roleNames: Record<string, string> = {
