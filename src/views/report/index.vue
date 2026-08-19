@@ -46,6 +46,22 @@
                   <el-checkbox label="AI工作建议" />
                 </el-checkbox-group>
               </el-form-item>
+              <el-form-item label="上传数据">
+                <div class="upload-area" @click="triggerUpload" @dragover.prevent @drop.prevent="onDrop">
+                  <input ref="fileInputRef" type="file" accept=".csv,.xlsx,.xls,.json" style="display:none" @change="onFileChange" />
+                  <template v-if="!uploadedFile">
+                    <el-icon :size="28" color="#2563eb"><Upload /></el-icon>
+                    <p class="upload-text">点击或拖拽上传数据文件</p>
+                    <p class="upload-hint">支持 CSV、Excel、JSON 格式，单个文件不超过 10MB</p>
+                  </template>
+                  <template v-else>
+                    <el-icon :size="24" color="#10b981"><Document /></el-icon>
+                    <span class="uploaded-name">{{ uploadedFile.name }}</span>
+                    <span class="uploaded-size">({{ formatFileSize(uploadedFile.size) }})</span>
+                    <el-button text type="danger" size="small" @click.stop="removeFile" class="remove-btn">移除</el-button>
+                  </template>
+                </div>
+              </el-form-item>
               <el-form-item>
                 <el-button
                   type="primary"
@@ -242,6 +258,35 @@ const dateRange = ref<string[]>([])
 const outputFormat = ref('word')
 const extras = ref<string[]>(['chart', 'data', 'suggestion'])
 const generating = ref(false)
+
+// 上传数据
+const fileInputRef = ref<HTMLInputElement | null>(null)
+const uploadedFile = ref<File | null>(null)
+const triggerUpload = () => { fileInputRef.value?.click() }
+const onFileChange = (e: Event) => {
+  const target = e.target as HTMLInputElement
+  if (target.files && target.files[0]) {
+    const file = target.files[0]
+    if (file.size > 10 * 1024 * 1024) { ElMessage.warning('文件大小不能超过 10MB'); return }
+    if (!['.csv','.xlsx','.xls','.json'].some(s => file.name.toLowerCase().endsWith(s))) { ElMessage.warning('仅支持 CSV、Excel、JSON 格式'); return }
+    uploadedFile.value = file; ElMessage.success(`已上传数据文件：${file.name}`)
+  }
+}
+const onDrop = (e: DragEvent) => {
+  if (e.dataTransfer?.files && e.dataTransfer.files[0]) {
+    const file = e.dataTransfer.files[0]
+    if (file.size > 10 * 1024 * 1024) { ElMessage.warning('文件大小不能超过 10MB'); return }
+    if (!['.csv','.xlsx','.xls','.json'].some(s => file.name.toLowerCase().endsWith(s))) { ElMessage.warning('仅支持 CSV、Excel、JSON 格式'); return }
+    uploadedFile.value = file; ElMessage.success(`已上传数据文件：${file.name}`)
+  }
+}
+const removeFile = () => { uploadedFile.value = null; if (fileInputRef.value) fileInputRef.value.value = '' }
+const formatFileSize = (bytes: number) => {
+  if (bytes < 1024) return bytes + 'B'
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + 'KB'
+  return (bytes / (1024 * 1024)).toFixed(1) + 'MB'
+}
+
 const reportData = ref<{
   title: string
   period: string
