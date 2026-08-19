@@ -668,6 +668,7 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import * as echarts from 'echarts'
+import dayjs from 'dayjs'
 import { Document, CircleCheck, Clock, Share, FolderOpened, Search, MagicStick, Promotion, Star, StarFilled, TrendCharts, Check, DocumentCopy, Stamp, Loading, Warning, Plus, InfoFilled } from '@element-plus/icons-vue'
 
 const activeTab = ref('library')
@@ -690,6 +691,7 @@ const genStep = ref<'outline' | 'content'>('outline')
 const generatingOutline = ref(false)
 const documentOutline = ref('')
 const documentContent = ref('')
+const documentCompiled = ref('')
 const suggestList = ref([
   { id: 1, text: '建议将核心政策依据放在第一段位置，强化权威性' },
   { id: 2, text: '第3段表述可进一步精简，突出办事时限要求' }
@@ -794,7 +796,51 @@ const startGenerateOutline = async () => {
     ElMessage.success('公文大纲生成完成，请确认')
   }, 1500)
 }
-const acceptOutline = () => { genStep.value = 'content'; currentStep.value = 1; ElMessage.success('大纲已确认，开始生成正文') }
+const generateBodyContent = () => {
+  const docType = genParam.value.docType === 'notice' ? '通知' : genParam.value.docType === 'report' ? '工作报告' : '函'
+  const prefix = '为深入贯彻落实党中央、国务院关于人力资源和社会保障工作的决策部署，'
+  const body = `根据《中华人民共和国就业促进法》《人力资源市场暂行条例》等法律法规，结合我市实际情况，现将有关事项通知如下：
+
+一、总体要求
+以习近平新时代中国特色社会主义思想为指导，全面贯彻党的二十大精神，认真落实党中央、国务院关于稳就业、保民生的决策部署，坚持稳中求进工作总基调，完整、准确、全面贯彻新发展理念，加快构建新发展格局，着力推动高质量发展。
+
+二、主要任务
+（一）强化就业优先政策。坚持把稳就业摆在更加突出位置，健全就业促进机制，推动就业政策与产业政策、财政政策、金融政策协同发力。加大对重点行业、重点企业的支持力度，确保就业形势总体稳定。
+
+（二）完善社会保障体系。深化社会保险制度改革，推进基本养老保险全国统筹，完善多层次医疗保障体系，健全失业保险、工伤保险制度。加强社保基金监管，确保基金安全可持续运行。
+
+（三）加强人才队伍建设。实施更加积极、更加开放、更加有效的人才政策，优化人才发展环境，激发人才创新活力。加强专业技术人才和高技能人才队伍建设，为经济社会发展提供强有力的人才支撑。
+
+（四）构建和谐劳动关系。健全劳动关系协调机制，完善劳动人事争议调解仲裁制度，加强劳动保障监察执法，维护劳动者合法权益。深入推进根治欠薪工作，保障农民工工资及时足额支付。
+
+三、保障措施
+（一）加强组织领导。各级人社部门要高度重视，切实履行主体责任，建立健全工作机制，确保各项任务落到实处。
+
+（二）强化部门协同。加强与财政、教育、发改等部门的沟通协调，形成工作合力，共同推进人社事业高质量发展。
+
+（三）严格督查考核。建立健全督查考核机制，定期对各项工作进展情况进行督导检查，对工作推进不力的单位和个人严肃问责。
+
+四、工作要求
+各地各部门要结合实际，制定具体实施方案，细化工作措施，明确时间表、路线图、责任人，确保各项工作有力有序推进。`
+
+  const fullContent = prefix + body
+  documentContent.value = fullContent
+  documentCompiled.value = fullContent
+  // 保存版本历史
+  versions.value.push({ id: versions.value.length + 1, time: dayjs().format('MM-DD HH:mm') })
+  return fullContent
+}
+const acceptOutline = () => {
+  genStep.value = 'content'
+  currentStep.value = 1
+  // 模拟生成正文
+  generatingOutline.value = true
+  setTimeout(() => {
+    generateBodyContent()
+    generatingOutline.value = false
+    ElMessage.success('正文生成完成，可在右侧实时预览版式效果')
+  }, 2000)
+}
 const editOutline = () => { ElMessage.info('您可直接编辑大纲输入框') }
 const regenerateOutline = () => { generatingOutline.value = true; setTimeout(()=>{ documentOutline.value += '\n（补充新调整内容...）'; generatingOutline.value = false; ElMessage.success('已换一版大纲') }, 1500) }
 const switchModel = () => ElMessage.info('已切换至「政务-增强版」大模型')
