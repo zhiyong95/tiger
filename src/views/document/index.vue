@@ -600,6 +600,9 @@
                 <el-button type="primary" @click="showFlowDialog = true">
                   <el-icon><Plus /></el-icon> 发起流转
                 </el-button>
+                <el-button @click="showFlowPathConfig = true">
+                  <el-icon><Setting /></el-icon> 配置流转路径
+                </el-button>
               </div>
               <div class="flow-card-list">
                 <el-card class="flow-item-card" v-for="item in filteredFlowItems" :key="item.id" shadow="hover">
@@ -657,6 +660,105 @@
           <template #footer>
             <el-button @click="showFlowDialog=false">取消</el-button>
             <el-button type="primary" @click="confirmCreateFlow">确认发起</el-button>
+          </template>
+        </el-dialog>
+
+        <!-- 配置流转路径对话框 -->
+        <el-dialog v-model="showFlowPathConfig" title="🔄 配置流转路径" width="650px">
+          <div class="flow-path-config">
+            <div class="path-config-header">
+              <span class="path-config-title">预设流转路径</span>
+              <el-button size="small" type="primary" @click="addFlowPath">
+                <el-icon><Plus /></el-icon> 新增路径
+              </el-button>
+            </div>
+            <div class="path-list">
+              <div v-for="(path, pIdx) in flowPaths" :key="path.id" class="path-card">
+                <div class="path-card-header">
+                  <div class="path-name-row">
+                    <el-icon class="path-icon"><Share /></el-icon>
+                    <span class="path-name">{{ path.name }}</span>
+                    <el-tag v-if="path.isDefault" size="small" type="primary">默认</el-tag>
+                  </div>
+                  <div class="path-actions">
+                    <el-button size="small" text @click="editPathName(pIdx)">重命名</el-button>
+                    <el-button v-if="!path.isDefault" size="small" text type="danger" @click="deleteFlowPath(pIdx)">删除</el-button>
+                  </div>
+                </div>
+                <div class="path-nodes">
+                  <div class="node-row" v-for="(node, nIdx) in path.nodes" :key="nIdx">
+                    <div class="node-index">{{ nIdx + 1 }}</div>
+                    <div class="node-content">
+                      <div class="node-name">{{ node.name }}</div>
+                      <div class="node-role">{{ node.role }} · {{ node.dept || '本级' }}</div>
+                    </div>
+                    <div class="node-actions">
+                      <el-button v-if="nIdx > 0" size="small" text circle @click="moveNodeUp(pIdx, nIdx)">
+                        <el-icon><ArrowUp /></el-icon>
+                      </el-button>
+                      <el-button v-if="nIdx < path.nodes.length - 1" size="small" text circle @click="moveNodeDown(pIdx, nIdx)">
+                        <el-icon><ArrowDown /></el-icon>
+                      </el-button>
+                      <el-button size="small" text circle @click="editNode(pIdx, nIdx)">
+                        <el-icon><Edit /></el-icon>
+                      </el-button>
+                      <el-button size="small" text circle type="danger" @click="deleteNode(pIdx, nIdx)">
+                        <el-icon><Delete /></el-icon>
+                      </el-button>
+                    </div>
+                    <div v-if="nIdx < path.nodes.length - 1" class="node-connector">
+                      <span class="connector-line"></span>
+                      <el-icon class="connector-arrow"><ArrowRight /></el-icon>
+                    </div>
+                  </div>
+                  <el-button class="add-node-btn" size="small" text @click="addNode(pIdx)">
+                    <el-icon><Plus /></el-icon> 添加审批节点
+                  </el-button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <template #footer>
+            <el-button @click="showFlowPathConfig = false">关闭</el-button>
+            <el-button type="primary" @click="saveFlowPaths">保存配置</el-button>
+          </template>
+        </el-dialog>
+
+        <!-- 编辑节点对话框 -->
+        <el-dialog v-model="showNodeDialog" :title="editingNodeIdx >= 0 ? '编辑审批节点' : '新增审批节点'" width="420px">
+          <el-form :model="nodeForm" label-width="80px">
+            <el-form-item label="节点名称">
+              <el-input v-model="nodeForm.name" placeholder="如：科室初审" />
+            </el-form-item>
+            <el-form-item label="审批角色">
+              <el-select v-model="nodeForm.role" style="width:100%">
+                <el-option label="科室负责人" value="科室负责人" />
+                <el-option label="分管领导" value="分管领导" />
+                <el-option label="局领导" value="局领导" />
+                <el-option label="办公室主任" value="办公室主任" />
+                <el-option label="业务专员" value="业务专员" />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="所属部门">
+              <el-input v-model="nodeForm.dept" placeholder="如：就业促进科" />
+            </el-form-item>
+          </el-form>
+          <template #footer>
+            <el-button @click="showNodeDialog = false">取消</el-button>
+            <el-button type="primary" @click="confirmSaveNode">确认</el-button>
+          </template>
+        </el-dialog>
+
+        <!-- 重命名路径对话框 -->
+        <el-dialog v-model="showRenameDialog" title="重命名流转路径" width="400px">
+          <el-form>
+            <el-form-item label="路径名称">
+              <el-input v-model="editingPathName" placeholder="输入流转路径名称" />
+            </el-form-item>
+          </el-form>
+          <template #footer>
+            <el-button @click="showRenameDialog = false">取消</el-button>
+            <el-button type="primary" @click="confirmRenamePath">确认</el-button>
           </template>
         </el-dialog>
       </el-tab-pane>
@@ -771,6 +873,111 @@ const filteredFlowItems = computed(() => {
   if (flowFilter.value === 'timeout') return flowItems.value.filter(i => i.isTimeout)
   return flowItems.value
 })
+
+// 流转路径配置
+const flowPaths = ref([
+  { id: 'fp1', name: '标准审批流程', isDefault: true, nodes: [{ name: '发起', role: '普通用户', dept: '办公室' }, { name: '科室负责人审', role: '科室负责人', dept: '业务科室' }, { name: '分管领导审', role: '分管领导', dept: '局领导' }, { name: '局长签发', role: '局长', dept: '局领导' }, { name: '印发', role: '文印员', dept: '办公室' }] },
+  { id: 'fp2', name: '快速审批流程', isDefault: false, nodes: [{ name: '发起', role: '普通用户', dept: '办公室' }, { name: '分管领导审', role: '分管领导', dept: '局领导' }, { name: '局长签发', role: '局长', dept: '局领导' }, { name: '印发', role: '文印员', dept: '办公室' }] },
+  { id: 'fp3', name: '内部会签流程', isDefault: false, nodes: [{ name: '发起', role: '普通用户', dept: '办公室' }, { name: '科室负责人审', role: '科室负责人', dept: '业务科室' }, { name: '会签单位', role: '会签负责人', dept: '相关科室' }, { name: '分管领导审', role: '分管领导', dept: '局领导' }, { name: '局长签发', role: '局长', dept: '局领导' }, { name: '印发', role: '文印员', dept: '办公室' }] }
+])
+const showFlowPathConfig = ref(false)
+const showNodeDialog = ref(false)
+const showRenameDialog = ref(false)
+const editingNodeIdx = ref(-1)
+const editingPathIdx = ref(-1)
+const editingPathName = ref('')
+const nodeForm = ref({ name: '', role: '', dept: '' })
+
+const addFlowPath = () => {
+  const newId = 'fp' + Date.now()
+  flowPaths.value.push({ id: newId, name: '新建流转路径', isDefault: false, nodes: [{ name: '发起', role: '普通用户', dept: '办公室' }] })
+  ElMessage.success('已添加新流转路径，请编辑节点')
+}
+
+const editPathName = (pIdx: number) => {
+  editingPathIdx.value = pIdx
+  editingPathName.value = flowPaths.value[pIdx].name
+  showRenameDialog.value = true
+}
+
+const confirmRenamePath = () => {
+  if (editingPathName.value.trim()) {
+    flowPaths.value[editingPathIdx.value].name = editingPathName.value.trim()
+    ElMessage.success('路径名称已更新')
+  }
+  showRenameDialog.value = false
+}
+
+const deleteFlowPath = (pIdx: number) => {
+  const path = flowPaths.value[pIdx]
+  if (path.isDefault) {
+    ElMessage.warning('预置路径不可删除')
+    return
+  }
+  flowPaths.value.splice(pIdx, 1)
+  ElMessage.success('流转路径已删除')
+}
+
+const addNode = (pIdx: number) => {
+  editingPathIdx.value = pIdx
+  editingNodeIdx.value = -1
+  nodeForm.value = { name: '', role: '', dept: '' }
+  showNodeDialog.value = true
+}
+
+const moveNodeUp = (pIdx: number, nIdx: number) => {
+  if (nIdx === 0) return
+  const nodes = flowPaths.value[pIdx].nodes
+  const temp = nodes[nIdx]
+  nodes[nIdx] = nodes[nIdx - 1]
+  nodes[nIdx - 1] = temp
+  ElMessage.success('节点顺序已调整')
+}
+
+const moveNodeDown = (pIdx: number, nIdx: number) => {
+  const nodes = flowPaths.value[pIdx].nodes
+  if (nIdx >= nodes.length - 1) return
+  const temp = nodes[nIdx]
+  nodes[nIdx] = nodes[nIdx + 1]
+  nodes[nIdx + 1] = temp
+  ElMessage.success('节点顺序已调整')
+}
+
+const editNode = (pIdx: number, nIdx: number) => {
+  editingPathIdx.value = pIdx
+  editingNodeIdx.value = nIdx
+  const node = flowPaths.value[pIdx].nodes[nIdx]
+  nodeForm.value = { name: node.name, role: node.role, dept: node.dept }
+  showNodeDialog.value = true
+}
+
+const deleteNode = (pIdx: number, nIdx: number) => {
+  flowPaths.value[pIdx].nodes.splice(nIdx, 1)
+  ElMessage.success('节点已删除')
+}
+
+const confirmSaveNode = () => {
+  if (!nodeForm.value.name.trim()) {
+    ElMessage.warning('请输入节点名称')
+    return
+  }
+  if (editingNodeIdx.value >= 0) {
+    const node = flowPaths.value[editingPathIdx.value].nodes[editingNodeIdx.value]
+    node.name = nodeForm.value.name
+    node.role = nodeForm.value.role
+    node.dept = nodeForm.value.dept
+    ElMessage.success('节点已更新')
+  } else {
+    flowPaths.value[editingPathIdx.value].nodes.push({ ...nodeForm.value })
+    ElMessage.success('节点已添加')
+  }
+  showNodeDialog.value = false
+}
+
+const saveFlowPaths = () => {
+  showFlowPathConfig.value = false
+  ElMessage.success('流转路径配置已保存')
+}
 
 const starredTemplates = ref([
   { id: 'tpl001', name: '通知 - 关于开展...工作的通知', type: '通知', bgColor: '#e8f0fe', icon: 'Bell', usageCount: 128 },
