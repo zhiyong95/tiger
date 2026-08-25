@@ -4,7 +4,9 @@
     <div class="policy-sidebar">
       <!-- 政策上传区 -->
       <div class="upload-section">
-        <div class="section-title"><span class="title-bar"></span>政策上传</div>
+        <div class="section-title">
+          <span class="title-bar"></span>政策上传
+        </div>
         <div class="url-input-area">
           <label class="input-label">政策文件链接</label>
           <el-input
@@ -16,10 +18,9 @@
           />
         </div>
         <div class="divider-text"><span>或</span></div>
-        <!-- 拖拽上传区 -->
         <div
           class="drop-zone"
-          :class="{ 'drop-zone-active': isDragOver, 'drop-zone-hidden': selectedFile }"
+          :class="{ 'drop-zone-active': isDragOver, 'drop-zone-hidden': !!selectedFile }"
           @click="triggerFileInput"
           @dragover.prevent="onDragOver"
           @dragleave.prevent="onDragLeave"
@@ -36,17 +37,15 @@
           style="display: none"
           @change="onFileSelected"
         />
-        <!-- 已选文件条 -->
         <div v-if="selectedFile" class="file-item">
           <span class="file-icon">📄</span>
           <span class="file-name">{{ selectedFile.name }}</span>
           <el-icon class="file-remove" @click="clearFile"><Close /></el-icon>
         </div>
-        <!-- 分析按钮 -->
         <el-button
           class="analyze-btn"
           :loading="analyzing"
-          :disabled="analyzing"
+          :disabled="(!policyUrl && !selectedFile) || analyzing"
           @click="startAnalysis"
         >
           <span v-if="!analyzing">🔍 开始 AI 分析</span>
@@ -76,12 +75,7 @@
             </div>
             <div class="history-title-text">{{ item.title }}</div>
             <div class="history-tags">
-              <el-tag
-                v-for="tag in item.tags"
-                :key="tag"
-                size="small"
-                class="history-tag"
-              >
+              <el-tag v-for="tag in item.tags" :key="tag" size="small" class="history-tag">
                 {{ tag }}
               </el-tag>
             </div>
@@ -120,12 +114,7 @@
             <div class="title-left">
               <div class="result-title-text">{{ resultData.title }}</div>
               <div class="result-tags">
-                <el-tag
-                  v-for="tag in resultData.policyTags"
-                  :key="tag"
-                  class="result-tag"
-                  size="small"
-                >
+                <el-tag v-for="tag in resultData.policyTags" :key="tag" class="result-tag" size="small">
                   {{ tag }}
                 </el-tag>
               </div>
@@ -143,30 +132,21 @@
                 <span class="info-card-title">{{ card.title }}</span>
               </div>
               <div class="info-card-body">
-                <!-- 面向对象：标签组 -->
                 <template v-if="card.type === 'tags'">
-                  <el-tag
-                    v-for="item in card.items"
-                    :key="item"
-                    class="info-tag"
-                    type="success"
-                  >
+                  <el-tag v-for="item in card.items" :key="item" class="info-tag" type="success">
                     {{ item }}
                   </el-tag>
                 </template>
-                <!-- 核心条件：有序列表 -->
                 <template v-else-if="card.type === 'list'">
                   <ol class="info-list">
                     <li v-for="item in card.items" :key="item">{{ item }}</li>
                   </ol>
                 </template>
-                <!-- 补贴标准：金额高亮 -->
                 <template v-else-if="card.type === 'amount'">
                   <div v-for="item in card.items" :key="item" class="amount-item">
                     <span v-html="highlightAmount(item)"></span>
                   </div>
                 </template>
-                <!-- 政策背景：普通段落 -->
                 <template v-else>
                   <p class="info-paragraph">{{ card.content }}</p>
                 </template>
@@ -214,7 +194,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Close } from '@element-plus/icons-vue'
 
@@ -227,7 +207,15 @@ const analyzing = ref(false)
 const activeHistoryIdx = ref(-1)
 
 /* ========== 历史记录数据 ========== */
-const historyList = reactive([
+interface HistoryItem {
+  title: string
+  source: string
+  time: string
+  tags: string[]
+  resultKey: number
+}
+
+const historyList = reactive<HistoryItem[]>([
   { title: '关于促进高校毕业生就业创业若干措施的通知', source: '链接解析', time: '2026-08-13', tags: ['就业', '高校毕业生'], resultKey: 0 },
   { title: '职业技能提升行动补贴政策', source: '文件上传', time: '2026-08-12', tags: ['培训', '补贴'], resultKey: 1 },
   { title: '困难人员就业援助实施办法', source: '链接解析', time: '2026-08-10', tags: ['援助', '困难群体'], resultKey: 2 },
@@ -236,7 +224,16 @@ const historyList = reactive([
 ])
 
 /* ========== 预置分析结果数据 ========== */
-const allResults = [
+interface PolicyResult {
+  title: string
+  policyTags: string[]
+  background: string
+  targetObjects: string[]
+  coreConditions: string[]
+  subsidyAmounts: string[]
+}
+
+const allResults: PolicyResult[] = [
   {
     title: '关于促进高校毕业生就业创业若干措施的通知',
     policyTags: ['就业促进', '高校毕业生'],
@@ -281,15 +278,14 @@ const allResults = [
 
 /* ========== 页面状态 ========== */
 const pageState = ref<'empty' | 'analyzing' | 'result'>('empty')
-const resultData = ref(allResults[0])
-
+const resultData = ref<PolicyResult>(allResults[0])
 const selectedRecommendTags = ref<string[]>([])
 
 const infoCards = computed(() => [
-  { icon: '📖', title: '政策背景', bgColor: '#e6f4ff', type: 'text', content: resultData.value.background },
-  { icon: '👥', title: '面向对象', bgColor: '#f6ffed', type: 'tags', items: resultData.value.targetObjects },
-  { icon: '📋', title: '核心条件', bgColor: '#fff7e6', type: 'list', items: resultData.value.coreConditions },
-  { icon: '💰', title: '补贴标准', bgColor: '#fff2f0', type: 'amount', items: resultData.value.subsidyAmounts },
+  { icon: '📖', title: '政策背景', bgColor: 'linear-gradient(135deg, #e6f4ff, #d6eaff)', type: 'text', content: resultData.value.background },
+  { icon: '👥', title: '面向对象', bgColor: 'linear-gradient(135deg, #f0f9eb, #e1f3d8)', type: 'tags', items: resultData.value.targetObjects },
+  { icon: '📋', title: '核心条件', bgColor: 'linear-gradient(135deg, #fff7e6, #ffefd0)', type: 'list', items: resultData.value.coreConditions },
+  { icon: '💰', title: '补贴标准', bgColor: 'linear-gradient(135deg, #fff2f0, #ffe8e4)', type: 'amount', items: resultData.value.subsidyAmounts },
 ])
 
 const processSteps = [
@@ -303,7 +299,6 @@ const recommendTags = ['#稳就业', '#人才引进', '#基层服务', '#创业�
 
 /* ========== 交互方法 ========== */
 const onUrlInput = () => {
-  // URL输入时清除文件选择
   if (policyUrl.value) {
     selectedFile.value = null
   }
@@ -365,7 +360,6 @@ const startAnalysis = () => {
   setTimeout(() => {
     analyzing.value = false
     pageState.value = 'result'
-    // 在结果中随机选取
     const randomIdx = Math.floor(Math.random() * allResults.length)
     resultData.value = allResults[randomIdx]
     selectedRecommendTags.value = []
@@ -412,8 +406,6 @@ const highlightAmount = (text: string) => {
   return text.replace(/([\d,]+(?:\.\d+)?)(?=\s*元)/g, '<span class="amount-highlight">$1</span>')
     .replace(/(\d+(?:\.\d+)?)%/g, '<span class="amount-highlight">$1%</span>')
 }
-
-import { computed } from 'vue'
 </script>
 
 <style scoped>
@@ -452,7 +444,7 @@ import { computed } from 'vue'
   display: inline-block;
   width: 3px;
   height: 16px;
-  background: #1677ff;
+  background: #2563eb;
   border-radius: 2px;
   margin-right: 8px;
 }
@@ -473,7 +465,7 @@ import { computed } from 'vue'
 }
 
 .url-input :deep(.el-input__wrapper.is-focus) {
-  box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.2);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
 }
 
 .divider-text {
@@ -509,8 +501,8 @@ import { computed } from 'vue'
 
 .drop-zone:hover,
 .drop-zone-active {
-  border-color: #1677ff;
-  background: #f0f5ff;
+  border-color: #2563eb;
+  background: #eef2ff;
 }
 
 .drop-zone-hidden {
@@ -537,8 +529,8 @@ import { computed } from 'vue'
   display: flex;
   align-items: center;
   gap: 8px;
-  background: #f6ffed;
-  border: 1px solid #b7eb8f;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
   border-radius: 6px;
   padding: 8px 12px;
   margin-bottom: 16px;
@@ -570,7 +562,7 @@ import { computed } from 'vue'
 .analyze-btn {
   width: 100%;
   height: 40px;
-  background: linear-gradient(135deg, #1677ff, #0958d9);
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
   color: #fff;
   border: none;
   border-radius: 6px;
@@ -580,7 +572,7 @@ import { computed } from 'vue'
 
 .analyze-btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(22, 119, 255, 0.3);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
 }
 
 .analyze-btn.is-disabled {
@@ -590,7 +582,7 @@ import { computed } from 'vue'
 /* 历史区 */
 .history-section {
   flex: 1;
-  background: #fafafa;
+  background: #f8f9fa;
   padding: 16px 20px;
   display: flex;
   flex-direction: column;
@@ -628,13 +620,13 @@ import { computed } from 'vue'
 }
 
 .history-card:hover {
-  border-color: #1677ff;
+  border-color: #2563eb;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .history-active {
-  border-color: #1677ff;
-  background: #f0f5ff;
+  border-color: #2563eb;
+  background: #eef2ff;
 }
 
 .history-card-top {
@@ -739,7 +731,7 @@ import { computed } from 'vue'
   height: 80px;
   border-radius: 50%;
   border: 4px solid #e8e8e8;
-  border-top-color: #1677ff;
+  border-top-color: #2563eb;
   animation: spin 1s linear infinite;
 }
 
@@ -814,24 +806,23 @@ import { computed } from 'vue'
 }
 
 .result-tag {
-  background: #e6f4ff;
-  color: #1677ff;
+  background: #eef2ff;
+  color: #2563eb;
   border: none;
   border-radius: 4px;
   font-size: 12px;
 }
 
 .export-btn {
-  background: #fff;
-  border: 1px solid #d9d9d9;
-  color: #374151;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  border: none;
+  color: #fff;
   border-radius: 6px;
   white-space: nowrap;
 }
 
 .export-btn:hover {
-  border-color: #1677ff;
-  color: #1677ff;
+  opacity: 0.9;
 }
 
 /* 四宫格 */
@@ -846,6 +837,12 @@ import { computed } from 'vue'
   border-radius: 10px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
   overflow: hidden;
+  transition: all 0.2s;
+}
+
+.info-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
 }
 
 .info-card-header {
@@ -891,19 +888,22 @@ import { computed } from 'vue'
 
 .info-list li {
   font-size: 13px;
-  line-height: 2;
   color: #374151;
+  line-height: 1.8;
+  padding-left: 4px;
 }
 
 .amount-item {
   font-size: 13px;
-  line-height: 2;
   color: #374151;
+  line-height: 1.8;
+  padding: 2px 0;
 }
 
-.amount-highlight {
-  color: #cf1322;
+:deep(.amount-highlight) {
+  color: #f59e0b;
   font-weight: 700;
+  font-size: 15px;
 }
 
 /* 办理流程 */
@@ -915,74 +915,75 @@ import { computed } from 'vue'
 }
 
 .process-title {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
   color: #1f2937;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .process-steps {
   display: flex;
-  align-items: flex-start;
+  justify-content: space-between;
   gap: 0;
+  position: relative;
 }
 
 .process-step {
-  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
+  flex: 1;
   position: relative;
 }
 
 .step-circle {
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #1677ff, #0958d9);
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
   color: #fff;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+  z-index: 1;
   margin-bottom: 8px;
-  flex-shrink: 0;
+}
+
+.step-line {
+  position: absolute;
+  top: 16px;
+  left: calc(50% + 16px);
+  width: calc(100% - 32px);
+  height: 2px;
+  background: #e5e7eb;
+  z-index: 0;
 }
 
 .step-info {
   text-align: center;
-  padding: 0 8px;
 }
 
 .step-name {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: #1f2937;
   margin-bottom: 4px;
 }
 
 .step-desc {
-  font-size: 12px;
+  font-size: 11px;
   color: #909399;
-  line-height: 1.4;
+  max-width: 120px;
 }
 
-.step-line {
-  position: absolute;
-  top: 19px;
-  right: -50%;
-  width: 100%;
-  height: 2px;
-  background: #e8e8e8;
-  z-index: 0;
-}
-
-/* AI推荐标签 */
+/* AI 推荐标签 */
 .recommend-card {
-  background: linear-gradient(135deg, #f0f5ff, #e6f0ff);
-  border: 1px solid #b3c6ff;
+  background: #fff;
   border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
   padding: 20px 24px;
 }
 
@@ -1001,33 +1002,42 @@ import { computed } from 'vue'
 
 .recommend-badge {
   font-size: 11px;
+  height: 20px;
+  line-height: 18px;
 }
 
 .recommend-tags {
   display: flex;
-  flex-wrap: wrap;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .recommend-tag-item {
   display: inline-block;
-  padding: 4px 14px;
-  border-radius: 20px;
-  font-size: 13px;
-  color: #1677ff;
-  background: #fff;
-  border: 1px solid #1677ff;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #374151;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .recommend-tag-item:hover {
-  background: #1677ff;
-  color: #fff;
+  border-color: #2563eb;
+  color: #2563eb;
+  background: #eef2ff;
 }
 
 .recommend-tag-active {
-  background: #1677ff;
+  background: #2563eb;
+  color: #fff;
+  border-color: #2563eb;
+}
+
+.recommend-tag-active:hover {
+  background: #1d4ed8;
   color: #fff;
 }
 </style>
