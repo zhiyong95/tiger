@@ -491,6 +491,7 @@ const reportMetrics = computed(() => {
 const showChart = computed(() => extras.value.includes('chart') && reportData.value?.chartData)
 const showTable = computed(() => extras.value.includes('table') && reportData.value?.detailTable)
 const showSuggestion = computed(() => extras.value.includes('suggestion') && reportData.value?.suggestions?.length)
+const detailTableData = computed(() => reportData.value?.detailTable || [])
 
 const chartRef = ref<HTMLElement | null>(null)
 let chartInstance: echarts.ECharts | null = null

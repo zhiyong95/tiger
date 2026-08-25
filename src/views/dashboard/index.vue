@@ -204,8 +204,7 @@ const onChartTimeChange = () => {
   updateChart()
 }
 
-const handleView = (row: RecordItem) => {
-  // 根据模块跳转到对应页面
+const handleView = (row: any) => {
   const pathMap: Record<string, string> = {
     'AI公文助手': '/document',
     '智能问数': '/data',
@@ -218,7 +217,7 @@ const handleView = (row: RecordItem) => {
   router.push(path)
 }
 
-const handleEdit = (row: RecordItem) => {
+const handleEdit = (row: any) => {
   const pathMap: Record<string, string> = {
     'AI公文助手': '/document',
     '智能问数': '/data',
@@ -231,7 +230,7 @@ const handleEdit = (row: RecordItem) => {
   router.push(path)
 }
 
-const handleFavorite = (row: RecordItem) => {
+const handleFavorite = (row: any) => {
   ElMessage.success('已收藏')
 }
 
@@ -251,7 +250,7 @@ onMounted(async () => {
   // 初始化图表
   if (chartRef.value) {
     chartInstance = echarts.init(chartRef.value)
-    const chartData = data.contributionData[chartTimeRange.value] || []
+    const chartData: ContributionData[] = (data.contributionData as Record<string, ContributionData[]>)[chartTimeRange.value] || []
     chartInstance.setOption({
       tooltip: {
         trigger: 'axis',
@@ -264,7 +263,7 @@ onMounted(async () => {
       grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true, top: '10px' },
       xAxis: {
         type: 'category',
-        data: chartData.map((d) => d.name),
+        data: chartData.map((d: ContributionData) => d.name),
         axisLine: { lineStyle: { color: '#e5e7eb' } },
         axisLabel: { color: '#6b7280', fontSize: 12 },
         axisTick: { show: false },
@@ -280,7 +279,7 @@ onMounted(async () => {
         {
           type: 'bar',
           barWidth: '36%',
-          data: chartData.map((d) => d.value),
+          data: chartData.map((d: ContributionData) => d.value),
           itemStyle: {
             color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
               { offset: 0, color: '#3b82f6' },
