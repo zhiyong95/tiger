@@ -17,10 +17,6 @@
 
           <div class="brand-features">
             <div class="feature-item">
-              <el-icon><Document /></el-icon>
-              <span>智能公文</span>
-            </div>
-            <div class="feature-item">
               <el-icon><ChatDotRound /></el-icon>
               <span>知识问答</span>
             </div>
@@ -29,8 +25,12 @@
               <span>智能问数</span>
             </div>
             <div class="feature-item">
+              <el-icon><Document /></el-icon>
+              <span>智能公文</span>
+            </div>
+            <div class="feature-item">
               <el-icon><Checked /></el-icon>
-              <span>业务审核</span>
+              <span>业务智审</span>
             </div>
           </div>
         </div>
