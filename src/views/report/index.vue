@@ -10,7 +10,8 @@
             <span>报告配置</span>
           </div>
 
-          <!-- 数据源二选一 -->
+          <!-- ===== 第一区块：数据源选择（必选，单选互斥） ===== -->
+          <div class="block-title">一、数据源选择</div>
           <div class="ds-radio-group">
             <el-radio-group v-model="dataSourceMode" class="ds-radio-list">
               <el-radio value="system" class="ds-radio-item">
@@ -24,13 +25,6 @@
 
           <!-- 方式一：系统数据源 -->
           <div v-if="dataSourceMode === 'system'" class="ds-config-body">
-            <el-select v-model="reportType" placeholder="请选择报告类型" style="width:100%" :disabled="dataSourceMode !== 'system'">
-              <el-option label="就业形势月度分析报告" value="monthly" />
-              <el-option label="社保运行季报" value="quarterly" />
-              <el-option label="重点群体就业监测报告" value="monitor" />
-              <el-option label="零工市场运行分析报告" value="gig" />
-              <el-option label="自定义专题报告" value="custom" />
-            </el-select>
             <div class="date-picker-row">
               <el-date-picker
                 v-model="dateRange"
@@ -40,7 +34,6 @@
                 end-placeholder="结束日期"
                 style="width:100%"
                 value-format="YYYY-MM-DD"
-                :disabled="dataSourceMode !== 'system'"
               />
             </div>
             <div class="quick-btns">
@@ -54,14 +47,14 @@
             </div>
           </div>
 
-          <!-- 方式二：上传台账数据 -->
+          <!-- 方式二：上传台账 -->
           <div v-if="dataSourceMode === 'upload'" class="ds-config-body">
             <div
               class="upload-area"
+              :class="{ 'is-active': !!uploadedLedger }"
               @click="triggerUploadLedger"
               @dragover.prevent
               @drop.prevent="onDropLedger"
-              :class="{ 'is-disabled': dataSourceMode !== 'upload' }"
             >
               <input ref="ledgerInputRef" type="file" accept=".xlsx,.csv,.docx,.pdf" style="display:none" @change="onLedgerChange" />
               <template v-if="!uploadedLedger">
@@ -77,53 +70,77 @@
             </div>
           </div>
 
-          <!-- 参考模板（独立模块，非数据源） -->
-          <div class="ref-template-section">
-            <div class="ref-header">
-              <el-icon color="#8b5cf6"><CopyDocument /></el-icon>
-              <span>参考模板</span>
-              <el-tag size="small" type="warning" effect="plain" class="optional-tag">选填</el-tag>
+          <!-- ===== 第二区块：参考素材（独立选填，三选一互斥） ===== -->
+          <div class="ref-section">
+            <div class="block-title ref-title">📎 参考素材 <el-tag size="small" type="warning" effect="plain" class="opt-tag">选填</el-tag></div>
+            <p class="ref-desc">用于定义报告框架、公文文风、章节结构，素材不作为业务数据源</p>
+
+            <el-radio-group v-model="refMaterialMode" class="ref-radio-group">
+              <el-radio value="none" class="ref-radio-item">
+                <span class="ref-radio-label">不使用参考素材</span>
+              </el-radio>
+              <el-radio value="system" class="ref-radio-item">
+                <span class="ref-radio-label">使用系统内置模板</span>
+              </el-radio>
+              <el-radio value="custom" class="ref-radio-item">
+                <span class="ref-radio-label">上传自定义参考模板</span>
+              </el-radio>
+            </el-radio-group>
+
+            <!-- 系统内置模板下拉 -->
+            <div v-if="refMaterialMode === 'system'" class="ref-config-body">
+              <el-select v-model="systemTemplateId" placeholder="请选择系统内置模板" style="width:100%">
+                <el-option label="就业形势月度分析报告" value="monthly" />
+                <el-option label="社保运行季报" value="quarterly" />
+                <el-option label="重点群体就业监测报告" value="monitor" />
+                <el-option label="零工市场运行分析报告" value="gig" />
+                <el-option label="自定义专题报告" value="custom" />
+              </el-select>
             </div>
-            <p class="ref-desc">上传参考报告模板，AI 参考文稿框架、公文风格、章节结构生成新报告</p>
-            <div
-              class="upload-area small-upload"
-              @click="triggerUploadRef"
-              @dragover.prevent
-              @drop.prevent="onDropRef"
-            >
-              <input ref="refInputRef" type="file" accept=".docx,.pdf" style="display:none" @change="onRefChange" />
-              <template v-if="!uploadedRef">
-                <el-icon :size="20" color="#8b5cf6"><Upload /></el-icon>
-                <span class="upload-text-small">上传参考模板文档</span>
-              </template>
-              <template v-else>
-                <el-icon :size="18" color="#10b981"><Document /></el-icon>
-                <span class="uploaded-name">{{ uploadedRef.name }}</span>
-                <el-button text type="danger" size="small" @click.stop="removeRef">移除</el-button>
-              </template>
+
+            <!-- 自定义上传 -->
+            <div v-if="refMaterialMode === 'custom'" class="ref-config-body">
+              <div
+                class="upload-area small-upload"
+                :class="{ 'is-active': !!uploadedRef }"
+                @click="triggerUploadRef"
+                @dragover.prevent
+                @drop.prevent="onDropRef"
+              >
+                <input ref="refInputRef" type="file" accept=".docx,.pdf" style="display:none" @change="onRefChange" />
+                <template v-if="!uploadedRef">
+                  <el-icon :size="20" color="#8b5cf6"><Upload /></el-icon>
+                  <span class="upload-text-small">上传参考模板文档</span>
+                </template>
+                <template v-else>
+                  <el-icon :size="18" color="#10b981"><Document /></el-icon>
+                  <span class="uploaded-name">{{ uploadedRef.name }}</span>
+                  <el-button text type="danger" size="small" @click.stop="removeRef">移除</el-button>
+                </template>
+              </div>
             </div>
           </div>
 
-          <!-- 输出格式（多选） -->
+          <!-- ===== 第三区块：输出格式（多选） ===== -->
+          <div class="block-title">三、输出格式</div>
           <div class="form-group">
-            <label class="form-label">输出格式</label>
-            <el-checkbox-group v-model="outputFormats">
+            <el-checkbox-group v-model="outputFormats" class="checkbox-group">
               <el-checkbox value="word" label="word">Word 文档</el-checkbox>
               <el-checkbox value="pdf" label="pdf">PDF 文档</el-checkbox>
             </el-checkbox-group>
           </div>
 
-          <!-- 附加生成内容 -->
+          <!-- ===== 第四区块：附加生成内容（选填多选） ===== -->
+          <div class="block-title">四、附加生成内容</div>
           <div class="form-group">
-            <label class="form-label">附加生成内容（选填多选）</label>
-            <el-checkbox-group v-model="extras">
+            <el-checkbox-group v-model="extras" class="checkbox-group">
               <el-checkbox value="chart" label="chart">可视化图表</el-checkbox>
               <el-checkbox value="table" label="table">明细数据表</el-checkbox>
               <el-checkbox value="suggestion" label="suggestion">AI 工作建议</el-checkbox>
             </el-checkbox-group>
           </div>
 
-          <!-- 操作按钮 -->
+          <!-- ===== 底部操作按钮 ===== -->
           <div class="config-actions">
             <el-button @click="handleReset" class="reset-btn">重置配置</el-button>
             <el-button
@@ -151,13 +168,14 @@
                 <span class="h-name">{{ h.name }}</span>
                 <span class="h-time">{{ h.genTime }}</span>
               </div>
+              <div class="h-meta">
+                <el-tag size="small" type="info" effect="plain">{{ h.dataSourceMode === 'system' ? '系统数据' : '台账数据' }}</el-tag>
+                <el-tag v-if="h.refMaterialInfo" size="small" type="warning" effect="plain">{{ h.refMaterialInfo }}</el-tag>
+              </div>
               <div class="h-actions">
                 <el-button text size="small" type="primary" @click="handleOpenHistory(h)">打开</el-button>
                 <el-button text size="small" type="primary" @click="handleDownload(h)">下载</el-button>
                 <el-button text size="small" type="primary" @click="handleRegenerate(h)">重新生成</el-button>
-              </div>
-              <div v-if="h.refTemplate" class="h-ref-tag">
-                <el-tag size="small" type="warning" effect="plain">参考模板：{{ h.refTemplate }}</el-tag>
               </div>
             </div>
           </div>
@@ -194,7 +212,7 @@
               <div class="rh-meta">
                 <el-tag type="info" effect="plain" size="small">统计周期：{{ reportData.period }}</el-tag>
                 <el-tag type="success" effect="plain" size="small">生成时间：{{ reportData.genTime }}</el-tag>
-                <el-tag v-if="reportData.refTemplate" type="warning" effect="plain" size="small">参考模板：{{ reportData.refTemplate }}</el-tag>
+                <el-tag v-if="reportData.refTemplate" type="warning" effect="plain" size="small">参考素材：{{ reportData.refTemplate }}</el-tag>
               </div>
             </div>
 
@@ -280,7 +298,7 @@
               :class="msg.role === 'user' ? 'msg-user' : 'msg-ai'"
             >
               <div class="msg-avatar">
-                <el-avatar :size="32" :icon="msg.role === 'user' ? undefined : undefined" :style="msg.role === 'user' ? { background: '#2563eb' } : { background: '#f59e0b' }">
+                <el-avatar :size="32" :style="msg.role === 'user' ? { background: '#2563eb' } : { background: '#f59e0b' }">
                   {{ msg.role === 'user' ? '我' : '途' }}
                 </el-avatar>
               </div>
@@ -334,7 +352,6 @@ import {
   UploadFilled,
   Upload,
   Document,
-  CopyDocument,
   Clock,
   TrendCharts,
   Download,
@@ -347,11 +364,10 @@ import { fetchReportTemplates, generateReport } from '@/api/mock'
 import type { ReportTemplate } from '@/types'
 import * as echarts from 'echarts'
 
-// ===== 数据源 =====
+// ===== 数据源（第一区块） =====
 const dataSourceMode = ref<'system' | 'upload'>('system')
 
 // 系统数据源
-const reportType = ref('monthly')
 const dateRange = ref<string[]>([])
 const quickBtns = [
   { label: '本月' },
@@ -365,24 +381,36 @@ const quickActive = ref('')
 const ledgerInputRef = ref<HTMLInputElement | null>(null)
 const uploadedLedger = ref<File | null>(null)
 
-// 参考模板（独立模块）
+// ===== 参考素材（第二区块，三选一互斥） =====
+const refMaterialMode = ref<'none' | 'system' | 'custom'>('none')
+// 系统内置模板
+const systemTemplateId = ref('monthly')
+// 自定义上传
 const refInputRef = ref<HTMLInputElement | null>(null)
 const uploadedRef = ref<File | null>(null)
 
-// 输出格式
+const systemTemplates = [
+  { label: '就业形势月度分析报告', value: 'monthly' },
+  { label: '社保运行季报', value: 'quarterly' },
+  { label: '重点群体就业监测报告', value: 'monitor' },
+  { label: '零工市场运行分析报告', value: 'gig' },
+  { label: '自定义专题报告', value: 'custom' }
+]
+
+// ===== 输出格式（第三区块） =====
 const outputFormats = ref<string[]>(['word'])
 
-// 附加内容
+// ===== 附加生成内容（第四区块） =====
 const extras = ref<string[]>(['chart', 'table', 'suggestion'])
 
-// 生成状态
+// ===== 生成状态 =====
 const generating = ref(false)
 const templates = ref<ReportTemplate[]>([])
 
 // ===== 计算属性 =====
 const canGenerate = computed(() => {
   const hasDs = dataSourceMode.value === 'system'
-    ? !!reportType.value
+    ? true
     : !!uploadedLedger.value
   return hasDs && outputFormats.value.length > 0
 })
@@ -444,7 +472,7 @@ function removeLedger() {
   if (ledgerInputRef.value) ledgerInputRef.value.value = ''
 }
 
-// ===== 参考模板上传 =====
+// ===== 参考素材上传 =====
 function triggerUploadRef() { refInputRef.value?.click() }
 function onRefChange(e: Event) {
   const target = e.target as HTMLInputElement
@@ -501,9 +529,12 @@ interface HistoryItem {
   name: string
   period: string
   genTime: string
-  reportType: string
-  refTemplate?: string
   dataSourceMode: 'system' | 'upload'
+  refMaterialMode: 'none' | 'system' | 'custom'
+  refMaterialInfo?: string
+  systemTemplateId?: string
+  ledgerFileName?: string
+  refFileName?: string
   metrics?: { label: string; value: string; trend: number }[]
   detailTable?: { indicator: string; current: string; prev: string; change: string }[]
   chartData?: { name: string; value: number }[]
@@ -539,14 +570,16 @@ function quickFillExample(ex: string) {
 // ===== 生命周期 =====
 onMounted(async () => {
   templates.value = await fetchReportTemplates()
-  // 默认快捷日期
   handleQuickBtn('本月')
   // 模拟历史
   historyList.value = [
     {
       name: '就业形势月度分析报告', period: '2025-01~2025-12',
-      genTime: '2025-12-20 10:30', reportType: 'monthly',
-      dataSourceMode: 'system', refTemplate: '上月报告模板.docx',
+      genTime: '2025-12-20 10:30',
+      dataSourceMode: 'system',
+      refMaterialMode: 'custom',
+      refMaterialInfo: '参考模板：上月报告模板.docx',
+      refFileName: '上月报告模板.docx',
       metrics: [
         { label: '总参保人数', value: '428.6万', trend: 5.8 },
         { label: '新增就业人数', value: '18.7万', trend: 8.3 },
@@ -593,17 +626,35 @@ onMounted(async () => {
 
 // ===== 生成报告 =====
 async function handleGenerate() {
+  // 表单校验
   if (!canGenerate.value) {
     if (!outputFormats.value.length) { ElMessage.warning('请至少选择一种输出格式'); return }
     ElMessage.warning('请完成数据源配置')
     return
   }
+
+  // 素材互斥校验（单选控件已保障，保留防御性检查）
+  // 已通过 radio 互斥，无需额外校验
+
   generating.value = true
   try {
     const periodStr = dateRange.value.length === 2
       ? `${dateRange.value[0]}~${dateRange.value[1]}`
       : '2025年度'
-    const result = await generateReport(reportType.value || 'custom', periodStr)
+
+    const result = await generateReport(
+      refMaterialMode.value === 'system' ? systemTemplateId.value : 'custom',
+      periodStr
+    )
+
+    // 构建参考素材信息
+    let refMaterialInfo: string | undefined
+    if (refMaterialMode.value === 'system') {
+      const tpl = systemTemplates.find(t => t.value === systemTemplateId.value)
+      refMaterialInfo = tpl?.label || '系统内置模板'
+    } else if (refMaterialMode.value === 'custom' && uploadedRef.value) {
+      refMaterialInfo = `参考模板：${uploadedRef.value.name}`
+    }
 
     // 模拟指标数据
     const mockMetrics = [
@@ -635,7 +686,7 @@ async function handleGenerate() {
       genTime: new Date().toLocaleString('zh-CN'),
       content: result.content,
       suggestions: result.suggestions,
-      refTemplate: uploadedRef.value?.name || undefined,
+      refTemplate: refMaterialInfo,
       metrics: mockMetrics,
       detailTable: mockDetailTable,
       chartData: mockChartData
@@ -646,9 +697,12 @@ async function handleGenerate() {
       name: reportData.value.title,
       period: periodStr,
       genTime: reportData.value.genTime,
-      reportType: reportType.value,
       dataSourceMode: dataSourceMode.value,
-      refTemplate: uploadedRef.value?.name || undefined,
+      refMaterialMode: refMaterialMode.value,
+      refMaterialInfo: refMaterialInfo,
+      systemTemplateId: refMaterialMode.value === 'system' ? systemTemplateId.value : undefined,
+      ledgerFileName: uploadedLedger.value?.name,
+      refFileName: uploadedRef.value?.name,
       metrics: mockMetrics,
       detailTable: mockDetailTable,
       chartData: mockChartData,
@@ -712,10 +766,11 @@ function initChart() {
 // ===== 重置 =====
 function handleReset() {
   dataSourceMode.value = 'system'
-  reportType.value = 'monthly'
   dateRange.value = []
   quickActive.value = ''
   uploadedLedger.value = null
+  refMaterialMode.value = 'none'
+  systemTemplateId.value = 'monthly'
   uploadedRef.value = null
   outputFormats.value = ['word']
   extras.value = ['chart', 'table', 'suggestion']
@@ -744,7 +799,7 @@ function handleOpenHistory(h: HistoryItem) {
     genTime: h.genTime,
     content: h.content,
     suggestions: h.suggestions,
-    refTemplate: h.refTemplate,
+    refTemplate: h.refMaterialInfo,
     metrics: h.metrics,
     detailTable: h.detailTable,
     chartData: h.chartData
@@ -758,10 +813,21 @@ function handleDownload(h: HistoryItem) {
 }
 
 function handleRegenerate(h: HistoryItem) {
-  reportType.value = h.reportType
+  // 回填数据源配置
   dataSourceMode.value = h.dataSourceMode
-  if (h.refTemplate) {
-    uploadedRef.value = new File([], h.refTemplate)
+  if (h.dataSourceMode === 'system') {
+    handleQuickBtn('本月')
+  }
+  // 回填参考素材配置
+  refMaterialMode.value = h.refMaterialMode
+  if (h.refMaterialMode === 'system' && h.systemTemplateId) {
+    systemTemplateId.value = h.systemTemplateId
+  } else if (h.refMaterialMode === 'custom' && h.refFileName) {
+    uploadedRef.value = new File([], h.refFileName)
+  }
+  // 回填台账
+  if (h.ledgerFileName) {
+    uploadedLedger.value = new File([], h.ledgerFileName)
   }
   ElMessage.info(`正在复用"${h.name}"的配置重新生成...`)
   handleGenerate()
@@ -779,7 +845,6 @@ function handleSendChat() {
   chatMessages.value.push(userMsg)
   chatInput.value = ''
 
-  // 模拟 AI 回复
   setTimeout(() => {
     const aiMsg: ChatMessage = {
       id: Date.now() + 1,
@@ -806,13 +871,12 @@ function formatReport(content: string) {
     .replace(/^(\d+)\.\s/gm, '<strong class="num-title">$1. </strong>')
 }
 
-// 监听数据源切换
+// 监听数据源切换 → 清空对方
 watch(dataSourceMode, (val) => {
   if (val === 'system') {
     uploadedLedger.value = null
     if (ledgerInputRef.value) ledgerInputRef.value.value = ''
   } else {
-    reportType.value = 'monthly'
     dateRange.value = []
     quickActive.value = ''
   }
@@ -861,6 +925,15 @@ watch(dataSourceMode, (val) => {
   border-bottom: 1px solid #f3f4f6;
 }
 
+/* 区块标题 */
+.block-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 10px;
+  margin-top: 4px;
+}
+
 /* 数据源单选 */
 .ds-radio-group {
   margin-bottom: 12px;
@@ -906,10 +979,9 @@ watch(dataSourceMode, (val) => {
   border-color: #2563eb;
   background: #eff6ff;
 }
-.upload-area.is-disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  pointer-events: none;
+.upload-area.is-active {
+  border-color: #10b981;
+  background: #f0fdf4;
 }
 .upload-text {
   font-size: 13px;
@@ -938,53 +1010,64 @@ watch(dataSourceMode, (val) => {
   color: #6b7280;
 }
 
-/* 参考模板 */
-.ref-template-section {
+/* 参考素材区块 */
+.ref-section {
   margin-bottom: 16px;
   padding: 14px;
   background: #fafafa;
   border-radius: 8px;
   border: 1px solid #f3f4f6;
 }
-.ref-header {
+.ref-title {
   display: flex;
   align-items: center;
   gap: 6px;
   font-size: 14px;
-  font-weight: 600;
-  color: #1f2937;
-  margin-bottom: 6px;
 }
-.optional-tag {
+.opt-tag {
   font-size: 11px;
 }
 .ref-desc {
   font-size: 12px;
   color: #6b7280;
   line-height: 1.5;
-  margin: 0 0 10px;
+  margin: 0 0 12px;
+}
+.ref-radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.ref-radio-item {
+  margin-right: 0;
+}
+.ref-radio-label {
+  font-size: 13px;
+}
+.ref-config-body {
+  margin-top: 10px;
+  padding-left: 22px;
 }
 
 /* 表单组 */
 .form-group {
   margin-bottom: 14px;
 }
-.form-label {
-  display: block;
-  font-size: 13px;
-  font-weight: 500;
-  color: #374151;
-  margin-bottom: 6px;
+.checkbox-group {
+  display: flex;
+  gap: 16px;
 }
 
 /* 操作按钮 */
 .config-actions {
   display: flex;
   gap: 10px;
-  margin-top: 4px;
+  margin-top: 16px;
 }
 .reset-btn {
   flex: 1;
+  border-color: #d1d5db;
 }
 .generate-btn {
   flex: 2;
@@ -998,15 +1081,18 @@ watch(dataSourceMode, (val) => {
 }
 
 /* 历史记录 */
+.history-section {
+  flex-shrink: 0;
+}
 .history-list {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-height: 300px;
+  max-height: 280px;
   overflow-y: auto;
 }
 .history-item {
-  padding: 12px;
+  padding: 10px 12px;
   border-radius: 8px;
   background: #f9fafb;
   border: 1px solid #f3f4f6;
@@ -1020,23 +1106,26 @@ watch(dataSourceMode, (val) => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 .h-name {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   color: #1f2937;
 }
 .h-time {
-  font-size: 12px;
+  font-size: 11px;
   color: #9ca3af;
+}
+.h-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 6px;
 }
 .h-actions {
   display: flex;
   gap: 4px;
-}
-.h-ref-tag {
-  margin-top: 6px;
 }
 .history-empty {
   text-align: center;
@@ -1097,7 +1186,6 @@ watch(dataSourceMode, (val) => {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 12px;
 }
 .report-title {
   font-size: 20px;
@@ -1127,35 +1215,41 @@ watch(dataSourceMode, (val) => {
 .metric-card {
   padding: 16px;
   border-radius: 10px;
+  border-left: 4px solid;
   background: #fafbfc;
-  border-top: 4px solid #94a3b8;
-  transition: all 0.2s;
 }
-.metric-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+.metric-card.metric-blue { border-left-color: #2563eb; }
+.metric-card.metric-green { border-left-color: #10b981; }
+.metric-card.metric-orange { border-left-color: #f59e0b; }
+.metric-card.metric-red { border-left-color: #ef4444; }
+.m-label {
+  font-size: 13px;
+  color: #6b7280;
+  margin-bottom: 6px;
 }
-.metric-blue { border-top-color: #2563eb; background: linear-gradient(180deg, #eff6ff 0%, #fff 100%); }
-.metric-green { border-top-color: #10b981; background: linear-gradient(180deg, #ecfdf5 0%, #fff 100%); }
-.metric-orange { border-top-color: #f59e0b; background: linear-gradient(180deg, #fffbeb 0%, #fff 100%); }
-.metric-red { border-top-color: #ef4444; background: linear-gradient(180deg, #fef2f2 0%, #fff 100%); }
-.m-label { font-size: 13px; color: #6b7280; margin-bottom: 6px; }
-.m-value { font-size: 24px; font-weight: 700; color: #1f2937; }
-.m-change { font-size: 12px; margin-top: 4px; display: flex; align-items: center; gap: 4px; }
+.m-value {
+  font-size: 26px;
+  font-weight: 700;
+  color: #1f2937;
+}
+.m-change {
+  font-size: 12px;
+  margin-top: 4px;
+  color: #9ca3af;
+}
 .m-change.up { color: #10b981; }
 .m-change.down { color: #ef4444; }
-.m-comp { color: #9ca3af; font-size: 11px; }
+.m-comp { color: #9ca3af; margin-left: 4px; }
 
 /* 图表 */
 .chart-block {
   margin-bottom: 20px;
   padding: 16px;
   background: #fafbfc;
-  border-radius: 10px;
-  border: 1px solid #f3f4f6;
+  border-radius: 8px;
 }
 .chart-container {
-  height: 280px;
+  height: 260px;
   width: 100%;
 }
 
@@ -1163,175 +1257,164 @@ watch(dataSourceMode, (val) => {
 .data-table-block {
   margin-bottom: 20px;
 }
-.block-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: #1f2937;
-  margin: 0 0 10px;
+.data-table-block .block-title {
+  font-size: 15px;
+  margin-bottom: 10px;
 }
-.text-green { color: #10b981; font-weight: 500; }
-.text-red { color: #ef4444; font-weight: 500; }
 
 /* 报告正文 */
 .report-text {
-  font-size: 15px;
-  line-height: 2.1;
-  color: #374151;
-  font-family: SimSun, serif;
   margin-bottom: 20px;
+  font-family: SimSun, '宋体', serif;
+  line-height: 2;
+  font-size: 15px;
+  color: #1f2937;
 }
 .report-text :deep(.sec-title) {
-  font-size: 17px;
-  font-weight: 600;
+  font-size: 16px;
+  font-weight: 700;
   color: #1f2937;
-  margin: 18px 0 6px;
+  margin: 16px 0 10px;
 }
 .report-text :deep(.num-title) {
-  color: #2563eb;
   font-weight: 600;
+  color: #374151;
 }
 
 /* AI 建议 */
 .ai-suggestions-block {
-  padding: 18px 22px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #1a56db 0%, #3b82f6 50%, #60a5fa 100%);
-  color: #fff;
+  background: linear-gradient(135deg, #eff6ff, #dbeafe);
+  border-radius: 10px;
+  padding: 18px 20px;
+  margin-top: 16px;
 }
 .suggest-header {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 16px;
+  gap: 8px;
+  font-size: 15px;
   font-weight: 600;
-  margin-bottom: 14px;
+  color: #1e40af;
+  margin-bottom: 12px;
 }
 .ai-tag {
-  margin-left: auto;
-  background: rgba(255,255,255,0.2);
-  border-color: rgba(255,255,255,0.3);
-  color: #fff;
+  font-size: 11px;
 }
 .suggest-list {
-  padding-left: 0;
   list-style: none;
+  padding: 0;
+  margin: 0;
 }
 .suggest-list li {
-  padding: 8px 0;
-  border-bottom: 1px solid rgba(255,255,255,0.15);
+  display: flex;
+  gap: 6px;
   font-size: 14px;
   line-height: 1.8;
+  color: #374151;
+  margin-bottom: 4px;
 }
-.suggest-list li:last-child { border-bottom: none; }
-.s-index { font-weight: 700; margin-right: 6px; opacity: 0.9; }
+.s-index {
+  font-weight: 600;
+  color: #2563eb;
+  flex-shrink: 0;
+}
 
 /* ===== AI 对话面板 ===== */
 .chat-section {
+  flex-shrink: 0;
+  max-height: 280px;
+  display: flex;
+  flex-direction: column;
   background: #fff;
   border-radius: 12px;
   border: 1px solid #e5e7eb;
-  display: flex;
-  flex-direction: column;
-  max-height: 280px;
-  overflow: hidden;
+  padding: 14px 18px;
 }
 .chat-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 20px;
+  padding-bottom: 10px;
   border-bottom: 1px solid #f3f4f6;
-  background: #fafbfc;
+  margin-bottom: 8px;
 }
 .ch-left {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 15px;
+  gap: 6px;
+  font-size: 14px;
   font-weight: 600;
   color: #1f2937;
 }
 .chat-messages {
   flex: 1;
   overflow-y: auto;
-  padding: 12px 20px;
-  min-height: 80px;
+  min-height: 60px;
+  max-height: 120px;
+  margin-bottom: 8px;
 }
 .chat-empty {
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 8px;
   height: 60px;
   color: #9ca3af;
   font-size: 13px;
-  gap: 6px;
 }
 .chat-msg {
   display: flex;
-  gap: 10px;
-  margin-bottom: 12px;
+  gap: 8px;
+  margin-bottom: 8px;
 }
-.msg-user {
-  flex-direction: row-reverse;
-}
-.msg-avatar {
-  flex-shrink: 0;
-}
+.msg-user { justify-content: flex-end; }
+.msg-ai { justify-content: flex-start; }
 .msg-bubble {
   max-width: 70%;
-  padding: 10px 14px;
-  border-radius: 10px;
-  font-size: 14px;
-  line-height: 1.6;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.5;
 }
 .msg-user .msg-bubble {
   background: #2563eb;
   color: #fff;
-  border-bottom-right-radius: 2px;
+  border-top-right-radius: 2px;
 }
 .msg-ai .msg-bubble {
   background: #f3f4f6;
   color: #1f2937;
-  border-bottom-left-radius: 2px;
-}
-.msg-text {
-  white-space: pre-wrap;
+  border-top-left-radius: 2px;
 }
 .msg-time {
   font-size: 11px;
   color: #9ca3af;
   margin-top: 4px;
 }
-.msg-user .msg-time {
-  color: rgba(255,255,255,0.7);
-  text-align: right;
-}
+.msg-user .msg-time { text-align: right; }
 .chat-input-bar {
   display: flex;
   gap: 8px;
-  padding: 10px 20px;
-  border-top: 1px solid #f3f4f6;
-  align-items: flex-end;
-}
-.chat-input-bar .el-input {
-  flex: 1;
+  align-items: flex-start;
 }
 .send-btn {
-  height: 50px;
-  min-width: 80px;
+  flex-shrink: 0;
+  height: 46px;
 }
 .chat-examples {
-  padding: 6px 20px 10px;
-  border-top: 1px solid #f3f4f6;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  margin-top: 6px;
 }
 .example-label {
   font-size: 12px;
   color: #9ca3af;
   margin-right: 6px;
-  white-space: nowrap;
+  flex-shrink: 0;
 }
+
+/* 文本颜色 */
+.text-green { color: #10b981; }
+.text-red { color: #ef4444; }
 </style>
