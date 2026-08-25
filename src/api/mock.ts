@@ -359,26 +359,69 @@ export async function handleRiskTask(taskId: string, action: string, comment: st
 export async function fetchDashboardData() {
   await delay()
   return {
-    todoCount: { pending: 8, overdue: 2, completed: 15 },
-    riskAlerts: 3,
-    recentQA: [
-      { id: '1', question: '失业保险金领取条件', time: '14:30' },
-      { id: '2', question: '灵活就业社保补贴标准', time: '11:20' },
+    // 伴您办公天数
+    workDays: 186,
+    // 效益总览指标
+    benefits: [
+      { id: '1', name: '累计节省工时', value: 2856, unit: '小时', icon: 'Timer', trend: 12.5 },
+      { id: '2', name: 'AI生成成果总数', value: 1532, unit: '篇', icon: 'Document', trend: 8.3 },
+      { id: '3', name: '知识问答服务次数', value: 8472, unit: '次', icon: 'ChatDotRound', trend: 23.1 },
+      { id: '4', name: '智能审核减负条数', value: 3689, unit: '条', icon: 'Checked', trend: 15.6 },
     ],
-    quickActions: [
-      { name: '知识问答', path: '/qa', icon: 'ChatDotRound' },
-      { name: '公文助手', path: '/document', icon: 'Document' },
-      { name: '智能问数', path: '/data', icon: 'DataAnalysis' },
-      { name: '业务审核', path: '/audit', icon: 'Checked' },
+    // 各AI工具使用次数
+    functionUsage: [
+      { name: '智能问数', count: 1268, path: '/data' },
+      { name: '智能分析报告', count: 532, path: '/report' },
+      { name: '政策快研', count: 876, path: '/policy' },
+      { name: '人社知识智能问答', count: 2547, path: '/qa' },
+      { name: 'AI公文助手', count: 1893, path: '/document' },
+      { name: '业务智能审核', count: 765, path: '/audit' },
     ],
-    employmentTrend: [
-      { month: '1月', value: 10200 },
-      { month: '2月', value: 8900 },
-      { month: '3月', value: 11500 },
-      { month: '4月', value: 12100 },
-      { month: '5月', value: 11800 },
-      { month: '6月', value: 12300 },
-      { month: '7月', value: 12580 },
+    // 各AI工具效益贡献数据（柱状图）
+    contributionData: {
+      thisWeek: [
+        { name: '智能问数', value: 45 },
+        { name: '智能分析报告', value: 28 },
+        { name: '政策快研', value: 36 },
+        { name: '知识问答', value: 52 },
+        { name: 'AI公文助手', value: 41 },
+        { name: '业务审核', value: 33 },
+      ],
+      thisMonth: [
+        { name: '智能问数', value: 186 },
+        { name: '智能分析报告', value: 112 },
+        { name: '政策快研', value: 154 },
+        { name: '知识问答', value: 228 },
+        { name: 'AI公文助手', value: 175 },
+        { name: '业务审核', value: 138 },
+      ],
+      thisQuarter: [
+        { name: '智能问数', value: 520 },
+        { name: '智能分析报告', value: 335 },
+        { name: '政策快研', value: 460 },
+        { name: '知识问答', value: 680 },
+        { name: 'AI公文助手', value: 510 },
+        { name: '业务审核', value: 390 },
+      ],
+      all: [
+        { name: '智能问数', value: 1268 },
+        { name: '智能分析报告', value: 532 },
+        { name: '政策快研', value: 876 },
+        { name: '知识问答', value: 2547 },
+        { name: 'AI公文助手', value: 1893 },
+        { name: '业务审核', value: 765 },
+      ],
+    },
+    // 最近AI使用记录
+    recentRecords: [
+      { id: '1', time: '2026-08-25 15:32', module: 'AI公文助手', title: '关于2026年就业促进工作的报告', status: 'completed' },
+      { id: '2', time: '2026-08-25 14:15', module: '智能问数', title: '2026年7月就业数据查询', status: 'completed' },
+      { id: '3', time: '2026-08-25 11:40', module: '政策快研', title: '关于失业保险稳岗返还政策的研究', status: 'completed' },
+      { id: '4', time: '2026-08-25 09:20', module: '人社知识智能问答', title: '灵活就业人员社会保险补贴政策咨询', status: 'completed' },
+      { id: '5', time: '2026-08-24 16:50', module: '智能分析报告', title: '2026年7月就业形势分析报告', status: 'completed' },
+      { id: '6', time: '2026-08-24 15:00', module: '业务智能审核', title: '就业困难人员认定资格批量审核', status: 'completed' },
+      { id: '7', time: '2026-08-24 11:10', module: 'AI公文助手', title: '关于加强高校毕业生就业服务的通知', status: 'completed' },
+      { id: '8', time: '2026-08-24 09:30', module: '智能问数', title: '2026年各区县就业数据对比', status: 'completed' },
     ],
   }
 }
