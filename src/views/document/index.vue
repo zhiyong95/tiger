@@ -50,11 +50,11 @@
 
     <!-- 政务公文全流程步骤条 -->
     <el-steps v-model="currentStep" finish-status="success" align-center class="process-steps">
-      <el-step title="素材调取" description="模板库"></el-step>
-      <el-step title="文稿创作" description="AI生成"></el-step>
-      <el-step title="风险校验" description="合规审校"></el-step>
-      <el-step title="标准化输出" description="排版导出"></el-step>
-      <el-step title="资料留存" description="检索归档"></el-step>
+      <el-step title="素材调取" description="模板库" style="cursor:pointer" @click="currentStep=0"></el-step>
+      <el-step title="文稿创作" description="AI生成" style="cursor:pointer" @click="currentStep=1"></el-step>
+      <el-step title="风险校验" description="合规审校" style="cursor:pointer" @click="currentStep=2"></el-step>
+      <el-step title="标准化输出" description="排版导出" style="cursor:pointer" @click="currentStep=3"></el-step>
+      <el-step title="资料留存" description="检索归档" style="cursor:pointer" @click="currentStep=4"></el-step>
       </el-steps>
 
     <!-- 模块Tab导航 -->
@@ -549,6 +549,12 @@ import { Document, CircleCheck, Clock, Share, FolderOpened, Search, MagicStick, 
 
 const activeTab = ref('library')
 const currentStep = ref(0)
+// 步骤条与Tab联动：步骤映射到tab name
+const stepToTab = ['library', 'generate', 'audit', 'export', 'archive']
+
+watch(currentStep, (val) => { activeTab.value = stepToTab[val] || 'library' })
+watch(activeTab, (val) => { currentStep.value = ({ library: 0, generate: 1, audit: 2, export: 3, archive: 4 } as Record<string, number>)[val] ?? 0 })
+
 const selectedDocType = ref('all')
 const selectedBizArea = ref('')
 const searchKeyword = ref('')
