@@ -17,12 +17,12 @@
 
           <div class="brand-features">
             <div class="feature-item">
-              <el-icon><ChatDotRound /></el-icon>
-              <span>知识问答</span>
-            </div>
-            <div class="feature-item">
               <el-icon><DataAnalysis /></el-icon>
               <span>智能问数</span>
+            </div>
+            <div class="feature-item">
+              <el-icon><ChatDotRound /></el-icon>
+              <span>知识问答</span>
             </div>
             <div class="feature-item">
               <el-icon><Document /></el-icon>
