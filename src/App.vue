@@ -207,8 +207,7 @@ const handleDropdownCommand = async (command: string) => {
   background: linear-gradient(180deg, #0f2a78 0%, #0d1f5f 100%);
   transition: width 0.3s ease;
   overflow: hidden;
-  border-right: 1px solid rgba(255,255,255,0.05);
-}
+  }
 
 .sidebar-header {
   height: 56px;
