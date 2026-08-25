@@ -37,17 +37,6 @@
       </el-card>
       <el-card class="stat-card shadow-sm">
         <div class="stat-content">
-          <div class="stat-icon bg-purple">
-            <el-icon><Share /></el-icon>
-          </div>
-          <div class="stat-text">
-            <div class="stat-value">24</div>
-            <div class="stat-label">流转处理中</div>
-          </div>
-        </div>
-      </el-card>
-      <el-card class="stat-card shadow-sm">
-        <div class="stat-content">
           <div class="stat-icon bg-gray">
             <el-icon><FolderOpened /></el-icon>
           </div>
