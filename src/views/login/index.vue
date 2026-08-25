@@ -324,6 +324,9 @@
         </div>
       </div>
     </div>
+    <div class="login-footer">
+      技术支持：广州德生智聘科技有限公司
+    </div>
   </div>
 </template>
 
@@ -493,11 +496,25 @@ onUnmounted(() => {
   z-index: 1;
 }
 
+.login-footer {
+  position: absolute;
+  bottom: 16px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 12px;
+  color: rgba(255,255,255,0.5);
+  letter-spacing: 0.5px;
+  z-index: 2;
+  pointer-events: none;
+}
+
 .login-wrapper {
   display: flex;
   width: 900px;
   max-width: 95vw;
   min-height: 560px;
+  position: relative;
   background: rgba(255, 255, 255, 0.98);
   border-radius: 16px;
   overflow: hidden;
