@@ -92,7 +92,6 @@ export const useAppStore = defineStore('app', () => {
     { path: '/qa', title: '人社知识智能问答', icon: 'ChatDotRound', parentId: '/' },
     { path: '/document', title: 'AI公文助手', icon: 'Document', parentId: '/' },
     { path: '/audit', title: '业务智能审核', icon: 'Checked', parentId: '/' },
-    { path: '/task', title: '风险预警与任务待办', icon: 'Bell', parentId: '/' },
   ]
 
   // 所有后台管理端菜单项（含 parentId 层级关系）
