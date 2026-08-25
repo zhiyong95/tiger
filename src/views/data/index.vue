@@ -1,57 +1,46 @@
 <template>
   <div class="data-page">
-    <!-- 左侧边栏 220px -->
+    <!-- 左侧侧边栏 -->
     <div class="data-sidebar">
-      <!-- 顶部标题栏 56px -->
       <div class="sidebar-header">
-        <div class="header-left">
-          <el-icon class="header-icon"><DataAnalysis /></el-icon>
-          <span class="header-title">人社智能问数</span>
-        </div>
-        <div class="header-right">
-          <el-button link type="primary" :icon="Setting" circle />
-          <div class="user-avatar">
-            <el-avatar :size="28" style="background: #2563eb">U</el-avatar>
-            <span class="online-dot"></span>
-          </div>
-        </div>
+        <el-icon class="header-icon"><DataAnalysis /></el-icon>
+        <span class="header-title">智能问数</span>
       </div>
 
-      <!-- 数据域 -->
-      <div class="data-domain-section">
-        <div class="section-label">数据域</div>
-        <div
-          v-for="domain in dataDomains"
-          :key="domain.key"
-          class="domain-item"
-          :class="{ active: activeDomain === domain.key }"
-          @click="selectDomain(domain.key)"
-        >
-          <div class="active-indicator" v-if="activeDomain === domain.key"></div>
-          <el-icon class="domain-icon" :style="{ color: domain.color }">
-            <component :is="domain.icon" />
-          </el-icon>
-          <span class="domain-name">{{ domain.name }}</span>
-          <el-badge v-if="domain.count > 0" :value="domain.count" :type="'info'" class="domain-badge" />
-        </div>
+      <!-- 新建对话按钮 -->
+      <div class="new-chat-btn-wrap">
+        <el-button type="primary" class="new-chat-btn" :icon="Plus" @click="startNewChat">
+          新建对话
+        </el-button>
       </div>
 
-      <!-- 查询历史 -->
+      <!-- 历史对话列表 -->
       <div class="history-section">
-        <div class="section-label history-header" @click="historyExpanded = !historyExpanded">
-          <span>查询历史</span>
-          <el-icon class="expand-icon" :class="{ rotated: historyExpanded }"><ArrowDown /></el-icon>
-        </div>
-        <div v-show="historyExpanded" class="history-list">
+        <div class="section-label">历史对话</div>
+        <div class="history-list">
           <div v-if="queryHistory.length === 0" class="history-empty">
-            <el-icon :size="16" color="#d1d5db"><Clock /></el-icon>
-            <span class="empty-text">暂无查询记录</span>
+            <el-icon :size="16" color="#d1d5db"><ChatDotRound /></el-icon>
+            <span class="empty-text">暂无对话记录</span>
           </div>
-          <div v-else v-for="(item, idx) in queryHistory" :key="idx" class="history-item" @click="reQuery(item.question)">
-            <div class="history-text">{{ item.question.length > 20 ? item.question.slice(0, 20) + '...' : item.question }}</div>
-            <div class="history-hover-actions" @click.stop>
-              <el-button link type="primary" size="small" @click="reQuery(item.question)">重新查询</el-button>
+          <div
+            v-for="(item, idx) in queryHistory"
+            :key="idx"
+            class="history-item"
+            :class="{ active: activeHistoryIdx === idx }"
+            @click="switchHistory(idx)"
+          >
+            <div class="history-text">
+              <el-icon class="history-msg-icon"><ChatDotRound /></el-icon>
+              <span>{{ item.question.length > 16 ? item.question.slice(0, 16) + '...' : item.question }}</span>
             </div>
+            <el-button
+              link
+              type="danger"
+              size="small"
+              class="history-del-btn"
+              :icon="Delete"
+              @click.stop="deleteHistory(idx)"
+            />
           </div>
         </div>
       </div>
@@ -62,16 +51,26 @@
       <div class="main-scroll" ref="mainScrollRef">
         <!-- 欢迎态 -->
         <div v-if="conversationMessages.length === 0 && !isThinking" class="welcome-state">
-          <div class="welcome-icon">
-            <el-icon :size="64" color="#2563eb"><ChatDotRound /></el-icon>
+          <div class="welcome-avatar">
+            <el-avatar :size="72" style="background: #2563eb">
+              <span style="font-size: 28px; font-weight: 700">途</span>
+            </el-avatar>
           </div>
-          <h1 class="welcome-title">您好，我是人社数据助手</h1>
-          <p class="welcome-subtitle">我可以帮您查询人社各业务领域指标数据，支持自然语言提问、自动生成可视化图表</p>
+          <h1 class="welcome-title">你好，我是<span class="welcome-name">途途</span></h1>
+          <p class="welcome-desc">
+            欢迎进入政务智能问数系统。我可以协助您完成统计数据查询、可视化分析、政策文件解读及数据报告生成等工作。<br />
+            系统已启用政务安全模式，您的查询内容及相关数据均受严格保护，不会用于任何模型训练。<br />
+            请问您需要查询哪方面的数据？
+          </p>
 
           <div class="quick-card-grid">
-            <div v-for="card in quickCards" :key="card.title" class="quick-card" @click="sendQuickQuestion(card.question)">
-              <el-tag size="small" :type="card.tagType" class="quick-card-tag">{{ card.category }}</el-tag>
-              <div class="quick-card-question">{{ card.title }}</div>
+            <div
+              v-for="(card, ci) in quickCards"
+              :key="ci"
+              class="quick-card"
+              @click="sendQuickQuestion(card.question)"
+            >
+              <div class="quick-card-text">{{ card.title }}</div>
             </div>
           </div>
         </div>
@@ -81,17 +80,15 @@
           <div v-for="(msg, idx) in conversationMessages" :key="idx" class="msg-wrap">
             <!-- 用户气泡 -->
             <div v-if="msg.role === 'user'" class="user-bubble-wrap">
-              <div class="user-bubble">
-                {{ msg.content }}
-              </div>
+              <div class="user-bubble">{{ msg.content }}</div>
             </div>
 
             <!-- AI回复 -->
             <div v-else class="ai-msg-wrap">
               <div class="ai-header-row">
-                <el-avatar :size="36" style="background: #2563eb"><el-icon><DataAnalysis /></el-icon></el-avatar>
-                <div class="ai-label">数据助手</div>
-                <span class="ai-tag">智能分析</span>
+                <el-avatar :size="36" style="background: #2563eb; font-size: 16px; font-weight: 600">途</el-avatar>
+                <div class="ai-label">途途</div>
+                <span class="ai-tag">智能问数</span>
               </div>
 
               <!-- 结论卡片 -->
@@ -123,21 +120,21 @@
                 <div class="chart-toolbar">
                   <div class="chart-ctrls">
                     <el-radio-group v-model="msg.chartType" size="small" @change="() => renderChartForMsg(idx)">
-                      <el-radio-button label="bar">柱状图</el-radio-button>
-                      <el-radio-button label="line">折线图</el-radio-button>
-                      <el-radio-button label="pie">饼图</el-radio-button>
+                      <el-radio-button value="bar">柱状图</el-radio-button>
+                      <el-radio-button value="line">折线图</el-radio-button>
+                      <el-radio-button value="pie">饼图</el-radio-button>
                     </el-radio-group>
                   </div>
                   <el-button link type="primary" size="small" :icon="Download">导出图表</el-button>
                 </div>
-                <div :ref="el => setChartRef(idx, el)" class="echart-canvas" style="height: 300px;"></div>
+                <div :ref="el => setChartRef(idx, el)" class="echart-canvas" style="height: 280px;"></div>
               </div>
 
               <!-- 数据表格 -->
               <div class="table-wrap" v-if="msg.tableData && msg.tableData.length > 0">
-                <el-table :data="msg.tableData" stripe class="data-table" :default-sort="{ prop: 'value', order: 'descending' as any }" @sort-change="onTableSort" style="width: 100%">
-                  <el-table-column prop="name" label="指标名称" align="left" sortable />
-                  <el-table-column prop="value" label="数值" align="right" sortable>
+                <el-table :data="msg.tableData" stripe class="data-table" style="width: 100%">
+                  <el-table-column prop="name" label="指标名称" align="left" />
+                  <el-table-column prop="value" label="数值" align="right">
                     <template #default="{ row }">
                       <span class="cell-num">{{ row.value.toLocaleString() }}</span>
                       <span class="cell-unit">{{ row.unit }}</span>
@@ -145,13 +142,7 @@
                   </el-table-column>
                   <el-table-column prop="period" label="统计周期" align="center" />
                   <el-table-column prop="source" label="数据来源" align="center" />
-                  <el-table-column label="操作" align="center" width="110">
-                    <template #default>
-                      <el-button link type="primary" size="small">查看详情</el-button>
-                    </template>
-                  </el-table-column>
                 </el-table>
-                <el-pagination v-model:current-page="msg.page" :page-size="8" :total="msg.tableData.length + 20" layout="total, prev, pager, next" size="small" class="table-pager" />
               </div>
             </div>
           </div>
@@ -159,8 +150,8 @@
           <!-- AI思考骨架屏 -->
           <div v-if="isThinking" class="thinking-skeleton">
             <div class="ai-header-row">
-              <el-avatar :size="36" style="background: #94a3b8"><el-icon><Loading /></el-icon></el-avatar>
-              <div class="ai-label">数据助手</div>
+              <el-avatar :size="36" style="background: #94a3b8; font-size: 16px; font-weight: 600">途</el-avatar>
+              <div class="ai-label">途途</div>
               <span class="ai-tag">分析中...</span>
             </div>
             <div class="skeleton-blocks">
@@ -174,30 +165,36 @@
 
       <!-- 底部输入区 -->
       <div class="input-footer">
-        <div class="quick-tags-line">
-          <el-tag v-for="tag in quickInputTags" :key="tag" class="footer-quick-tag" @click="sendQuickQueryTag(tag)">
-            {{ tag }}
-          </el-tag>
-        </div>
         <div class="input-bar">
-          <el-input
-            v-model="userInput"
-            placeholder="请输入您想查询的人社业务数据问题……"
-            class="data-input"
-            @focus="inputFocused = true"
-            @blur="inputFocused = false"
-            @keyup.enter="sendQuery"
-          >
-            <template #prepend>
-              <el-button :icon="Microphone" circle text />
-            </template>
-            <template #append>
-              <el-button type="primary" :loading="isThinking" @click="sendQuery" class="send-btn">
-                <el-icon><Promotion /></el-icon>
-                发送
-              </el-button>
-            </template>
-          </el-input>
+          <div class="input-left">
+            <!-- 语音输入按钮 -->
+            <el-button
+              class="mic-btn"
+              :class="{ 'mic-active': isVoiceMode }"
+              :icon="Microphone"
+              circle
+              @click="toggleVoiceMode"
+            />
+            <!-- 输入框 -->
+            <el-input
+              v-model="userInput"
+              placeholder="请输入您想查询的人社业务数据问题……"
+              class="data-input"
+              :disabled="isVoiceMode"
+              @keyup.enter="sendQuery"
+            />
+          </div>
+          <div class="input-right">
+            <el-button
+              type="primary"
+              :loading="isThinking"
+              @click="sendQuery"
+              class="send-btn"
+            >
+              <el-icon><Promotion /></el-icon>
+              发送
+            </el-button>
+          </div>
         </div>
       </div>
     </div>
@@ -205,36 +202,32 @@
 </template>
 
 <script setup lang="ts">
-import { ref, nextTick, onUnmounted, onMounted, watch } from 'vue'
+import { ref, nextTick, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
 import * as echarts from 'echarts'
 import {
-  DataAnalysis,
-  Setting,
-  ArrowDown,
+  Plus,
+  Delete,
   ChatDotRound,
-  Clock,
+  DataAnalysis,
   Document,
   Download,
   Microphone,
   Promotion,
   ArrowUp,
-  ArrowDown as ArrowDownIcon,
-  PieChart,
-  Histogram,
-  User,
-  Briefcase,
-  OfficeBuilding,
-  Coin,
-  Loading
+  ArrowDown,
+  Loading,
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
-const activeDomain = ref('social')
-const historyExpanded = ref(true)
-const queryHistory = ref<Array<{ question: string; ts: number }>>([
-  { question: '本月城镇新增就业人数是多少', ts: Date.now() },
-  { question: '各区县养老保险参保分布', ts: Date.now() - 3600000 },
-  { question: '人才引进入户环比趋势', ts: Date.now() - 7200000 },
+const router = useRouter()
+
+const activeHistoryIdx = ref(-1)
+const queryHistory = ref<Array<{ question: string }>>([
+  { question: '本月城镇新增就业人数是多少' },
+  { question: '各区县养老保险参保分布' },
+  { question: '人才引进入户环比趋势' },
+  { question: '失业保险金申领条件统计' },
 ])
 
 const conversationMessages = ref<Array<{
@@ -246,55 +239,55 @@ const conversationMessages = ref<Array<{
   chartData?: { labels: string[]; values: number[] }
   chartType?: 'bar' | 'line' | 'pie'
   tableData?: Array<{ name: string; value: number; unit: string; period: string; source: string }>
-  page?: number
 }>>([])
 
 const isThinking = ref(false)
 const userInput = ref('')
-const inputFocused = ref(false)
+const isVoiceMode = ref(true)
 const mainScrollRef = ref<HTMLElement>()
-const sortProp = ref<string>('value')
-const sortOrder = ref<string>('descending')
 const chartMap = new Map<number, echarts.ECharts | null>()
 
-const dataDomains = [
-  { key: 'social', name: '社会保险', icon: PieChart, count: 3, color: '#2563eb' },
-  { key: 'employment', name: '就业创业', icon: Briefcase, count: 2, color: '#10b981' },
-  { key: 'talent', name: '人才人事', icon: User, count: 1, color: '#f59e0b' },
-  { key: 'labor', name: '劳动关系', icon: OfficeBuilding, count: 0, color: '#ef4444' },
-  { key: 'welfare', name: '工资福利', icon: Coin, count: 4, color: '#8b5cf6' },
+const quickCards = [
+  { title: '本月城镇新增就业人数是多少？', question: '本月城镇新增就业人数是多少？' },
+  { title: '就业核心指标城镇调查失业率最新数据？', question: '就业核心指标城镇调查失业率最新数据？' },
+  { title: '就业质量预警失业人员再就业和困难人员就业完成情况？', question: '就业质量预警失业人员再就业和困难人员就业完成情况？' },
+  { title: '重点群体帮扶高校毕业生就业去向落实率？', question: '重点群体帮扶高校毕业生就业去向落实率？' },
+  { title: '年度攻坚指标农村劳动力转移就业规模及变化？', question: '年度攻坚指标农村劳动力转移就业规模及变化？' },
+  { title: '乡村振兴关联就业补助资金支出进度？', question: '乡村振兴关联就业补助资金支出进度？' },
 ]
 
-const quickCards: Array<{ category: string; title: string; question: string; tagType: 'primary' | 'success' | 'warning' | 'danger' | 'info' | undefined }> = [
-  { category: '社保', title: '本月养老保险参保人数', question: '本月养老保险参保人数有多少？', tagType: 'primary' },
-  { category: '就业', title: '城镇新增就业趋势', question: '近6个月城镇新增就业人数变化趋势？', tagType: 'success' },
-  { category: '人才', title: '人才引进数据统计', question: '本年度人才引进数据统计分析', tagType: 'warning' },
-  { category: '劳动关系', title: '劳动争议案件分布', question: '各区县劳动争议案件分布情况', tagType: 'danger' },
-  { category: '工资福利', title: '最低工资标准执行情况', question: '全市最低工资标准执行情况汇总', tagType: 'info' },
-  { category: '综合', title: '人社核心指标概览', question: '本月人社核心业务指标概览', tagType: undefined },
-]
-
-const quickInputTags = ['最近一年', '按区县', '同比', '环比', '导出数据']
-
-const selectDomain = (key: string) => {
-  activeDomain.value = key
-  const domainName = dataDomains.find(d => d.key === key)?.name
-  ElMessage.success(`已切换至${domainName}数据域`)
+const startNewChat = () => {
+  conversationMessages.value = []
+  activeHistoryIdx.value = -1
 }
 
-const reQuery = (question: string) => {
-  userInput.value = question
-  sendQuery()
+const switchHistory = (idx: number) => {
+  activeHistoryIdx.value = idx
+  const q = queryHistory.value[idx].question
+  userInput.value = q
+}
+
+const deleteHistory = (idx: number) => {
+  queryHistory.value.splice(idx, 1)
+  if (activeHistoryIdx.value === idx) {
+    activeHistoryIdx.value = -1
+  } else if (activeHistoryIdx.value > idx) {
+    activeHistoryIdx.value--
+  }
+}
+
+const toggleVoiceMode = () => {
+  isVoiceMode.value = !isVoiceMode.value
+  if (isVoiceMode.value) {
+    ElMessage.success('已切换至语音输入模式')
+  } else {
+    ElMessage.success('已切换至文字输入模式')
+  }
 }
 
 const sendQuickQuestion = (question: string) => {
   userInput.value = question
   sendQuery()
-}
-
-const sendQuickQueryTag = (tag: string) => {
-  userInput.value += userInput.value ? ` ${tag}` : tag
-  ElMessage.success(`已追加条件：${tag}`)
 }
 
 const sendQuery = async () => {
@@ -309,9 +302,14 @@ const sendQuery = async () => {
   userInput.value = ''
   isThinking.value = true
 
-  // 加入查询历史
-  queryHistory.value.unshift({ question: q, ts: Date.now() })
+  // 加入历史
+  const existingIdx = queryHistory.value.findIndex(h => h.question === q)
+  if (existingIdx >= 0) {
+    queryHistory.value.splice(existingIdx, 1)
+  }
+  queryHistory.value.unshift({ question: q })
   if (queryHistory.value.length > 20) queryHistory.value = queryHistory.value.slice(0, 20)
+  activeHistoryIdx.value = 0
 
   await nextTick()
   scrollToBottom()
@@ -343,7 +341,6 @@ const sendQuery = async () => {
       { name: '工伤保险参保', value: 1587623, unit: '人', period: '2026-08', source: '工伤库' },
       { name: '新增就业人数', value: 42689, unit: '人', period: '2026-08', source: '就业库' },
     ],
-    page: 1,
   }
 
   conversationMessages.value.push(newMsg)
@@ -379,80 +376,58 @@ const renderChartForMsg = (idx: number) => {
   if (chartType === 'bar') {
     option = {
       tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-      legend: { data: ['指标数值'] },
-      grid: { left: '3%', right: '4%', bottom: '3%', top: '12%', containLabel: true },
+      grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
       xAxis: { type: 'category', data: labels, axisLine: { lineStyle: { color: '#e5e7eb' } }, axisLabel: { color: '#6b7280' } },
       yAxis: { type: 'value', splitLine: { lineStyle: { color: '#f3f4f6' } }, axisLabel: { color: '#6b7280' } },
-      series: [
-        {
-          name: '指标数值',
-          type: 'bar',
-          data: values,
-          itemStyle: {
-            borderRadius: [6, 6, 0, 0],
-            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: '#4f8ef7' },
-              { offset: 1, color: '#2563eb' },
-            ]),
-          },
-          barWidth: '45%',
+      series: [{
+        type: 'bar',
+        data: values,
+        itemStyle: {
+          borderRadius: [6, 6, 0, 0],
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: '#4f8ef7' },
+            { offset: 1, color: '#2563eb' },
+          ]),
         },
-      ],
+        barWidth: '45%',
+      }],
     }
   } else if (chartType === 'line') {
     option = {
       tooltip: { trigger: 'axis' },
-      legend: { data: ['指标数值'] },
-      grid: { left: '3%', right: '4%', bottom: '3%', top: '12%', containLabel: true },
+      grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
       xAxis: { type: 'category', data: labels, axisLine: { lineStyle: { color: '#e5e7eb' } }, axisLabel: { color: '#6b7280' } },
       yAxis: { type: 'value', splitLine: { lineStyle: { color: '#f3f4f6' } }, axisLabel: { color: '#6b7280' } },
-      series: [
-        {
-          name: '指标数值',
-          type: 'line',
-          data: values,
-          symbol: 'circle',
-          symbolSize: 8,
-          lineStyle: { width: 2 },
-          itemStyle: { color: '#2563eb' },
-          areaStyle: {
-            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: 'rgba(37,99,235,0.3)' },
-              { offset: 1, color: 'rgba(37,99,235,0.02)' },
-            ]),
-          },
+      series: [{
+        type: 'line',
+        data: values,
+        symbol: 'circle',
+        symbolSize: 8,
+        lineStyle: { width: 2 },
+        itemStyle: { color: '#2563eb' },
+        areaStyle: {
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: 'rgba(37,99,235,0.3)' },
+            { offset: 1, color: 'rgba(37,99,235,0.02)' },
+          ]),
         },
-      ],
+      }],
     }
   } else {
-    const total = values.reduce((a, b) => a + b, 0)
-    const pieNames = labels.map((l, i) => `${l}`)
     option = {
       tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
       legend: { bottom: '2%', left: 'center' },
-      series: [
-        {
-          name: '指标占比',
-          type: 'pie',
-          radius: ['35%', '70%'],
-          center: ['50%', '45%'],
-          data: labels.map((l, i) => ({ value: values[i], name: pieNames[i] })),
-          itemStyle: { borderRadius: 4, borderColor: '#fff', borderWidth: 2 },
-          color: ['#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'],
-        },
-      ],
+      series: [{
+        type: 'pie',
+        radius: ['35%', '70%'],
+        center: ['50%', '45%'],
+        data: labels.map((l, i) => ({ value: values[i], name: l })),
+        itemStyle: { borderRadius: 4, borderColor: '#fff', borderWidth: 2 },
+        color: ['#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'],
+      }],
     }
   }
   chart.setOption(option, true)
-  chart.on('legendselectchanged', (params: any) => {
-    ElMessage.info(`图例切换：${JSON.stringify(params.name)}`)
-  })
-}
-
-const onTableSort = (sortInfo: any) => {
-  sortProp.value = sortInfo.prop || 'value'
-  sortOrder.value = (sortInfo.order as string) || 'descending'
-  ElMessage.success(`已按「${sortProp.value}」${sortOrder.value === 'ascending' ? '升序' : '降序'}排序`)
 }
 
 const scrollToBottom = () => {
@@ -474,9 +449,9 @@ onUnmounted(() => {
   overflow: hidden;
 }
 
-/* 左侧边栏 220px */
+/* ====== 左侧侧边栏 ====== */
 .data-sidebar {
-  width: 220px;
+  width: 260px;
   background: #ffffff;
   border-right: 1px solid #e5e7eb;
   display: flex;
@@ -487,17 +462,11 @@ onUnmounted(() => {
 
 .sidebar-header {
   height: 56px;
-  padding: 0 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.header-left {
+  padding: 0 20px;
   display: flex;
   align-items: center;
   gap: 8px;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .header-icon {
@@ -511,151 +480,96 @@ onUnmounted(() => {
   color: #1f2937;
 }
 
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.new-chat-btn-wrap {
+  padding: 16px 16px 12px;
 }
 
-.user-avatar {
-  position: relative;
+.new-chat-btn {
+  width: 100%;
+  border-radius: 8px;
+  height: 40px;
+  font-size: 14px;
+  font-weight: 500;
 }
 
-.online-dot {
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: #10b981;
-  border: 2px solid white;
-}
-
-.data-domain-section,
 .history-section {
-  padding: 16px 12px;
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 12px 16px;
 }
 
 .section-label {
   font-size: 12px;
-  color: #6b7280;
+  color: #9ca3af;
   font-weight: 500;
-  margin-bottom: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  cursor: pointer;
-  user-select: none;
-}
-
-.history-header {
-  cursor: pointer;
-}
-
-.expand-icon {
-  transition: transform 0.2s;
-  font-size: 14px;
-}
-
-.expand-icon.rotated {
-  transform: rotate(180deg);
-}
-
-.domain-item {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border-radius: 8px;
-  margin-bottom: 6px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.domain-item:hover {
-  background: #f0f4ff;
-}
-
-.domain-item.active {
-  background: #e8f0fe;
-  font-weight: 600;
-}
-
-.active-indicator {
-  position: absolute;
-  left: 0;
-  top: 15%;
-  bottom: 15%;
-  width: 3px;
-  border-radius: 0 3px 3px 0;
-  background: #000000;
-}
-
-.domain-icon {
-  font-size: 18px;
-}
-
-.domain-name {
-  flex: 1;
-  font-size: 14px;
-  color: #374151;
+  padding: 0 4px;
+  margin-bottom: 8px;
 }
 
 .history-list {
-  padding-left: 4px;
-}
-
-.history-item {
-  position: relative;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 8px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background 0.2s;
-  margin-bottom: 4px;
-}
-
-.history-item:hover {
-  background: #f8fafc;
-}
-
-.history-item:hover .history-hover-actions {
-  opacity: 1;
-}
-
-.history-text {
-  font-size: 13px;
-  color: #4b5563;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.history-hover-actions {
-  position: absolute;
-  right: 4px;
-  opacity: 0;
-  transition: opacity 0.2s;
-  background: #f8fafc;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .history-empty {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 12px;
+  gap: 8px;
+  padding: 16px 12px;
   color: #9ca3af;
-}
-
-.empty-text {
   font-size: 13px;
 }
 
-/* 主内容区 */
+.history-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  gap: 4px;
+}
+
+.history-item:hover {
+  background: #f0f4ff;
+}
+
+.history-item.active {
+  background: #e8f0fe;
+}
+
+.history-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #374151;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.history-msg-icon {
+  font-size: 14px;
+  color: #9ca3af;
+  flex-shrink: 0;
+}
+
+.history-del-btn {
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.history-item:hover .history-del-btn {
+  opacity: 1;
+}
+
+/* ====== 主内容区 ====== */
 .data-main {
   display: flex;
   flex-direction: column;
@@ -666,79 +580,83 @@ onUnmounted(() => {
 .main-scroll {
   flex: 1;
   overflow-y: auto;
-  padding: 24px 32px 20px;
+  padding: 40px 40px 20px;
 }
 
-/* 欢迎态 */
+/* ====== 欢迎态 ====== */
 .welcome-state {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   min-height: 70vh;
+  max-width: 800px;
+  margin: 0 auto;
 }
 
-.welcome-icon {
+.welcome-avatar {
   margin-bottom: 20px;
 }
 
 .welcome-title {
-  font-size: 30px;
+  font-size: 28px;
   font-weight: 700;
   color: #1f2937;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
 
-.welcome-subtitle {
-  font-size: 15px;
+.welcome-name {
+  color: #2563eb;
+}
+
+.welcome-desc {
+  font-size: 14px;
   color: #6b7280;
-  margin-bottom: 40px;
+  line-height: 1.8;
   text-align: center;
+  margin-bottom: 36px;
+  max-width: 640px;
 }
 
 .quick-card-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: repeat(2, 1fr);
-  gap: 16px;
-  max-width: 720px;
+  gap: 12px;
+  width: 100%;
 }
 
 .quick-card {
   background: #ffffff;
-  border-radius: 12px;
-  padding: 20px;
+  border-radius: 10px;
+  padding: 16px 18px;
   cursor: pointer;
   transition: all 0.25s;
   border: 1px solid #e5e7eb;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
 }
 
 .quick-card:hover {
-  transform: translateY(-4px);
+  transform: translateY(-3px);
   box-shadow: 0 6px 16px rgba(0,0,0,0.08);
   border-color: #2563eb;
 }
 
-.quick-card-tag {
-  margin-bottom: 10px;
-}
-
-.quick-card-question {
-  font-size: 15px;
+.quick-card-text {
+  font-size: 13px;
   font-weight: 500;
   color: #1f2937;
   line-height: 1.5;
 }
 
-/* 对话态 */
+/* ====== 对话态 ====== */
 .message-flow {
   display: flex;
   flex-direction: column;
   gap: 28px;
-  max-width: 1100px;
+  max-width: 900px;
   margin: 0 auto;
   padding-bottom: 16px;
+  width: 100%;
 }
 
 .msg-wrap {
@@ -755,8 +673,8 @@ onUnmounted(() => {
   max-width: 70%;
   background: #1f2937;
   color: white;
-  padding: 14px 20px;
-  border-radius: 16px;
+  padding: 12px 18px;
+  border-radius: 16px 16px 4px 16px;
   font-size: 14px;
   line-height: 1.7;
 }
@@ -764,7 +682,7 @@ onUnmounted(() => {
 .ai-msg-wrap {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
 
 .ai-header-row {
@@ -780,7 +698,7 @@ onUnmounted(() => {
 }
 
 .ai-tag {
-  font-size: 12px;
+  font-size: 11px;
   color: #2563eb;
   background: #e8f0fe;
   padding: 2px 8px;
@@ -789,7 +707,7 @@ onUnmounted(() => {
 
 .ai-conclusion-card {
   background: white;
-  padding: 18px 22px;
+  padding: 16px 20px;
   border-radius: 12px;
   border: 1px solid #e5e7eb;
 }
@@ -812,13 +730,13 @@ onUnmounted(() => {
 .kpi-row {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 14px;
+  gap: 12px;
 }
 
 .kpi-card {
   background: white;
   border-radius: 10px;
-  padding: 16px 18px;
+  padding: 14px 16px;
   border: 1px solid #e5e7eb;
   border-top: 3px solid #2563eb;
 }
@@ -826,21 +744,21 @@ onUnmounted(() => {
 .kpi-name {
   font-size: 13px;
   color: #6b7280;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .kpi-value-line {
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .kpi-num {
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 700;
   color: #1f2937;
 }
 
 .kpi-unit {
-  font-size: 13px;
+  font-size: 12px;
   color: #6b7280;
   margin-left: 4px;
 }
@@ -849,17 +767,12 @@ onUnmounted(() => {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
 }
 
-.kpi-up {
-  color: #10b981;
-}
-
-.kpi-down {
-  color: #ef4444;
-}
+.kpi-up { color: #10b981; }
+.kpi-down { color: #ef4444; }
 
 .chart-wrap {
   background: white;
@@ -906,15 +819,9 @@ onUnmounted(() => {
   margin-left: 4px;
 }
 
-.table-pager {
-  margin-top: 12px;
-  display: flex;
-  justify-content: flex-end;
-}
-
 /* 骨架屏 */
 .thinking-skeleton {
-  padding-left: 46px;
+  padding-left: 0;
 }
 
 .skeleton-blocks {
@@ -931,13 +838,8 @@ onUnmounted(() => {
   background: #f0f0f0;
 }
 
-.skeleton-medium {
-  width: 70%;
-}
-
-.skeleton-short {
-  width: 45%;
-}
+.skeleton-medium { width: 70%; }
+.skeleton-short { width: 45%; }
 
 .shimmer {
   animation: shimmer 1.5s infinite ease-in-out;
@@ -949,43 +851,82 @@ onUnmounted(() => {
   100% { opacity: 0.6; }
 }
 
-/* 底部输入区 */
+/* ====== 底部输入区 ====== */
 .input-footer {
   border-top: 1px solid #e5e7eb;
   background: white;
-  padding: 14px 24px 18px;
+  padding: 16px 40px 20px;
 }
 
-.quick-tags-line {
+.input-bar {
   display: flex;
-  gap: 10px;
-  margin-bottom: 10px;
+  align-items: center;
+  gap: 12px;
+  max-width: 900px;
+  margin: 0 auto;
+  width: 100%;
 }
 
-.footer-quick-tag {
-  cursor: pointer;
-  transition: all 0.2s;
+.input-left {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f8f9fa;
+  border-radius: 24px;
+  padding: 4px 4px 4px 8px;
+  border: 1px solid #e5e7eb;
+  transition: border-color 0.2s;
 }
 
-.footer-quick-tag:hover {
-  background: #2563eb;
-  color: white;
+.input-left:focus-within {
   border-color: #2563eb;
 }
 
-.data-input :deep(.el-input__wrapper) {
-  border-radius: 24px;
-  box-shadow: none !important;
+.mic-btn {
+  font-size: 20px;
+  color: #2563eb;
+  background: transparent;
+  border: none;
+  flex-shrink: 0;
 }
 
-.data-input :deep(.el-input__wrapper.is-focus) {
-  border: 2px solid #000000;
-  box-shadow: 0 0 0 2px rgba(0,0,0,0.06);
+.mic-btn:hover {
+  background: #e8f0fe;
+  color: #1d4ed8;
+}
+
+.mic-btn.mic-active {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.data-input {
+  flex: 1;
+}
+
+.data-input :deep(.el-input__wrapper) {
+  background: transparent;
+  box-shadow: none !important;
+  padding: 0 8px;
+}
+
+.data-input :deep(.el-input__inner) {
+  border: none;
+  background: transparent;
+  font-size: 14px;
 }
 
 .send-btn {
-  border-radius: 0 20px 20px 0;
-  background: #1f2937;
-  border-color: #1f2937;
+  border-radius: 20px;
+  padding: 10px 24px;
+  font-size: 14px;
+  background: #2563eb;
+  border-color: #2563eb;
+}
+
+.send-btn:hover {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
 }
 </style>
