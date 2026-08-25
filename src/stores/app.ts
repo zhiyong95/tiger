@@ -86,12 +86,12 @@ export const useAppStore = defineStore('app', () => {
   // 所有PC端菜单项（含 parentId 层级关系）
   const pcMenuMeta: MenuItemMeta[] = [
     { path: '/dashboard', title: '工作台首页', icon: 'HomeFilled', parentId: '/' },
-    { path: '/qa', title: '智能问答', icon: 'ChatDotRound', parentId: '/' },
-    { path: '/document', title: '智能问数', icon: 'Document', parentId: '/' },
-    { path: '/data', title: '智能公文', icon: 'DataAnalysis', parentId: '/' },
+    { path: '/qa', title: '人社知识智能问答', icon: 'ChatDotRound', parentId: '/' },
+    { path: '/document', title: 'AI公文助手', icon: 'Document', parentId: '/' },
+    { path: '/data', title: '智能问数', icon: 'DataAnalysis', parentId: '/' },
     { path: '/report', title: '智能分析报告', icon: 'TrendCharts', parentId: '/' },
     { path: '/policy', title: '政策快研', icon: 'Reading', parentId: '/' },
-    { path: '/audit', title: '业务智审', icon: 'Checked', parentId: '/' },
+    { path: '/audit', title: '业务智能审核', icon: 'Checked', parentId: '/' },
     { path: '/task', title: '风险预警与任务待办', icon: 'Bell', parentId: '/' },
   ]
 
