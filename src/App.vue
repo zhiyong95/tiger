@@ -130,6 +130,10 @@
         </el-main>
       </el-container>
     </el-container>
+    <!-- 底部版权信息 -->
+    <div class="footer-bar">
+      广州德生智聘科技有限公司
+    </div>
   </div>
 </template>
 
@@ -425,5 +429,16 @@ const handleDropdownCommand = async (command: string) => {
 .notification-footer {
   text-align: center;
   padding: 0 4px;
+}
+
+.footer-bar {
+  height: 32px;
+  line-height: 32px;
+  text-align: center;
+  font-size: 12px;
+  color: #999;
+  background: #fff;
+  border-top: 1px solid #e8e8e8;
+  flex-shrink: 0;
 }
 </style>
