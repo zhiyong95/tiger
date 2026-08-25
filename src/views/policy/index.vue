@@ -187,6 +187,74 @@
               </span>
             </div>
           </div>
+
+          <!-- 3.5 政策智能问答 -->
+          <div class="qa-card">
+            <div class="qa-header">
+              <div class="qa-header-left">
+                <span class="qa-title">📝 政策智能问答</span>
+                <el-tag size="small" type="warning" class="qa-badge">基于当前研判结果</el-tag>
+              </div>
+              <el-button v-if="qaMessages.length > 0" text size="small" type="danger" @click="clearQA">
+                清空对话
+              </el-button>
+            </div>
+            <div class="qa-body" ref="qaBodyRef">
+              <div v-if="qaMessages.length === 0" class="qa-empty">
+                <div class="qa-empty-icon">💬</div>
+                <div class="qa-empty-title">对当前政策内容进行提问</div>
+                <div class="qa-empty-desc">可询问政策适用条件、办理流程、补贴标准等</div>
+                <div class="qa-suggestions">
+                  <span
+                    v-for="(q, qIdx) in getQuickQuestions()"
+                    :key="qIdx"
+                    class="qa-suggestion-item"
+                    @click="sendQuestion(q)"
+                  >
+                    {{ q }}
+                  </span>
+                </div>
+              </div>
+              <div v-else class="qa-messages">
+                <div
+                  v-for="(msg, mIdx) in qaMessages"
+                  :key="mIdx"
+                  class="qa-message"
+                  :class="msg.role === 'user' ? 'qa-message-user' : 'qa-message-ai'"
+                >
+                  <div class="qa-avatar">
+                    {{ msg.role === 'user' ? '👤' : '🤖' }}
+                  </div>
+                  <div class="qa-bubble">
+                    <div class="qa-bubble-text">{{ msg.content }}</div>
+                    <div v-if="msg.extra" class="qa-bubble-extra">
+                      <div v-for="(item, eIdx) in msg.extra" :key="eIdx" class="qa-extra-item">
+                        <span class="qa-extra-dot"></span>
+                        {{ item }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div ref="qaBottomRef"></div>
+              </div>
+            </div>
+            <div class="qa-input-area">
+              <el-input
+                v-model="qaInput"
+                placeholder="输入政策相关问题..."
+                class="qa-input"
+                clearable
+                @keyup.enter="sendQA"
+              />
+              <el-button
+                class="qa-send-btn"
+                :disabled="!qaInput.trim()"
+                @click="sendQA"
+              >
+                发送
+              </el-button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -194,7 +262,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Close } from '@element-plus/icons-vue'
 
@@ -405,6 +473,132 @@ const toggleRecommendTag = (tag: string) => {
 const highlightAmount = (text: string) => {
   return text.replace(/([\d,]+(?:\.\d+)?)(?=\s*元)/g, '<span class="amount-highlight">$1</span>')
     .replace(/(\d+(?:\.\d+)?)%/g, '<span class="amount-highlight">$1%</span>')
+}
+
+/* ========== 政策智能问答 ========== */
+interface QAMessage {
+  role: 'user' | 'ai'
+  content: string
+  extra?: string[]
+}
+
+const qaInput = ref('')
+const qaMessages = reactive<QAMessage[]>([])
+const qaBodyRef = ref<HTMLDivElement>()
+const qaBottomRef = ref<HTMLDivElement>()
+
+const scrollQAToBottom = async () => {
+  await nextTick()
+  if (qaBottomRef.value) {
+    qaBottomRef.value.scrollIntoView({ behavior: 'smooth' })
+  }
+}
+
+const getQuickQuestions = () => {
+  const title = resultData.value.title
+  if (title.includes('高校毕业生')) {
+    return ['哪些高校毕业生可以申请补贴？', '具体补贴标准是多少？', '如何办理申请手续？', '申请需要准备哪些材料？']
+  } else if (title.includes('补贴') || title.includes('返还')) {
+    return ['哪些企业可以申请稳岗返还？', '返还比例如何计算？', '资金用途有哪些限制？', '申请流程需要多长时间？']
+  } else if (title.includes('困难')) {
+    return ['哪些人员属于就业困难群体？', '可以享受哪些援助政策？', '如何申请认定就业困难人员？', '援助政策的有效期是多久？']
+  } else if (title.includes('创业')) {
+    return ['贷款额度最高多少？', '贴息比例是多少？', '需要提供什么担保？', '还款期限有何规定？']
+  } else if (title.includes('培训') || title.includes('技能')) {
+    return ['哪些培训可以申请补贴？', '补贴标准是多少？', '如何报名参加培训？', '证书有何要求？']
+  }
+  return ['该政策的适用对象有哪些？', '具体申请条件是什么？', '补贴标准和周期是多少？', '办理流程和时限是？']
+}
+
+const getAIAnswer = (question: string): QAMessage => {
+  const q = question.toLowerCase()
+  const data = resultData.value
+
+  if (q.includes('对象') || q.includes('人群') || q.includes('谁') || q.includes('哪些人')) {
+    return {
+      role: 'ai',
+      content: `根据研读 "${data.title}" 政策内容，该政策的适用对象包括：`,
+      extra: data.targetObjects.map(o => `✅ ${o}`)
+    }
+  }
+  if (q.includes('条件') || q.includes('申请') || q.includes('资格') || q.includes('要求')) {
+    return {
+      role: 'ai',
+      content: `根据政策规定，申请需满足以下核心条件：`,
+      extra: data.coreConditions.map(c => `📌 ${c}`)
+    }
+  }
+  if (q.includes('补贴') || q.includes('标准') || q.includes('金额') || q.includes('多少') || q.includes('钱')) {
+    return {
+      role: 'ai',
+      content: `该政策涉及的补贴/资金标准如下：`,
+      extra: data.subsidyAmounts.map(a => `💰 ${a.replace(/<[^>]*>/g, '')}`)
+    }
+  }
+  if (q.includes('流程') || q.includes('手续') || q.includes('办理') || q.includes('步骤')) {
+    return {
+      role: 'ai',
+      content: `${data.title} 的办理流程如下：`,
+      extra: processSteps.map((s, i) => `第${i + 1}步：${s.name} — ${s.desc}`)
+    }
+  }
+  if (q.includes('材料') || q.includes('证件') || q.includes('文件') || q.includes('资料')) {
+    return {
+      role: 'ai',
+      content: '办理该政策通常需要准备以下材料（具体以当地人社部门要求为准）：',
+      extra: ['📄 身份证原件及复印件', '📄 相关资格证明文件', '📄 申请表（可在窗口领取或网上下载）', '📄 单位/个人银行账户信息', '📄 其他佐证材料（根据具体政策类型）']
+    }
+  }
+  if (q.includes('时间') || q.includes('期限') || q.includes('多久') || q.includes('有效期')) {
+    return {
+      role: 'ai',
+      content: '根据政策规定，办理时限和有效期说明如下：',
+      extra: ['⏱ 审核时限：5-15个工作日', '⏱ 公示期：5个工作日', '⏱ 资金拨付：公示无异议后10个工作日内', '⏱ 政策有效期：一般至2028年12月31日']
+    }
+  }
+  if (q.includes('背景') || q.includes('目的') || q.includes('依据') || q.includes('原因')) {
+    return {
+      role: 'ai',
+      content: data.background,
+    }
+  }
+
+  // 默认回答
+  return {
+    role: 'ai',
+    content: `根据对 "${data.title}" 的政策研判，以下是为您梳理的相关信息：`,
+    extra: [
+      `📌 适用对象：${data.targetObjects.join('、')}`,
+      `📌 核心条件：${data.coreConditions.slice(0, 3).join('；')}`,
+      `📌 补贴标准：${data.subsidyAmounts.slice(0, 3).map(a => a.replace(/<[^>]*>/g, '')).join('；')}`
+    ]
+  }
+}
+
+const sendQuestion = (question: string) => {
+  qaInput.value = question
+  sendQA()
+}
+
+const sendQA = () => {
+  const text = qaInput.value.trim()
+  if (!text) return
+
+  qaMessages.push({ role: 'user', content: text })
+  qaInput.value = ''
+  scrollQAToBottom()
+
+  // 模拟AI回复
+  setTimeout(() => {
+    const answer = getAIAnswer(text)
+    qaMessages.push(answer)
+    scrollQAToBottom()
+  }, 600)
+}
+
+const clearQA = () => {
+  qaMessages.length = 0
+  ElMessage.success('已清空对话')
 }
 </script>
 
@@ -1039,5 +1233,229 @@ const highlightAmount = (text: string) => {
 .recommend-tag-active:hover {
   background: #1d4ed8;
   color: #fff;
+}
+
+/* 政策智能问答 */
+.qa-card {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.qa-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.qa-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.qa-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.qa-badge {
+  font-size: 10px;
+  height: 18px;
+  line-height: 16px;
+}
+
+.qa-body {
+  min-height: 180px;
+  max-height: 320px;
+  overflow-y: auto;
+  background: #fafbfc;
+  padding: 16px 20px;
+}
+
+.qa-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 0;
+  text-align: center;
+}
+
+.qa-empty-icon {
+  font-size: 36px;
+  margin-bottom: 10px;
+  opacity: 0.5;
+}
+
+.qa-empty-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+.qa-empty-desc {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-bottom: 16px;
+}
+
+.qa-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  max-width: 500px;
+}
+
+.qa-suggestion-item {
+  padding: 6px 14px;
+  border-radius: 16px;
+  font-size: 12px;
+  color: #2563eb;
+  background: #eef2ff;
+  border: 1px solid #c7d2fe;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.qa-suggestion-item:hover {
+  background: #2563eb;
+  color: #fff;
+  border-color: #2563eb;
+}
+
+.qa-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.qa-message {
+  display: flex;
+  gap: 10px;
+  max-width: 85%;
+}
+
+.qa-message-user {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.qa-message-ai {
+  align-self: flex-start;
+}
+
+.qa-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.qa-bubble {
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1.6;
+  position: relative;
+}
+
+.qa-message-user .qa-bubble {
+  background: #2563eb;
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+
+.qa-message-ai .qa-bubble {
+  background: #fff;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+  border-bottom-left-radius: 4px;
+}
+
+.qa-bubble-text {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.qa-bubble-extra {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.qa-extra-item {
+  font-size: 12px;
+  color: #6b7280;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  line-height: 1.5;
+}
+
+.qa-message-ai .qa-extra-item {
+  color: #4b5563;
+}
+
+.qa-extra-dot {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #2563eb;
+  margin-top: 7px;
+  flex-shrink: 0;
+}
+
+.qa-input-area {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px;
+  border-top: 1px solid #f0f0f0;
+  background: #fff;
+}
+
+.qa-input {
+  flex: 1;
+}
+
+.qa-input :deep(.el-input__wrapper) {
+  border-radius: 8px;
+  background: #f5f7fa;
+}
+
+.qa-input :deep(.el-input__wrapper.is-focus) {
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+}
+
+.qa-send-btn {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 20px;
+  font-size: 13px;
+}
+
+.qa-send-btn:hover {
+  opacity: 0.9;
+}
+
+.qa-send-btn.is-disabled {
+  opacity: 0.5;
 }
 </style>
