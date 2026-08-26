@@ -83,16 +83,10 @@
             <div class="block-title ref-title">📎 参考素材 <el-tag size="small" type="warning" effect="plain" class="opt-tag">选填</el-tag></div>
             <p class="ref-desc">用于定义报告框架、公文文风、章节结构，素材不作为业务数据源</p>
 
-            <el-radio-group v-model="refMaterialMode" class="ref-radio-group">
-              <el-radio value="none" class="ref-radio-item">
-                <span class="ref-radio-label">不使用参考素材</span>
-              </el-radio>
-              <el-radio value="system" class="ref-radio-item">
-                <span class="ref-radio-label">使用系统内置模板</span>
-              </el-radio>
-              <el-radio value="custom" class="ref-radio-item">
-                <span class="ref-radio-label">上传自定义参考模板</span>
-              </el-radio>
+            <el-radio-group v-model="refMaterialMode" class="ref-btn-group">
+              <el-radio-button value="none">不使用参考素材</el-radio-button>
+              <el-radio-button value="system">使用系统内置模板</el-radio-button>
+              <el-radio-button value="custom">上传自定义参考模板</el-radio-button>
             </el-radio-group>
 
             <!-- 系统内置模板下拉 -->
@@ -1070,11 +1064,27 @@ watch(dataSourceMode, (val) => {
   gap: 6px;
   margin-bottom: 10px;
 }
-.ref-radio-item {
-  margin-right: 0;
+.ref-btn-group {
+  display: flex;
+  gap: 0;
+  margin: 10px 0 4px;
+  width: 100%;
 }
-.ref-radio-label {
+.ref-btn-group .el-radio-button {
+  flex: 1;
+}
+.ref-btn-group .el-radio-button__inner {
+  width: 100%;
   font-size: 13px;
+  padding: 8px 4px;
+  border-color: #d1d5db;
+  color: #374151;
+}
+.ref-btn-group .el-radio-button.is-active .el-radio-button__inner {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  border-color: #2563eb;
+  color: #fff;
+  box-shadow: none;
 }
 .ref-config-body {
   margin-top: 10px;
