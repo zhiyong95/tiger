@@ -63,6 +63,9 @@
           <el-option v-for="d in departments" :key="d.id" :label="d.name" :value="d.id" />
         </el-select>
         <el-checkbox v-model="onlyMine" size="small">仅看我的</el-checkbox>
+        <el-button size="small" @click="handleReset">
+          <el-icon><Refresh /></el-icon> 重置
+        </el-button>
       </div>
       <div class="filter-right">
         <el-button type="primary" size="small" @click="$emit('create')">
@@ -131,7 +134,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { Search, Plus, Document, Share, OfficeBuilding, User } from '@element-plus/icons-vue'
+import { Search, Plus, Refresh, Document, Share, OfficeBuilding, User } from '@element-plus/icons-vue'
 
 const props = defineProps<{
   currentUser: any
@@ -160,6 +163,14 @@ const departments = [
   { id: 'd5', name: '劳动监察科' }, { id: 'd6', name: '工资福利科' },
   { id: 'sys', name: '系统管理' },
 ]
+
+const handleReset = () => {
+  searchKeyword.value = ''
+  filterType.value = ''
+  filterScope.value = ''
+  filterDept.value = ''
+  onlyMine.value = false
+}
 
 const demoUsers = [
   { id: 'u1', name: '赵磊', dept: 'sys' }, { id: 'u2', name: '张伟', dept: 'd1' },
