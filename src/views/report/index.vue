@@ -84,7 +84,6 @@
             <p class="ref-desc">用于定义报告框架、公文文风、章节结构，素材不作为业务数据源</p>
 
             <el-radio-group v-model="refMaterialMode" class="ref-btn-group">
-              <el-radio-button value="none">不使用参考素材</el-radio-button>
               <el-radio-button value="system">使用系统内置模板</el-radio-button>
               <el-radio-button value="custom">上传自定义参考模板</el-radio-button>
             </el-radio-group>
@@ -384,7 +383,7 @@ const ledgerInputRef = ref<HTMLInputElement | null>(null)
 const uploadedLedger = ref<File | null>(null)
 
 // ===== 参考素材（第二区块，三选一互斥） =====
-const refMaterialMode = ref<'none' | 'system' | 'custom'>('none')
+const refMaterialMode = ref<'none' | 'system' | 'custom'>('system')
 // 系统内置模板
 const systemTemplateId = ref('monthly')
 // 自定义上传
@@ -771,7 +770,7 @@ function handleReset() {
   dateRange.value = []
   quickActive.value = ''
   uploadedLedger.value = null
-  refMaterialMode.value = 'none'
+  refMaterialMode.value = 'system'
   systemTemplateId.value = 'monthly'
   uploadedRef.value = null
   outputFormats.value = ['word']
