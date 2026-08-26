@@ -11,7 +11,7 @@
             </div>
           </div>
           <div class="greeting-bubble">
-            <span>您好，我是您的政务智能问答助手，人社相关政策、办事指南等问题可以咨询我哟！</span>
+            <span>您好，我是您的政务智能问答助手，人力资源社会保障惠民政策——养老保险、失业保险、工伤保险、就业扶持政策等方面的问题可以咨询我哟！</span>
           </div>
         </div>
 
@@ -83,7 +83,7 @@
           <div class="input-wrapper">
             <el-input
               v-model="inputMessage"
-              placeholder="请输入您想咨询的问题，例如：身份证补办"
+              placeholder="请输入您想咨询的问题，例如：灵活就业人员如何缴纳养老保险？"
               :disabled="loading"
               class="qa-input"
               @keyup.enter="sendMessage"
@@ -186,14 +186,14 @@ const faqList = ref<string[]>([...faqQuestions])
 const historyList = ref<HistoryItem[]>([])
 
 const hotTopics = ref([
-  '教师资格证',
-  '生育服务',
-  '老年人办事服务',
-  '军人退役',
-  '公积金提取',
-  '医疗保险登记',
-  '育儿补贴制度政策问答',
-  '中共中央办公厅 国务院办公厅印发《育儿补贴制度实施方案》',
+  '养老保险缴费查询',
+  '失业保险金申领',
+  '灵活就业社保参保',
+  '工伤认定申请',
+  '社保卡补办',
+  '就业创业补贴',
+  '劳动仲裁咨询',
+  '人力资源社会保障惠民政策解读——养老保险、失业保险、工伤保险、就业扶持政策问答服务',
 ])
 
 function refreshFAQ() {
