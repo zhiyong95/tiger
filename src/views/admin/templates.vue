@@ -1,79 +1,505 @@
 <template>
-  <div class="admin-page">
-    <div class="page-card">
-      <div class="page-header">
-        <div>
-          <div class="page-title">公文模板管理</div>
-          <div class="page-subtitle">管理公文模板和写作规范</div>
-        </div>
-        <el-button type="primary" @click="showAddDialog = true">
-          <el-icon><Plus /></el-icon> 新增模板
-        </el-button>
+  <div class="template-page">
+    <!-- 身份切换栏 -->
+    <div class="identity-bar">
+      <div class="identity-left">
+        <span class="page-title">公文模板库</span>
+        <span class="page-desc">统一沉淀、分类、共享人社公文模板</span>
       </div>
-
-      <el-table :data="templates" stripe style="width: 100%">
-        <el-table-column prop="name" label="模板名称" width="160" />
-        <el-table-column prop="category" label="类型" width="100">
-          <template #default="{ row }">
-            <el-tag size="small">{{ row.category }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="字段配置" min-width="300">
-          <template #default="{ row }">
-            <el-tag v-for="f in row.fields" :key="f" size="small" style="margin: 2px">{{ f }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="180" fixed="right">
-          <template #default>
-            <el-button size="small" text type="primary">编辑</el-button>
-            <el-button size="small" text type="danger">删除</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+      <div class="identity-right">
+        <span class="label">当前身份：</span>
+        <el-select v-model="currentIdentity" size="small" style="width:200px" @change="switchIdentity">
+          <el-option
+            v-for="u in demoUsers"
+            :key="u.id"
+            :label="`${u.name}（${u.deptName}·${u.roleName}）`"
+            :value="u.id"
+          />
+        </el-select>
+        <el-tag :type="identityTagType" size="small" effect="dark" class="role-tag">
+          {{ currentRoleName }}
+        </el-tag>
+      </div>
     </div>
 
-    <el-dialog v-model="showAddDialog" title="新增模板" width="500px">
-      <el-form label-width="80px">
-        <el-form-item label="模板名称"><el-input v-model="newTpl.name" /></el-form-item>
-        <el-form-item label="类型">
-          <el-select v-model="newTpl.category" style="width: 100%">
-            <el-option label="通知" value="通知" />
-            <el-option label="报告" value="报告" />
-            <el-option label="请示" value="请示" />
-            <el-option label="函件" value="函件" />
-            <el-option label="批复" value="批复" />
-          </el-select>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="showAddDialog = false">取消</el-button>
-        <el-button type="primary" @click="handleAdd">保存</el-button>
-      </template>
+    <!-- 权限提示横幅 -->
+    <el-alert
+      v-if="permissionNotice"
+      :title="permissionNotice"
+      type="info"
+      show-icon
+      :closable="false"
+      class="perm-alert"
+    />
+
+    <!-- 主内容区域 -->
+    <div class="main-content">
+      <el-tabs v-model="activeTab" class="tpl-tabs">
+        <el-tab-pane label="📋 模板列表" name="list">
+          <template-list
+            :current-user="currentUser"
+            :templates="filteredTemplates"
+            @preview="handlePreview"
+            @edit="handleEdit"
+            @copy="handleCopy"
+            @delete="handleDelete"
+            @create="handleCreate"
+          />
+        </el-tab-pane>
+        <el-tab-pane label="🏢 科室与权限" name="depts">
+          <dept-permissions :departments="departments" :users="demoUsers" />
+        </el-tab-pane>
+        <el-tab-pane label="📂 公文类型" name="types">
+          <doc-types :templates="allTemplates" />
+        </el-tab-pane>
+        <el-tab-pane label="📊 使用统计" name="stats">
+          <usage-stats :templates="allTemplates" :departments="departments" :users="demoUsers" />
+        </el-tab-pane>
+        <el-tab-pane label="❓ 权限说明" name="help">
+          <perm-help />
+        </el-tab-pane>
+      </el-tabs>
+    </div>
+
+    <!-- 新建/编辑模板弹窗 -->
+    <el-dialog
+      v-model="dialogVisible"
+      :title="isEditing ? '编辑模板' : '新建模板'"
+      width="800px"
+      class="tpl-dialog"
+      destroy-on-close
+    >
+      <template-form
+        :template="editingTemplate"
+        :current-user="currentUser"
+        @save="handleSave"
+        @cancel="dialogVisible = false"
+      />
+    </el-dialog>
+
+    <!-- 预览弹窗 -->
+    <el-dialog
+      v-model="previewVisible"
+      title="模板预览"
+      width="720px"
+      class="preview-dialog"
+    >
+      <template-preview :template="previewingTemplate" />
     </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
-import { fetchDocumentTemplates } from '@/api/mock'
-import type { DocumentTemplate } from '@/types'
+import { ref, computed, onMounted, nextTick } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import TemplateList from './tpl/TemplateList.vue'
+import TemplateForm from './tpl/TemplateForm.vue'
+import TemplatePreview from './tpl/TemplatePreview.vue'
+import DeptPermissions from './tpl/DeptPermissions.vue'
+import DocTypes from './tpl/DocTypes.vue'
+import UsageStats from './tpl/UsageStats.vue'
+import PermHelp from './tpl/PermHelp.vue'
+import { useAppStore } from '@/stores/app'
 
-const templates = ref<DocumentTemplate[]>([])
-const showAddDialog = ref(false)
-const newTpl = ref({ name: '', category: '通知' as const })
+interface DemoUser {
+  id: string
+  name: string
+  dept: string
+  deptName: string
+  role: 'admin' | 'manager' | 'member'
+  roleName: string
+  title: string
+}
 
-onMounted(async () => {
-  templates.value = await fetchDocumentTemplates()
+interface Department {
+  id: string
+  name: string
+  duty: string
+  manager: string
+}
+
+interface Template {
+  id: string
+  name: string
+  type: string
+  system: boolean
+  scope: 'public' | 'department' | 'private'
+  createdBy: string
+  createdDept: string
+  createdAt: string
+  updatedAt: string
+  usage: number
+  status: 'draft' | 'live'
+  org: string
+  docNo: string
+  title: string
+  desc: string
+  body: string
+}
+
+const appStore = useAppStore()
+const activeTab = ref('list')
+const currentIdentity = ref('u1')
+const dialogVisible = ref(false)
+const previewVisible = ref(false)
+const isEditing = ref(false)
+const editingTemplate = ref<Template | null>(null)
+const previewingTemplate = ref<Template | null>(null)
+const searchKeyword = ref('')
+const filterType = ref('')
+const filterScope = ref('')
+const filterDept = ref('')
+const onlyMine = ref(false)
+
+const departments: Department[] = [
+  { id: 'd1', name: '办公室', duty: '综合协调、文电会务、机要保密', manager: '王芳' },
+  { id: 'd2', name: '人事科', duty: '干部人事、机构编制、考核任免', manager: '李明' },
+  { id: 'd3', name: '就业促进科', duty: '就业创业政策、劳务协作', manager: '赵磊' },
+  { id: 'd4', name: '社会保险科', duty: '养老、失业、工伤等社保业务', manager: '陈静' },
+  { id: 'd5', name: '劳动监察科', duty: '劳动保障监察、争议仲裁', manager: '赵磊' },
+  { id: 'd6', name: '工资福利科', duty: '工资福利、离退休审批', manager: '赵磊' },
+  { id: 'sys', name: '系统管理', duty: '平台维护（非业务科室）', manager: '赵磊' },
+]
+
+const demoUsers: DemoUser[] = [
+  { id: 'u1', name: '赵磊', dept: 'sys', deptName: '系统管理', role: 'admin', roleName: '系统管理员', title: '系统管理员' },
+  { id: 'u2', name: '张伟', dept: 'd1', deptName: '办公室', role: 'member', roleName: '科室成员', title: '科员' },
+  { id: 'u3', name: '王芳', dept: 'd1', deptName: '办公室', role: 'manager', roleName: '科室管理员', title: '办公室主任' },
+  { id: 'u4', name: '李明', dept: 'd2', deptName: '人事科', role: 'manager', roleName: '科室管理员', title: '人事科科长' },
+  { id: 'u5', name: '孙悦', dept: 'd5', deptName: '劳动监察科', role: 'member', roleName: '科室成员', title: '科员' },
+  { id: 'u6', name: '陈静', dept: 'd4', deptName: '社会保险科', role: 'manager', roleName: '科室管理员', title: '社保科科长' },
+]
+
+const allTemplates = ref<Template[]>([])
+
+const currentUser = computed(() => demoUsers.find(u => u.id === currentIdentity.value)!)
+
+const currentRoleName = computed(() => currentUser.value?.roleName || '')
+
+const identityTagType = computed(() => {
+  if (currentUser.value?.role === 'admin') return 'danger'
+  if (currentUser.value?.role === 'manager') return 'warning'
+  return 'info'
 })
 
-const handleAdd = () => {
-  templates.value.push({ id: Date.now().toString(), ...newTpl.value, fields: ['标题', '正文', '落款'] })
-  showAddDialog.value = false
-  ElMessage.success('模板已添加')
+const permissionNotice = computed(() => {
+  const u = currentUser.value
+  if (!u) return ''
+  if (u.role === 'admin') return '您拥有系统管理员权限，可查看、编辑、删除所有模板。'
+  if (u.role === 'manager') return `您当前为${u.deptName}的科室管理员，可管理本部门模板。`
+  return `您当前为${u.deptName}的${u.roleName}，仅可查看本部门及公开模板。`
+})
+
+// 可见性判断
+function canView(user: DemoUser, tpl: Template): boolean {
+  if (user.role === 'admin') return true
+  if (tpl.scope === 'public' || tpl.system) return true
+  if (tpl.scope === 'department') return tpl.createdDept === user.dept
+  if (tpl.scope === 'private') return tpl.createdBy === user.id
+  return false
 }
+
+function canEdit(user: DemoUser, tpl: Template): boolean {
+  if (user.role === 'admin') return true
+  if (user.role === 'manager' && tpl.createdDept === user.dept) return true
+  return tpl.createdBy === user.id
+}
+
+function canDelete(user: DemoUser, tpl: Template): boolean {
+  if (user.role === 'admin') return true
+  return tpl.createdBy === user.id
+}
+
+function handleCreate() {
+  isEditing.value = false
+  editingTemplate.value = null
+  dialogVisible.value = true
+}
+
+const filteredTemplates = computed(() => {
+  return allTemplates.value.filter(tpl => {
+    if (!canView(currentUser.value, tpl)) return false
+    if (searchKeyword.value) {
+      const kw = searchKeyword.value.toLowerCase()
+      if (!tpl.name.toLowerCase().includes(kw) && !tpl.org.toLowerCase().includes(kw) && !tpl.title.toLowerCase().includes(kw)) return false
+    }
+    if (filterType.value && tpl.type !== filterType.value) return false
+    if (filterScope.value && tpl.scope !== filterScope.value) return false
+    if (filterDept.value && tpl.createdDept !== filterDept.value) return false
+    if (onlyMine.value && tpl.createdBy !== currentUser.value.id) return false
+    return true
+  })
+})
+
+function switchIdentity(id: string) {
+  currentIdentity.value = id
+}
+
+function handlePreview(tpl: Template) {
+  previewingTemplate.value = tpl
+  previewVisible.value = true
+}
+
+function handleEdit(tpl: Template) {
+  if (!canEdit(currentUser.value, tpl)) {
+    ElMessage.warning('您没有编辑此模板的权限')
+    return
+  }
+  editingTemplate.value = { ...tpl }
+  isEditing.value = true
+  dialogVisible.value = true
+}
+
+function handleCopy(tpl: Template) {
+  const newTpl: Template = {
+    ...tpl,
+    id: 'tpl-' + Date.now(),
+    name: tpl.name + '（副本）',
+    createdBy: currentUser.value.id,
+    createdDept: currentUser.value.dept,
+    createdAt: new Date().toISOString().slice(0, 16).replace('T', ' '),
+    updatedAt: new Date().toISOString().slice(0, 16).replace('T', ' '),
+    usage: 0,
+    status: 'draft',
+    scope: 'private',
+  }
+  allTemplates.value.unshift(newTpl)
+  ElMessage.success('已复制模板到我的草稿')
+}
+
+function handleDelete(tpl: Template) {
+  if (!canDelete(currentUser.value, tpl)) {
+    ElMessage.warning('您没有删除此模板的权限')
+    return
+  }
+  ElMessageBox.confirm(`确定删除模板「${tpl.name}」吗？`, '确认删除', {
+    confirmButtonText: '确认删除',
+    cancelButtonText: '取消',
+    type: 'warning',
+  }).then(() => {
+    allTemplates.value = allTemplates.value.filter(t => t.id !== tpl.id)
+    ElMessage.success('模板已删除')
+  }).catch(() => {})
+}
+
+function handleSave(data: Partial<Template>) {
+  if (isEditing.value && editingTemplate.value) {
+    const idx = allTemplates.value.findIndex(t => t.id === editingTemplate.value!.id)
+    if (idx !== -1) {
+      allTemplates.value[idx] = {
+        ...allTemplates.value[idx],
+        ...data,
+        updatedAt: new Date().toISOString().slice(0, 16).replace('T', ' '),
+      }
+    }
+  } else {
+    allTemplates.value.unshift({
+      id: 'tpl-' + Date.now(),
+      name: data.name || '',
+      type: data.type || '通知',
+      system: false,
+      scope: (data.scope as 'public' | 'department' | 'private') || 'private',
+      createdBy: currentUser.value.id,
+      createdDept: currentUser.value.dept,
+      createdAt: new Date().toISOString().slice(0, 16).replace('T', ' '),
+      updatedAt: new Date().toISOString().slice(0, 16).replace('T', ' '),
+      usage: 0,
+      status: data.status || 'draft',
+      org: data.org || '',
+      docNo: data.docNo || '',
+      title: data.title || '',
+      desc: data.desc || '',
+      body: data.body || '',
+    })
+  }
+  dialogVisible.value = false
+  ElMessage.success(isEditing.value ? '模板已更新' : '模板已创建')
+}
+
+// 初始化模拟数据
+function initMockData() {
+  const now = new Date()
+  const dateStr = (d: Date) => d.toISOString().slice(0, 16).replace('T', ' ')
+  const d = (offset: number) => { const x = new Date(now); x.setDate(x.getDate() - offset); return dateStr(x) }
+
+  allTemplates.value = [
+    {
+      id: 'tpl-001', name: '关于XX工作的请示', type: '请示', system: true,
+      scope: 'public', createdBy: 'u1', createdDept: 'sys',
+      createdAt: d(30), updatedAt: d(10), usage: 28, status: 'live',
+      org: 'XX市人力资源和社会保障局', docNo: 'X人社〔2026〕XX号',
+      title: '关于XX工作的请示',
+      desc: '用于向上级机关请示工作事项的标准模板',
+      body: '<h2>关于【事项】工作的请示</h2><p>市政府：</p><p>根据【政策依据】要求，结合我市实际，现将【事项】有关情况请示如下：</p><p>一、【背景与缘由】</p><p>【详细说明背景、必要性等内容】</p><p>二、【请示事项】</p><p>【具体请示内容】</p><p>三、【建议方案】</p><p>【提出建议方案】</p><p>妥否，请批示。</p><p>XX市人力资源和社会保障局</p><p>2026年XX月XX日</p>'
+    },
+    {
+      id: 'tpl-002', name: '会议通知（通用）', type: '通知', system: true,
+      scope: 'public', createdBy: 'u1', createdDept: 'sys',
+      createdAt: d(25), updatedAt: d(5), usage: 45, status: 'live',
+      org: 'XX市人力资源和社会保障局', docNo: 'X人社办〔2026〕XX号',
+      title: '关于召开【会议名称】的通知',
+      desc: '召开各类会议的通用通知模板',
+      body: '<h2>关于召开【会议名称】的通知</h2><p>各县（市、区）人力资源和社会保障局，局机关各科室、局属各单位：</p><p>经研究，定于【时间】召开【会议名称】。现将有关事项通知如下：</p><p>一、会议时间</p><p>【日期】上午/下午【具体时间】</p><p>二、会议地点</p><p>【地点】</p><p>三、参会人员</p><p>【参会人员范围】</p><p>四、会议内容</p><p>【会议议程】</p><p>五、有关要求</p><p>【注意事项】</p><p>联系人：【姓名】 联系电话：【电话】</p><p>XX市人力资源和社会保障局办公室</p><p>2026年XX月XX日</p>'
+    },
+    {
+      id: 'tpl-003', name: 'XX年度工作总结报告', type: '报告', system: true,
+      scope: 'public', createdBy: 'u1', createdDept: 'sys',
+      createdAt: d(20), updatedAt: d(3), usage: 36, status: 'live',
+      org: 'XX市人力资源和社会保障局', docNo: 'X人社〔2026〕XX号',
+      title: 'XX年度工作总结报告',
+      desc: '年度工作总结报告标准模板',
+      body: '<h2>XX年度工作总结报告</h2><p>一、年度工作总体情况</p><p>【总体情况概述】</p><p>二、主要工作成效</p><p>（一）【重点工作一】</p><p>【详细内容】</p><p>（二）【重点工作二】</p><p>【详细内容】</p><p>三、存在问题与不足</p><p>【问题分析】</p><p>四、下一步工作计划</p><p>【计划安排】</p>'
+    },
+    {
+      id: 'tpl-004', name: '关于XX事项的批复', type: '批复', system: true,
+      scope: 'public', createdBy: 'u1', createdDept: 'sys',
+      createdAt: d(15), updatedAt: d(2), usage: 18, status: 'live',
+      org: 'XX市人力资源和社会保障局', docNo: 'X人社批〔2026〕XX号',
+      title: '关于XX事项的批复',
+      desc: '用于批复下级请示事项的模板',
+      body: '<h2>关于【事项】的批复</h2><p>【来文单位】：</p><p>你单位《关于【来文事项】的请示》（【来文字号】）收悉。经研究，现批复如下：</p><p>一、【批复意见】</p><p>【具体批复内容】</p><p>二、【其他说明】</p><p>【补充说明】</p><p>此复。</p><p>XX市人力资源和社会保障局</p><p>2026年XX月XX日</p>'
+    },
+    {
+      id: 'tpl-005', name: '关于XX的函', type: '函', system: true,
+      scope: 'public', createdBy: 'u1', createdDept: 'sys',
+      createdAt: d(12), updatedAt: d(1), usage: 22, status: 'live',
+      org: 'XX市人力资源和社会保障局', docNo: 'X人社函〔2026〕XX号',
+      title: '关于征求XX意见的函',
+      desc: '用于向有关单位征求意见或商洽工作的函件模板',
+      body: '<h2>关于征求【事项】意见的函</h2><p>【单位名称】：</p><p>根据【依据】，我局拟开展【事项】工作。现将《【文件名称】》（征求意见稿）送你单位，请研究提出修改意见，并于【日期】前书面反馈我局。</p><p>联系人：【姓名】 电话：【电话】</p><p>附件：【附件名称】</p><p>XX市人力资源和社会保障局</p><p>2026年XX月XX日</p>'
+    },
+    {
+      id: 'tpl-006', name: '办公室公文流转单', type: '审批表', createdBy: 'u3', createdDept: 'd1',
+      scope: 'department', system: false,
+      createdAt: d(8), updatedAt: d(1), usage: 15, status: 'live',
+      org: 'XX市人力资源和社会保障局办公室', docNo: '',
+      title: '公文流转审批单',
+      desc: '办公室内部公文流转审批专用',
+      body: '<h2>公文流转审批单</h2><p>来文单位：【】</p><p>收文日期：【】</p><p>文件标题：【】</p><p>拟办意见：【】</p><p>领导批示：【】</p><p>办理结果：【】</p>'
+    },
+    {
+      id: 'tpl-007', name: '人事任免审批表', type: '审批表', createdBy: 'u4', createdDept: 'd2',
+      scope: 'department', system: false,
+      createdAt: d(6), updatedAt: d(0), usage: 12, status: 'live',
+      org: 'XX市人力资源和社会保障局人事科', docNo: '',
+      title: '人事任免审批表',
+      desc: '人事科干部任免审批专用模板',
+      body: '<h2>人事任免审批表</h2><p>姓名：【】 &nbsp; 性别：【】 &nbsp; 出生年月：【】</p><p>现任职务：【】</p><p>拟任职务：【】</p><p>免去职务：【】</p><p>任免理由：【】</p><p>审批意见：【】</p>'
+    },
+    {
+      id: 'tpl-008', name: '劳动监察投诉受理告知书', type: '告知书', createdBy: 'u5', createdDept: 'd5',
+      scope: 'department', system: false,
+      createdAt: d(5), updatedAt: d(0), usage: 8, status: 'draft',
+      org: 'XX市劳动监察支队', docNo: 'X劳监告〔2026〕XX号',
+      title: '劳动保障监察投诉受理告知书',
+      desc: '劳动监察投诉受理告知书模板',
+      body: '<h2>劳动保障监察投诉受理告知书</h2><p>【投诉人】：</p><p>你于【日期】反映的【投诉事项】问题，经审查符合受理条件，我支队已依法受理。现将有关事项告知如下：</p><p>【处理流程说明】</p><p>特此告知。</p><p>XX市劳动监察支队</p><p>2026年XX月XX日</p>'
+    },
+    {
+      id: 'tpl-009', name: '社保补贴申请表', type: '审批表', createdBy: 'u6', createdDept: 'd4',
+      scope: 'department', system: false,
+      createdAt: d(3), updatedAt: d(0), usage: 6, status: 'draft',
+      org: 'XX市社会保险局', docNo: '',
+      title: '社会保险补贴申请表',
+      desc: '社保补贴申请审批表',
+      body: '<h2>社会保险补贴申请表</h2><p>申请人：【】</p><p>身份证号：【】</p><p>申请补贴类型：【】</p><p>申请金额：【】</p><p>申请理由：【】</p><p>审核意见：【】</p>'
+    },
+    {
+      id: 'tpl-010', name: '个人工作汇报模板', type: '报告', createdBy: 'u2', createdDept: 'd1',
+      scope: 'private', system: false,
+      createdAt: d(1), updatedAt: d(0), usage: 2, status: 'draft',
+      org: '', docNo: '',
+      title: '个人工作汇报',
+      desc: '个人周报/月报工作汇报模板',
+      body: '<h2>个人工作汇报</h2><p>汇报人：【】</p><p>汇报周期：【】</p><p>一、本周/本月工作完成情况</p><p>【逐项列出】</p><p>二、存在问题</p><p>【问题描述】</p><p>三、下步计划</p><p>【计划内容】</p>'
+    },
+  ]
+}
+
+onMounted(() => {
+  initMockData()
+})
 </script>
 
 <style scoped>
-.admin-page { height: calc(100vh - 96px); }
+.template-page {
+  padding: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.identity-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: #fff;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.identity-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.page-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #0a1e5c;
+}
+
+.page-desc {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.identity-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.identity-right .label {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.role-tag {
+  margin-left: 8px;
+}
+
+.perm-alert {
+  margin: 12px 20px 0;
+}
+
+.main-content {
+  flex: 1;
+  padding: 0 20px 20px;
+  overflow: auto;
+}
+
+.tpl-tabs {
+  height: 100%;
+}
+
+.tpl-tabs :deep(.el-tabs__content) {
+  height: calc(100% - 50px);
+  overflow: auto;
+}
+
+.tpl-tabs :deep(.el-tab-pane) {
+  height: 100%;
+}
+
+.tpl-dialog :deep(.el-dialog__body) {
+  padding: 20px 24px;
+  max-height: 65vh;
+  overflow-y: auto;
+}
+
+.preview-dialog :deep(.el-dialog__body) {
+  padding: 20px 24px;
+}
 </style>
