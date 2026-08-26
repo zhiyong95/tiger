@@ -10,17 +10,25 @@
             <span>报告配置</span>
           </div>
 
-          <!-- ===== 第一区块：数据源选择（必选，单选互斥） ===== -->
+          <!-- ===== 第一区块：数据源选择（必选，标签切换互斥） ===== -->
           <div class="block-title">一、数据源选择</div>
-          <div class="ds-radio-group">
-            <el-radio-group v-model="dataSourceMode" class="ds-radio-list">
-              <el-radio value="system" class="ds-radio-item">
-                <span class="ds-radio-label">方式一：基于系统业务数据生成报告</span>
-              </el-radio>
-              <el-radio value="upload" class="ds-radio-item">
-                <span class="ds-radio-label">方式二：上传台账数据生成报告</span>
-              </el-radio>
-            </el-radio-group>
+          <div class="ds-tab-group">
+            <div
+              class="ds-tab-item"
+              :class="{ active: dataSourceMode === 'system' }"
+              @click="dataSourceMode = 'system'"
+            >
+              <el-icon :size="16"><DataAnalysis /></el-icon>
+              <span>系统业务数据</span>
+            </div>
+            <div
+              class="ds-tab-item"
+              :class="{ active: dataSourceMode === 'upload' }"
+              @click="dataSourceMode = 'upload'"
+            >
+              <el-icon :size="16"><Upload /></el-icon>
+              <span>台账数据</span>
+            </div>
           </div>
 
           <!-- 方式一：系统数据源 -->
@@ -934,21 +942,44 @@ watch(dataSourceMode, (val) => {
   margin-top: 4px;
 }
 
-/* 数据源单选 */
-.ds-radio-group {
-  margin-bottom: 12px;
-}
-.ds-radio-list {
+/* 数据源标签切换 */
+.ds-tab-group {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
+  background: #f0f4ff;
+  border-radius: 8px;
+  padding: 3px;
+  margin-bottom: 12px;
+  gap: 2px;
 }
-.ds-radio-item {
-  margin-right: 0;
-}
-.ds-radio-label {
+.ds-tab-item {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 6px;
   font-size: 13px;
-  line-height: 1.4;
+  font-weight: 500;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  user-select: none;
+}
+.ds-tab-item:hover {
+  color: #2563eb;
+  background: rgba(37, 99, 235, 0.06);
+}
+.ds-tab-item.active {
+  color: #ffffff;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+}
+.ds-tab-item.active .el-icon {
+  color: #ffffff;
+}
+.ds-tab-item .el-icon {
+  transition: color 0.25s ease;
 }
 .ds-config-body {
   margin-bottom: 16px;
