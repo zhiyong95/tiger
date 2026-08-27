@@ -104,7 +104,6 @@ export const useAppStore = defineStore('app', () => {
   // 所有后台管理端菜单项（含 parentId 层级关系）
   const adminMenuMeta: MenuItemMeta[] = [
     { path: '/admin/dashboard', title: '后台首页', icon: 'DataBoard', parentId: '/admin' },
-    { path: '/admin/system-map', title: '系统功能架构', icon: 'Platform', parentId: '/admin' },
     { path: '/admin/users', title: '用户权限管理', icon: 'User', parentId: '/admin' },
     { path: '/admin/knowledge', title: '知识库管理', icon: 'Collection', parentId: '/admin' },
     { path: '/admin/feedback', title: '知识反馈运营', icon: 'ChatLineSquare', parentId: '/admin' },

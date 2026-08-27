@@ -67,12 +67,6 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true, roles: ['staff', 'leader'] }
   },
   {
-    path: '/system-map',
-    name: 'SystemMap',
-    component: () => import('@/views/system-map/index.vue'),
-    meta: { requiresAuth: true }
-  },
-  {
     path: '/profile',
     name: 'Profile',
     component: () => import('@/views/profile/index.vue'),
@@ -148,12 +142,6 @@ const routes: RouteRecordRaw[] = [
     name: 'AdminLogs',
     component: () => import('@/views/admin/logs.vue'),
     meta: { requiresAuth: true, roles: ['sysadmin', 'bizadmin', 'auditor'] }
-  },
-  {
-    path: '/admin/system-map',
-    name: 'AdminSystemMap',
-    component: () => import('@/views/system-map/index.vue'),
-    meta: { requiresAuth: true, roles: ['sysadmin', 'bizadmin'] }
   },
   {
     path: '/admin/system',
