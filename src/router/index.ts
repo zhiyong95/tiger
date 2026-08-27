@@ -39,8 +39,19 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/report',
-    name: 'Report',
-    component: () => import('@/views/report/index.vue'),
+    redirect: '/report/research',
+    meta: { requiresAuth: true, roles: ['staff', 'leader'] }
+  },
+  {
+    path: '/report/research',
+    name: 'ReportResearch',
+    component: () => import('@/views/report/research.vue'),
+    meta: { requiresAuth: true, roles: ['staff', 'leader'] }
+  },
+  {
+    path: '/report/data',
+    name: 'ReportData',
+    component: () => import('@/views/report/data.vue'),
     meta: { requiresAuth: true, roles: ['staff', 'leader'] }
   },
   {

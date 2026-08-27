@@ -35,10 +35,21 @@
             </el-menu-item>
           </template>
           <template v-else>
-            <el-menu-item v-for="item in appStore.pcMenuItems" :key="item.path" :index="item.path">
-              <el-icon><component :is="item.icon" /></el-icon>
-              <template #title>{{ item.title }}</template>
-            </el-menu-item>
+            <template v-for="item in appStore.pcMenuItems" :key="item.path">
+              <el-sub-menu v-if="item.children && item.children.length > 0" :index="item.path">
+                <template #title>
+                  <el-icon><component :is="item.icon" /></el-icon>
+                  <span>{{ item.title }}</span>
+                </template>
+                <el-menu-item v-for="child in item.children" :key="child.path" :index="child.path">
+                  <template #title>{{ child.title }}</template>
+                </el-menu-item>
+              </el-sub-menu>
+              <el-menu-item v-else :index="item.path">
+                <el-icon><component :is="item.icon" /></el-icon>
+                <template #title>{{ item.title }}</template>
+              </el-menu-item>
+            </template>
           </template>
         </el-menu>
       </el-aside>
@@ -265,6 +276,23 @@ const handleDropdownCommand = async (command: string) => {
   color: #ffffff;
   border-left: 3px solid #60a5fa;
   font-weight: 600;
+}
+
+.sidebar-menu :deep(.el-sub-menu__title) {
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.sidebar-menu :deep(.el-sub-menu__title:hover) {
+  background: rgba(255, 255, 255, 0.08);
+  color: white;
+}
+
+.sidebar-menu :deep(.el-sub-menu.is-active .el-sub-menu__title) {
+  color: white;
+}
+
+.sidebar-menu :deep(.el-menu--inline) {
+  background: rgba(0, 0, 0, 0.15);
 }
 
 .header {

@@ -81,13 +81,20 @@ export const useAppStore = defineStore('app', () => {
     title: string
     icon: string
     parentId: string // 父级路径，空字符串表示根
+    children?: Omit<MenuItemMeta, 'children' | 'icon'>[] // 子菜单
   }
 
   // 所有PC端菜单项（含 parentId 层级关系）
   const pcMenuMeta: MenuItemMeta[] = [
     { path: '/dashboard', title: '工作台首页', icon: 'HomeFilled', parentId: '/' },
     { path: '/data', title: '智能问数', icon: 'DataAnalysis', parentId: '/' },
-    { path: '/report', title: '智能分析报告', icon: 'TrendCharts', parentId: '/' },
+    {
+      path: '/report', title: '智能分析报告', icon: 'TrendCharts', parentId: '/',
+      children: [
+        { path: '/report/research', title: '调研分析报告', parentId: '/report' },
+        { path: '/report/data', title: '数据分析报告', parentId: '/report' },
+      ]
+    },
     { path: '/policy', title: '政策快研', icon: 'Reading', parentId: '/' },
     { path: '/qa', title: '人社知识智能问答', icon: 'ChatDotRound', parentId: '/' },
     { path: '/document', title: 'AI公文助手', icon: 'Document', parentId: '/' },
@@ -120,22 +127,36 @@ export const useAppStore = defineStore('app', () => {
   const getBreadcrumb = (path: string): { path: string; title: string }[] => {
     const crumbs: { path: string; title: string }[] = [{ path: '', title: '首页' }]
 
-    // 先在PC菜单中查找
-    let item = pcMenuMeta.find(m => m.path === path)
-    // 再在后台菜单中查找
-    if (!item) {
-      item = adminMenuMeta.find(m => m.path === path)
+    // 查找函数：先在顶层查，再在children中查
+    const findItem = (p: string): { path: string; title: string; parentId: string } | undefined => {
+      for (const m of pcMenuMeta) {
+        if (m.path === p) return m
+        if (m.children) {
+          const child = m.children.find(c => c.path === p)
+          if (child) return { ...child, parentId: m.path }
+        }
+      }
+      return adminMenuMeta.find(m => m.path === p)
     }
 
-    if (item && item.parentId && parentNodeMap[item.parentId]) {
-      crumbs.push(parentNodeMap[item.parentId])
+    const item = findItem(path)
+
+    if (item) {
+      // 父级面包屑
+      if (item.parentId && parentNodeMap[item.parentId]) {
+        crumbs.push(parentNodeMap[item.parentId])
+      }
+      // 如果父级是菜单项（如 /report），也需要插入
+      const parentAsMenuItem = pcMenuMeta.find(m => m.path === item.parentId)
+      if (parentAsMenuItem && parentNodeMap[parentAsMenuItem.parentId]) {
+        crumbs.push({ path: parentAsMenuItem.path, title: parentAsMenuItem.title })
+      }
     }
 
     // 当前页面包屑（最后一项）
     if (item) {
       crumbs.push({ path: item.path, title: item.title })
     } else {
-      // 未匹配菜单时取路由 meta.title
       crumbs.push({ path, title: '' })
     }
 
@@ -145,7 +166,10 @@ export const useAppStore = defineStore('app', () => {
   // PC工作台权限矩阵
   const pcMenuItems = computed(() => {
     const role = userRole.value
-    const items = pcMenuMeta.map(({ path, title, icon }) => ({ path, title, icon }))
+    const items = pcMenuMeta.map(({ path, title, icon, children }) => ({
+      path, title, icon,
+      children: children ? children.map(c => ({ path: c.path, title: c.title })) : undefined
+    }))
     // 根据角色过滤菜单
     if (role === 'staff') return items
     if (role === 'leader') return items
