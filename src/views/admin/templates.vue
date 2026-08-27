@@ -84,7 +84,7 @@
       width="720px"
       class="preview-dialog"
     >
-      <template-preview :template="previewingTemplate" />
+      <template-preview :tpl="previewingTemplate" />
     </el-dialog>
   </div>
 </template>
