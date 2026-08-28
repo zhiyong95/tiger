@@ -237,15 +237,7 @@ import { ElMessage } from 'element-plus'
 
 const router = useRouter()
 
-const activeHistoryIdx = ref(-1)
-const queryHistory = ref<Array<{ question: string }>>([
-  { question: '本月城镇新增就业人数是多少' },
-  { question: '各区县养老保险参保分布' },
-  { question: '人才引进入户环比趋势' },
-  { question: '失业保险金申领条件统计' },
-])
-
-const conversationMessages = ref<Array<{
+type MsgType = {
   role: 'user' | 'ai'
   content: string
   conclusion?: string
@@ -254,7 +246,17 @@ const conversationMessages = ref<Array<{
   chartData?: { labels: string[]; values: number[] }
   chartType?: 'bar' | 'line' | 'pie'
   tableData?: Array<{ name: string; value: number; unit: string; period: string; source: string }>
-}>>([])
+}
+
+const activeHistoryIdx = ref(-1)
+const queryHistory = ref<Array<{ question: string; messages: MsgType[] }>>([
+  { question: '本月城镇新增就业人数是多少', messages: [] },
+  { question: '各区县养老保险参保分布', messages: [] },
+  { question: '人才引进入户环比趋势', messages: [] },
+  { question: '失业保险金申领条件统计', messages: [] },
+])
+
+const conversationMessages = ref<MsgType[]>([])
 
 const isThinking = ref(false)
 const userInput = ref('')
@@ -277,8 +279,13 @@ const startNewChat = () => {
 
 const switchHistory = (idx: number) => {
   activeHistoryIdx.value = idx
-  const q = queryHistory.value[idx].question
-  userInput.value = q
+  const item = queryHistory.value[idx]
+  if (item.messages && item.messages.length > 0) {
+    conversationMessages.value = JSON.parse(JSON.stringify(item.messages))
+  } else {
+    userInput.value = item.question
+    sendQuery()
+  }
 }
 
 const deleteHistory = (idx: number) => {
@@ -312,7 +319,7 @@ const sendQuery = async () => {
   if (existingIdx >= 0) {
     queryHistory.value.splice(existingIdx, 1)
   }
-  queryHistory.value.unshift({ question: q })
+  queryHistory.value.unshift({ question: q, messages: [] })
   if (queryHistory.value.length > 20) queryHistory.value = queryHistory.value.slice(0, 20)
   activeHistoryIdx.value = 0
 
@@ -355,6 +362,12 @@ const sendQuery = async () => {
   scrollToBottom()
   const newMsgIdx = conversationMessages.value.length - 1
   setTimeout(() => renderChartForMsg(newMsgIdx), 120)
+  // 保存完整对话到历史记录
+  if (activeHistoryIdx.value >= 0 && queryHistory.value[activeHistoryIdx.value]) {
+    queryHistory.value[activeHistoryIdx.value].messages = JSON.parse(JSON.stringify(conversationMessages.value))
+  } else if (queryHistory.value.length > 0) {
+    queryHistory.value[0].messages = JSON.parse(JSON.stringify(conversationMessages.value))
+  }
 }
 
 const setChartRef = (idx: number, el: any) => {
