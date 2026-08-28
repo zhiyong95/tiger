@@ -347,30 +347,201 @@ const sendQuery = async () => {
   // 模拟AI思考
   await new Promise(r => setTimeout(r, 1800))
 
-  // 生成AI回复
-  const newMsg = {
-    role: 'ai' as const,
-    content: '',
-    conclusion: `根据您的查询「${q}」，系统从人社核心业务数据库中自动检索到了最新统计数据，数据口径符合指标管理配置要求。`,
-    updateTime: new Date().toLocaleString(),
-    kpiCards: [
-      { name: '参保人数', value: 2876542, unit: '人', trend: 6.8, color: '#2563eb' },
-      { name: '新增就业', value: 42689, unit: '人', trend: 4.2, color: '#10b981' },
-      { name: '登记失业', value: 18754, unit: '人', trend: -5.3, color: '#ef4444' },
-      { name: '技能培训', value: 156890, unit: '人', trend: 12.1, color: '#f59e0b' },
-    ],
-    chartData: {
-      labels: ['1月', '2月', '3月', '4月', '5月', '6月'],
-      values: [38000, 41000, 39500, 43200, 45100, 42689],
-    },
-    chartType: 'bar' as const,
-    tableData: [
-      { name: '城镇职工养老保险参保', value: 2145678, unit: '人', period: '2026-08', source: '社保库' },
-      { name: '城乡居民养老保险参保', value: 730864, unit: '人', period: '2026-08', source: '社保库' },
-      { name: '失业保险参保', value: 1456789, unit: '人', period: '2026-08', source: '就业库' },
-      { name: '工伤保险参保', value: 1587623, unit: '人', period: '2026-08', source: '工伤库' },
-      { name: '新增就业人数', value: 42689, unit: '人', period: '2026-08', source: '就业库' },
-    ],
+  // 生成AI回复 - 根据查询内容智能匹配
+  const qLower = q.toLowerCase()
+  const isFollowUp = conversationMessages.value.length > 1
+
+  let newMsg: MsgType
+
+  if (q.includes('按区县拆分') || q.includes('区县')) {
+    newMsg = {
+      role: 'ai' as const,
+      content: '',
+      conclusion: `已按区县维度对数据进行拆分，以下是各区县2026年8月核心指标分布情况：`,
+      updateTime: new Date().toLocaleString(),
+      kpiCards: [
+        { name: 'A区参保', value: 589234, unit: '人', trend: 5.2, color: '#2563eb' },
+        { name: 'B区参保', value: 452187, unit: '人', trend: 3.8, color: '#10b981' },
+        { name: 'C区参保', value: 376542, unit: '人', trend: 7.1, color: '#f59e0b' },
+        { name: 'D区参保', value: 289651, unit: '人', trend: 2.4, color: '#8b5cf6' },
+      ],
+      chartData: {
+        labels: ['A区', 'B区', 'C区', 'D区', 'E区', 'F区'],
+        values: [589234, 452187, 376542, 289651, 234567, 187654],
+      },
+      chartType: 'bar' as const,
+      tableData: [
+        { name: 'A区', value: 589234, unit: '人', period: '2026-08', source: '社保库' },
+        { name: 'B区', value: 452187, unit: '人', period: '2026-08', source: '社保库' },
+        { name: 'C区', value: 376542, unit: '人', period: '2026-08', source: '社保库' },
+        { name: 'D区', value: 289651, unit: '人', period: '2026-08', source: '社保库' },
+        { name: 'E区', value: 234567, unit: '人', period: '2026-08', source: '社保库' },
+        { name: 'F区', value: 187654, unit: '人', period: '2026-08', source: '社保库' },
+      ],
+    }
+  } else if (q.includes('同比环比') || q.includes('同比') || q.includes('环比')) {
+    newMsg = {
+      role: 'ai' as const,
+      content: '',
+      conclusion: `已将当前数据与去年同期（同比）和上期（环比）进行对比分析，各指标变化趋势如下：`,
+      updateTime: new Date().toLocaleString(),
+      kpiCards: [
+        { name: '新增就业(同比)', value: 42689, unit: '人', trend: 4.2, color: '#2563eb' },
+        { name: '新增就业(环比)', value: 42689, unit: '人', trend: -2.1, color: '#10b981' },
+        { name: '失业率(同比)', value: 4.8, unit: '%', trend: -0.3, color: '#f59e0b' },
+        { name: '失业率(环比)', value: 4.8, unit: '%', trend: 0.1, color: '#ef4444' },
+      ],
+      chartData: {
+        labels: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月'],
+        values: [41000, 39500, 42300, 40800, 43600, 45100, 43900, 42689],
+      },
+      chartType: 'line' as const,
+      tableData: [
+        { name: '本期(2026年8月)', value: 42689, unit: '人', period: '2026-08', source: '就业库' },
+        { name: '上期(2026年7月)', value: 43900, unit: '人', period: '2026-07', source: '就业库' },
+        { name: '去年同期(2025年8月)', value: 40980, unit: '人', period: '2025-08', source: '就业库' },
+        { name: '环比变化', value: -1211, unit: '人', period: '-2.76%', source: '计算' },
+        { name: '同比变化', value: 1709, unit: '人', period: '+4.17%', source: '计算' },
+      ],
+    }
+  } else if (q.includes('历史趋势') || q.includes('趋势')) {
+    newMsg = {
+      role: 'ai' as const,
+      content: '',
+      conclusion: `以下为您展示近12个月的历史趋势数据，整体呈稳步上升态势，建议重点关注Q3季度变化。`,
+      updateTime: new Date().toLocaleString(),
+      kpiCards: [
+        { name: '12月均值', value: 40782, unit: '人', trend: 3.5, color: '#2563eb' },
+        { name: '最高值', value: 45100, unit: '人', trend: 0, color: '#10b981' },
+        { name: '最低值', value: 36800, unit: '人', trend: 0, color: '#f59e0b' },
+        { name: '年度累计', value: 489384, unit: '人', trend: 5.8, color: '#8b5cf6' },
+      ],
+      chartData: {
+        labels: ['2025年9月', '10月', '11月', '12月', '2026年1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月'],
+        values: [36800, 38200, 37500, 39100, 38000, 39500, 41000, 42300, 43200, 45100, 43900, 42689],
+      },
+      chartType: 'line' as const,
+      tableData: [
+        { name: '2025年9月', value: 36800, unit: '人', period: '2025-09', source: '就业库' },
+        { name: '2025年10月', value: 38200, unit: '人', period: '2025-10', source: '就业库' },
+        { name: '2025年11月', value: 37500, unit: '人', period: '2025-11', source: '就业库' },
+        { name: '2025年12月', value: 39100, unit: '人', period: '2025-12', source: '就业库' },
+        { name: '2026年1月', value: 38000, unit: '人', period: '2026-01', source: '就业库' },
+        { name: '2026年2月', value: 39500, unit: '人', period: '2026-02', source: '就业库' },
+        { name: '2026年3月', value: 41000, unit: '人', period: '2026-03', source: '就业库' },
+        { name: '2026年4月', value: 42300, unit: '人', period: '2026-04', source: '就业库' },
+        { name: '2026年5月', value: 43200, unit: '人', period: '2026-05', source: '就业库' },
+        { name: '2026年6月', value: 45100, unit: '人', period: '2026-06', source: '就业库' },
+        { name: '2026年7月', value: 43900, unit: '人', period: '2026-07', source: '就业库' },
+        { name: '2026年8月', value: 42689, unit: '人', period: '2026-08', source: '就业库' },
+      ],
+    }
+  } else if (q.includes('导出明细') || q.includes('导出')) {
+    newMsg = {
+      role: 'ai' as const,
+      content: `已为您整理当前数据明细，您可以通过以下方式导出：
+
+**1. 下载Excel文件**：包含完整数据明细及统计口径说明
+**2. 下载PDF报告**：包含数据表格、图表及分析结论
+
+系统将在数据处理完成后自动生成下载链接。`,
+      conclusion: `已为您导出当前查询结果，数据共覆盖6个维度、12条明细记录，文件正在生成中，预计1-2分钟完成。`,
+      updateTime: new Date().toLocaleString(),
+      kpiCards: [
+        { name: '数据维度', value: 6, unit: '个', trend: 0, color: '#2563eb' },
+        { name: '明细记录', value: 12, unit: '条', trend: 0, color: '#10b981' },
+        { name: '文件大小', value: 2.4, unit: 'MB', trend: 0, color: '#f59e0b' },
+        { name: '预计完成', value: 2, unit: '分钟', trend: 0, color: '#8b5cf6' },
+      ],
+      chartData: {
+        labels: ['数据明细', '分析结论', '图表展示', '口径说明', '政策依据', '附注说明'],
+        values: [100, 85, 90, 78, 92, 65],
+      },
+      chartType: 'bar' as const,
+      tableData: [
+        { name: '数据明细', value: 100, unit: '%', period: '完整', source: '自动生成' },
+        { name: '分析结论', value: 85, unit: '%', period: '完整', source: '自动生成' },
+        { name: '图表展示', value: 90, unit: '%', period: '完整', source: '自动生成' },
+        { name: '口径说明', value: 78, unit: '%', period: '完整', source: '自动生成' },
+        { name: '政策依据', value: 92, unit: '%', period: '完整', source: '自动生成' },
+        { name: '附注说明', value: 65, unit: '%', period: '完整', source: '自动生成' },
+      ],
+    }
+  } else if (q.includes('口径说明') || q.includes('口径')) {
+    newMsg = {
+      role: 'ai' as const,
+      content: `**数据口径说明（当前数据集）**
+
+**1. 参保人数口径**
+- 统计范围：本市行政区域内城镇职工基本养老保险参保人员
+- 统计时点：每月最后一日24时
+- 数据来源：社保核心业务系统
+- 数据更新频率：T+1日更新
+
+**2. 新增就业口径**
+- 统计范围：本市城镇新增就业人员（含各类单位就业、灵活就业、自主创业）
+- 统计时点：每月累计至当月
+- 数据来源：就业信息管理系统
+- 数据更新频率：T+3日更新
+
+**3. 登记失业率口径**
+- 统计范围：本市城镇登记失业人员/城镇从业人员
+- 统计时点：月末时点数
+- 数据来源：失业登记管理系统
+- 数据更新频率：月度更新
+
+**4. 技能培训口径**
+- 统计范围：本市参加职业技能培训并取得证书人员
+- 统计时点：累计至当月
+- 数据来源：职业技能培训监管平台
+- 数据更新频率：T+5日更新
+
+> 如需了解更详细的指标口径定义，请前往后台管理端「指标口径管理」模块查看完整文档。`,
+      conclusion: `以上为当前查询数据涉及的核心指标口径说明，数据统计口径均符合国家人社统计报表制度要求。`,
+      updateTime: new Date().toLocaleString(),
+      kpiCards: [
+        { name: '核心指标', value: 4, unit: '个', trend: 0, color: '#2563eb' },
+        { name: '数据来源', value: 4, unit: '个', trend: 0, color: '#10b981' },
+        { name: '更新频率', value: 1, unit: 'T+1日', trend: 0, color: '#f59e0b' },
+        { name: '覆盖范围', value: 100, unit: '%', trend: 0, color: '#8b5cf6' },
+      ],
+      chartData: {
+        labels: ['社保库', '就业库', '失业库', '培训库'],
+        values: [2876542, 42689, 18754, 156890],
+      },
+      chartType: 'bar' as const,
+      tableData: [
+        { name: '社保核心系统', value: 2876542, unit: '条', period: '实时', source: '数据中台' },
+        { name: '就业管理系统', value: 42689, unit: '条', period: 'T+1', source: '数据中台' },
+        { name: '失业登记系统', value: 18754, unit: '条', period: 'T+1', source: '数据中台' },
+        { name: '培训监管平台', value: 156890, unit: '条', period: 'T+3', source: '数据中台' },
+      ],
+    }
+  } else {
+    newMsg = {
+      role: 'ai' as const,
+      content: '',
+      conclusion: `根据您的查询「${q}」，系统从人社核心业务数据库中自动检索到了最新统计数据，数据口径符合指标管理配置要求。`,
+      updateTime: new Date().toLocaleString(),
+      kpiCards: [
+        { name: '参保人数', value: 2876542, unit: '人', trend: 6.8, color: '#2563eb' },
+        { name: '新增就业', value: 42689, unit: '人', trend: 4.2, color: '#10b981' },
+        { name: '登记失业', value: 18754, unit: '人', trend: -5.3, color: '#ef4444' },
+        { name: '技能培训', value: 156890, unit: '人', trend: 12.1, color: '#f59e0b' },
+      ],
+      chartData: {
+        labels: ['1月', '2月', '3月', '4月', '5月', '6月'],
+        values: [38000, 41000, 39500, 43200, 45100, 42689],
+      },
+      chartType: 'bar' as const,
+      tableData: [
+        { name: '城镇职工养老保险参保', value: 2145678, unit: '人', period: '2026-08', source: '社保库' },
+        { name: '城乡居民养老保险参保', value: 730864, unit: '人', period: '2026-08', source: '社保库' },
+        { name: '失业保险参保', value: 1456789, unit: '人', period: '2026-08', source: '就业库' },
+        { name: '工伤保险参保', value: 1587623, unit: '人', period: '2026-08', source: '工伤库' },
+        { name: '新增就业人数', value: 42689, unit: '人', period: '2026-08', source: '就业库' },
+      ],
+    }
   }
 
   conversationMessages.value.push(newMsg)
