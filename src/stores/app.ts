@@ -89,7 +89,7 @@ export const useAppStore = defineStore('app', () => {
     { path: '/dashboard', title: '工作台首页', icon: 'HomeFilled', parentId: '/' },
     { path: '/data', title: '智能问数', icon: 'DataAnalysis', parentId: '/' },
     {
-      path: '/report', title: '智能分析报告', icon: 'TrendCharts', parentId: '/',
+      path: '/report', title: '智能报告', icon: 'TrendCharts', parentId: '/',
       children: [
         { path: '/report/research', title: '调研分析报告', parentId: '/report' },
         { path: '/report/data', title: '数据分析报告', parentId: '/report' },
