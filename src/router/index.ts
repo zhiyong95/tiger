@@ -51,8 +51,31 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/policy',
-    name: 'Policy',
-    component: () => import('@/views/policy/index.vue'),
+    redirect: '/policy/research',
+    meta: { requiresAuth: true, roles: ['staff', 'leader'] }
+  },
+  {
+    path: '/policy/research',
+    name: 'PolicyResearch',
+    component: () => import('@/views/policy/research.vue'),
+    meta: { requiresAuth: true, roles: ['staff', 'leader'] }
+  },
+  {
+    path: '/policy/compare',
+    name: 'PolicyCompare',
+    component: () => import('@/views/policy/compare.vue'),
+    meta: { requiresAuth: true, roles: ['staff', 'leader'] }
+  },
+  {
+    path: '/policy/draft',
+    name: 'PolicyDraft',
+    component: () => import('@/views/policy/draft.vue'),
+    meta: { requiresAuth: true, roles: ['staff', 'leader'] }
+  },
+  {
+    path: '/policy/qa',
+    name: 'PolicyQA',
+    component: () => import('@/views/policy/qa.vue'),
     meta: { requiresAuth: true, roles: ['staff', 'leader'] }
   },
   {

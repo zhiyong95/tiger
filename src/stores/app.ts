@@ -94,7 +94,14 @@ export const useAppStore = defineStore('app', () => {
         { path: '/report/data', title: '数据分析报告', parentId: '/report' },
       ]
     },
-    { path: '/policy', title: '政策快研', icon: 'Reading', parentId: '/' },
+    { path: '/policy', title: '政策快研', icon: 'Reading', parentId: '/',
+      children: [
+        { path: '/policy/research', title: '政策研判', parentId: '/policy' },
+        { path: '/policy/compare', title: '政策比对', parentId: '/policy' },
+        { path: '/policy/draft', title: '政策编制', parentId: '/policy' },
+        { path: '/policy/qa', title: '政策问答', parentId: '/policy' },
+      ]
+    },
     { path: '/qa', title: '人社知识智能问答', icon: 'ChatDotRound', parentId: '/' },
     { path: '/document', title: 'AI公文助手', icon: 'Document', parentId: '/' },
     { path: '/audit', title: '业务智审', icon: 'Checked', parentId: '/' },
