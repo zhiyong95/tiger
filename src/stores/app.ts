@@ -103,7 +103,7 @@ export const useAppStore = defineStore('app', () => {
       ]
     },
     { path: '/qa', title: '人社知识智能问答', icon: 'ChatDotRound', parentId: '/' },
-    { path: '/document', title: 'AI公文助手', icon: 'Document', parentId: '/' },
+    { path: '/document', title: '公文助手', icon: 'Document', parentId: '/' },
     { path: '/audit', title: '业务智审', icon: 'Checked', parentId: '/' },
     {
       path: '/cockpit', title: '领导驾驶舱', icon: 'Monitor', parentId: '/',
