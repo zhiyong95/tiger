@@ -11,7 +11,7 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/',
-    redirect: '/dashboard'
+    redirect: '/data'
   },
   {
     path: '/dashboard',
@@ -176,9 +176,9 @@ router.beforeEach((to, _from, next) => {
 
   // 检查路由角色权限
   if (routeRoles && !routeRoles.includes(role)) {
-    // 工作人员角色进入PC工作台首页
+    // 工作人员角色进入智能问数
     if (['staff', 'leader'].includes(role)) {
-      next({ path: '/dashboard' })
+      next({ path: '/data' })
       return
     }
     // 管理员角色进入后台首页

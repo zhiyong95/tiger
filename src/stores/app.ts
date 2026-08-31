@@ -86,7 +86,6 @@ export const useAppStore = defineStore('app', () => {
 
   // 所有PC端菜单项（含 parentId 层级关系）
   const pcMenuMeta: MenuItemMeta[] = [
-    { path: '/dashboard', title: '工作台首页', icon: 'HomeFilled', parentId: '/' },
     { path: '/data', title: '智能问数', icon: 'DataAnalysis', parentId: '/' },
     {
       path: '/report', title: '智能报告', icon: 'TrendCharts', parentId: '/',
