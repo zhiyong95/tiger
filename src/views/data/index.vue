@@ -99,21 +99,8 @@
           </div>
         </div>
 
-        <!-- 快捷追问标签（对话框上方） -->
-        <div class="hotwords-bar" v-if="conversationMessages.length > 0">
-          <span class="hotword-label">追问：</span>
-          <el-tag
-            v-for="word in hotWords"
-            :key="word"
-            size="small"
-            class="hotword-tag"
-            :class="userInput === word ? 'active' : ''"
-            @click="sendFollowUpQuery(word)"
-          >{{ word }}</el-tag>
-        </div>
-
         <!-- 对话态消息流 -->
-        <div v-else class="message-flow">
+        <div class="message-flow" v-if="conversationMessages.length > 0">
           <div v-for="(msg, idx) in conversationMessages" :key="idx" class="msg-wrap">
             <!-- 用户气泡 -->
             <div v-if="msg.role === 'user'" class="user-bubble-wrap">
@@ -198,6 +185,19 @@
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- 快捷追问标签 -->
+      <div class="hotwords-bar" v-if="conversationMessages.length > 0">
+        <span class="hotword-label">追问：</span>
+        <el-tag
+          v-for="word in hotWords"
+          :key="word"
+          size="small"
+          class="hotword-tag"
+          :class="userInput === word ? 'active' : ''"
+          @click="sendFollowUpQuery(word)"
+        >{{ word }}</el-tag>
       </div>
 
       <!-- 底部输入区 -->
