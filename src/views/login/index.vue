@@ -407,7 +407,7 @@ const doLogin = async (username: string, password: string, role: 'staff' | 'lead
     if (adminRoles.includes(role)) {
       router.push('/admin/dashboard')
     } else {
-      router.push('/dashboard')
+      router.push('/data')
     }
   } catch {
     ElMessage.error('登录信息有误，请重试')

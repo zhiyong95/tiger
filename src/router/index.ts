@@ -13,12 +13,7 @@ const routes: RouteRecordRaw[] = [
     path: '/',
     redirect: '/data'
   },
-  {
-    path: '/dashboard',
-    name: 'Dashboard',
-    component: () => import('@/views/dashboard/index.vue'),
-    meta: { requiresAuth: true, roles: ['staff', 'leader'] }
-  },
+  
   {
     path: '/qa',
     name: 'QA',
