@@ -98,6 +98,15 @@ export const useAppStore = defineStore('app', () => {
     { path: '/qa', title: '人社知识智能问答', icon: 'ChatDotRound', parentId: '/' },
     { path: '/document', title: 'AI公文助手', icon: 'Document', parentId: '/' },
     { path: '/audit', title: '业务智审', icon: 'Checked', parentId: '/' },
+    {
+      path: '/cockpit', title: '领导驾驶舱', icon: 'Monitor', parentId: '/',
+      children: [
+        { path: '/cockpit/labor', title: '辖区劳动力资源概况', parentId: '/cockpit' },
+        { path: '/cockpit/enterprise', title: '市场主体用工概况', parentId: '/cockpit' },
+        { path: '/cockpit/industry', title: '产业用工概况', parentId: '/cockpit' },
+        { path: '/cockpit/service', title: '线下服务矩阵网络分布', parentId: '/cockpit' },
+      ]
+    },
   ]
 
   // 所有后台管理端菜单项（含 parentId 层级关系）

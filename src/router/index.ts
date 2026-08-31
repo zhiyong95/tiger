@@ -66,6 +66,36 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/audit/index.vue'),
     meta: { requiresAuth: true, roles: ['staff', 'leader'] }
   },
+  // 领导驾驶舱
+  {
+    path: '/cockpit',
+    redirect: '/cockpit/labor',
+    meta: { requiresAuth: true, roles: ['staff', 'leader'] }
+  },
+  {
+    path: '/cockpit/labor',
+    name: 'CockpitLabor',
+    component: () => import('@/views/cockpit/labor.vue'),
+    meta: { requiresAuth: true, roles: ['staff', 'leader'] }
+  },
+  {
+    path: '/cockpit/enterprise',
+    name: 'CockpitEnterprise',
+    component: () => import('@/views/cockpit/enterprise.vue'),
+    meta: { requiresAuth: true, roles: ['staff', 'leader'] }
+  },
+  {
+    path: '/cockpit/industry',
+    name: 'CockpitIndustry',
+    component: () => import('@/views/cockpit/industry.vue'),
+    meta: { requiresAuth: true, roles: ['staff', 'leader'] }
+  },
+  {
+    path: '/cockpit/service',
+    name: 'CockpitService',
+    component: () => import('@/views/cockpit/service.vue'),
+    meta: { requiresAuth: true, roles: ['staff', 'leader'] }
+  },
   {
     path: '/profile',
     name: 'Profile',
