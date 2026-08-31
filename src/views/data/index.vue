@@ -99,6 +99,19 @@
           </div>
         </div>
 
+        <!-- 快捷追问标签（对话框上方） -->
+        <div class="hotwords-bar" v-if="conversationMessages.length > 0">
+          <span class="hotword-label">追问：</span>
+          <el-tag
+            v-for="word in hotWords"
+            :key="word"
+            size="small"
+            class="hotword-tag"
+            :class="userInput === word ? 'active' : ''"
+            @click="sendFollowUpQuery(word)"
+          >{{ word }}</el-tag>
+        </div>
+
         <!-- 对话态消息流 -->
         <div v-else class="message-flow">
           <div v-for="(msg, idx) in conversationMessages" :key="idx" class="msg-wrap">
@@ -189,17 +202,6 @@
 
       <!-- 底部输入区 -->
       <div class="input-footer">
-        <div class="hotwords-row" v-if="conversationMessages.length > 0">
-          <span class="hotword-label">追问：</span>
-          <el-tag
-            v-for="word in hotWords"
-            :key="word"
-            size="small"
-            class="hotword-tag"
-            :class="userInput === word ? 'active' : ''"
-            @click="sendFollowUpQuery(word)"
-          >{{ word }}</el-tag>
-        </div>
         <div class="input-hint">直接告诉AI你的问题</div>
         <div class="input-bar">
           <div class="input-left">
