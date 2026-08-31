@@ -277,10 +277,6 @@ const mainScrollRef = ref<HTMLElement>()
 
 const hotWords = ['按区县拆分', '同比环比分析', '查看历史趋势', '导出明细', '查看口径说明']
 
-function sendFollowUpQuery(word: string) {
-  userInput.value = word
-  sendQuery()
-}
 const chartMap = new Map<number, echarts.ECharts | null>()
 
 const quickCards = [
@@ -297,17 +293,6 @@ const startNewChat = () => {
   activeHistoryIdx.value = -1
 }
 
-const switchHistory = (idx: number) => {
-  activeHistoryIdx.value = idx
-  const item = queryHistory.value[idx]
-  if (item.messages && item.messages.length > 0) {
-    conversationMessages.value = JSON.parse(JSON.stringify(item.messages))
-  } else {
-    userInput.value = item.question
-    sendQuery()
-  }
-}
-
 const deleteHistory = (idx: number) => {
   queryHistory.value.splice(idx, 1)
   if (activeHistoryIdx.value === idx) {
@@ -317,18 +302,18 @@ const deleteHistory = (idx: number) => {
   }
 }
 
-const sendQuickQuestion = (question: string) => {
-  userInput.value = question
-  sendQuery()
-}
-
 const sendQuery = async () => {
+  console.log('sendQuery called, input:', userInput.value)
   const q = userInput.value.trim()
+  console.log('sendQuery trimmed:', q)
   if (!q) {
     ElMessage.warning('请输入查询问题')
     return
   }
-  if (isThinking.value) return
+  if (isThinking.value) {
+    console.log('sendQuery: isThinking is true, returning')
+    return
+  }
 
   conversationMessages.value.push({ role: 'user', content: q })
   userInput.value = ''
@@ -561,6 +546,27 @@ const sendQuery = async () => {
   }
 }
 
+const sendQuickQuestion = (question: string) => {
+  userInput.value = question
+  sendQuery()
+}
+
+const sendFollowUpQuery = (word: string) => {
+  userInput.value = word
+  sendQuery()
+}
+
+const switchHistory = (idx: number) => {
+  activeHistoryIdx.value = idx
+  const item = queryHistory.value[idx]
+  if (item.messages && item.messages.length > 0) {
+    conversationMessages.value = JSON.parse(JSON.stringify(item.messages))
+  } else {
+    userInput.value = item.question
+    sendQuery()
+  }
+}
+
 const setChartRef = (idx: number, el: any) => {
   const htmlEl = el as HTMLElement | null | undefined
   if (!htmlEl) return
@@ -574,7 +580,7 @@ const setChartRef = (idx: number, el: any) => {
 
 const renderChartForMsg = (idx: number) => {
   const msg = conversationMessages.value[idx]
-  if (!msg?.chartData) return
+  if (!msg || !msg.chartData) return
   const chart = chartMap.get(idx)
   if (!chart) return
   const chartType = msg.chartType || 'bar'
@@ -646,7 +652,7 @@ const scrollToBottom = () => {
 }
 
 onUnmounted(() => {
-  chartMap.forEach((c) => c?.dispose())
+  chartMap.forEach((c) => { if (c) c.dispose() })
 })
 </script>
 
