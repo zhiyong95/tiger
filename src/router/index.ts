@@ -84,6 +84,12 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/audit/index.vue'),
     meta: { requiresAuth: true, roles: ['staff', 'leader'] }
   },
+  {
+    path: '/audit/policy-service',
+    name: 'PolicyService',
+    component: () => import('@/views/audit/policy-service.vue'),
+    meta: { requiresAuth: true, roles: ['staff', 'leader'] }
+  },
   // 领导驾驶舱
   {
     path: '/cockpit',
