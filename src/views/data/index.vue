@@ -202,28 +202,99 @@
 
       <!-- 底部输入区 -->
       <div class="input-footer">
-        <div class="input-hint">直接告诉AI你的问题</div>
+        <div class="input-hint" v-if="inputMode === 'voice' && !isRecording">点击麦克风开始说话，或切换键盘输入文字</div>
+        <div class="input-hint" v-else-if="isRecording">正在聆听…</div>
+        <div class="input-hint" v-else>直接告诉AI你的问题</div>
         <div class="input-bar">
-          <div class="input-left">
-            <el-icon class="input-q-icon" :size="18"><ChatDotRound /></el-icon>
-            <el-input
-              v-model="userInput"
-              placeholder="请输入您想查询的人社业务数据问题……"
-              class="data-input"
-              @keyup.enter="sendQuery"
-            />
-          </div>
-          <div class="input-right">
-            <el-button
-              type="primary"
-              :loading="isThinking"
-              @click="sendQuery"
-              class="send-btn"
-            >
-              <el-icon><Promotion /></el-icon>
-              发送
-            </el-button>
-          </div>
+          <!-- 语音输入模式 -->
+          <template v-if="inputMode === 'voice'">
+            <div class="voice-input-area">
+              <button
+                class="voice-btn"
+                :class="{ recording: isRecording }"
+                @click="startRecording"
+                aria-label="语音输入"
+                :title="isRecording ? '点击停止录音' : '点击开始录音'"
+              >
+                <svg v-if="!isRecording" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 15C13.66 15 15 13.66 15 12V6C15 4.34 13.66 3 12 3C10.34 3 9 4.34 9 6V12C9 13.66 10.34 15 12 15Z" fill="#2563eb"/>
+                  <path d="M17 12C17 14.76 14.76 17 12 17C9.24 17 7 14.76 7 12H5C5 15.53 7.61 18.43 11 18.92V21H13V18.92C16.39 18.43 19 15.53 19 12H17Z" fill="#2563eb"/>
+                </svg>
+                <svg v-else width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="6" y="6" width="12" height="12" rx="2" fill="#ff4d4f"/>
+                </svg>
+              </button>
+              <div class="voice-status" v-if="isRecording">
+                <span class="voice-pulse"></span>
+                <span class="voice-text">正在聆听…</span>
+              </div>
+              <div class="voice-status" v-else-if="recordingText">
+                <span class="voice-text">{{ recordingText }}</span>
+              </div>
+              <div class="voice-status voice-idle" v-else>
+                <span class="voice-text">点击麦克风开始说话</span>
+              </div>
+              <!-- 切换文字输入按钮 -->
+              <button
+                class="mode-toggle-btn"
+                @click="inputMode = 'text'"
+                title="切换到文字输入"
+                aria-label="切换到文字输入"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M20 4H4C2.9 4 2 4.9 2 6V18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V6C22 4.9 21.1 4 20 4ZM20 18H4V6H20V18Z" fill="#9ca3af"/>
+                  <circle cx="12" cy="12" r="3" fill="#9ca3af"/>
+                </svg>
+              </button>
+            </div>
+            <div class="input-right" v-if="recordingText">
+              <el-button
+                type="primary"
+                :loading="isThinking"
+                @click="sendQuery"
+                class="send-btn"
+              >
+                <el-icon><Promotion /></el-icon>
+                发送
+              </el-button>
+            </div>
+          </template>
+
+          <!-- 文字输入模式 -->
+          <template v-else>
+            <div class="input-left">
+              <el-icon class="input-q-icon" :size="18"><ChatDotRound /></el-icon>
+              <el-input
+                v-model="userInput"
+                placeholder="请输入您想查询的人社业务数据问题……"
+                class="data-input"
+                @keyup.enter="sendQuery"
+              />
+              <!-- 切换语音输入按钮 -->
+              <button
+                class="mode-toggle-btn text-mode"
+                @click="inputMode = 'voice'; recordingText = ''"
+                title="切换到语音输入"
+                aria-label="切换到语音输入"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 15C13.66 15 15 13.66 15 12V6C15 4.34 13.66 3 12 3C10.34 3 9 4.34 9 6V12C9 13.66 10.34 15 12 15Z" fill="#9ca3af"/>
+                  <path d="M17 12C17 14.76 14.76 17 12 17C9.24 17 7 14.76 7 12H5C5 15.53 7.61 18.43 11 18.92V21H13V18.92C16.39 18.43 19 15.53 19 12H17Z" fill="#9ca3af"/>
+                </svg>
+              </button>
+            </div>
+            <div class="input-right">
+              <el-button
+                type="primary"
+                :loading="isThinking"
+                @click="sendQuery"
+                class="send-btn"
+              >
+                <el-icon><Promotion /></el-icon>
+                发送
+              </el-button>
+            </div>
+          </template>
         </div>
       </div>
     </div>
@@ -231,6 +302,38 @@
 </template>
 
 <script setup lang="ts">
+interface SpeechRecognition extends EventTarget {
+  continuous: boolean
+  interimResults: boolean
+  lang: string
+  start(): void
+  stop(): void
+  abort(): void
+  onresult: ((this: SpeechRecognition, ev: SpeechRecognitionEvent) => void) | null
+  onerror: ((this: SpeechRecognition, ev: SpeechRecognitionErrorEvent) => void) | null
+  onend: ((this: SpeechRecognition, ev: Event) => void) | null
+}
+interface SpeechRecognitionEvent extends Event {
+  resultIndex: number
+  results: SpeechRecognitionResultList
+}
+interface SpeechRecognitionResultList {
+  length: number
+  [index: number]: SpeechRecognitionResult
+}
+interface SpeechRecognitionResult {
+  isFinal: boolean
+  [index: number]: SpeechRecognitionAlternative
+}
+interface SpeechRecognitionAlternative {
+  transcript: string
+  confidence: number
+}
+interface SpeechRecognitionErrorEvent extends Event {
+  error: string
+  message: string
+}
+
 import { ref, nextTick, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import * as echarts from 'echarts'
@@ -274,6 +377,10 @@ const conversationMessages = ref<MsgType[]>([])
 const isThinking = ref(false)
 const userInput = ref('')
 const mainScrollRef = ref<HTMLElement>()
+const inputMode = ref<'voice' | 'text'>('voice')
+const isRecording = ref(false)
+const recordingText = ref('')
+let recognition: any = null
 
 const hotWords = ['按区县拆分', '同比环比分析', '查看历史趋势', '导出明细', '查看口径说明']
 
@@ -299,6 +406,65 @@ const deleteHistory = (idx: number) => {
     activeHistoryIdx.value = -1
   } else if (activeHistoryIdx.value > idx) {
     activeHistoryIdx.value--
+  }
+}
+
+const startRecording = () => {
+  const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+  if (!SpeechRecognition) {
+    ElMessage.warning('您的浏览器不支持语音识别，请使用 Chrome 浏览器')
+    return
+  }
+  isRecording.value = true
+  recordingText.value = ''
+  const SpeechRecognitionAPI = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+  recognition = new SpeechRecognitionAPI()
+  recognition.lang = 'zh-CN'
+  recognition.continuous = true
+  recognition.interimResults = true
+  recognition.onresult = (event: SpeechRecognitionEvent) => {
+    let transcript = ''
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      transcript += event.results[i][0].transcript
+    }
+    recordingText.value = transcript
+  }
+  recognition.onerror = () => {
+    isRecording.value = false
+    ElMessage.warning('语音识别失败，请重试')
+  }
+  recognition.onend = () => {
+    if (isRecording.value) {
+      if (recordingText.value) {
+        userInput.value = recordingText.value
+        recordingText.value = ''
+      }
+      isRecording.value = false
+    }
+  }
+  recognition.start()
+}
+
+const stopRecording = () => {
+  if (recognition) {
+    recognition.stop()
+    recognition = null
+  }
+  isRecording.value = false
+  if (recordingText.value) {
+    userInput.value = recordingText.value
+    recordingText.value = ''
+  }
+}
+
+const toggleInputMode = () => {
+  if (inputMode.value === 'voice') {
+    if (isRecording.value) {
+      stopRecording()
+    }
+    inputMode.value = 'text'
+  } else {
+    inputMode.value = 'voice'
   }
 }
 
