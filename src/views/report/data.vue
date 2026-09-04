@@ -103,11 +103,6 @@
     <div class="chat-area">
       <!-- 顶部 -->
       <div class="chat-topbar">
-        <el-breadcrumb separator="/">
-          <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
-          <el-breadcrumb-item>智能报告</el-breadcrumb-item>
-          <el-breadcrumb-item>数据分析报告</el-breadcrumb-item>
-        </el-breadcrumb>
         <div class="topbar-right">
           <el-badge :value="3" class="notif-badge">
             <el-icon :size="20"><Bell /></el-icon>
@@ -646,7 +641,7 @@ function openHistoryReport(row: any) {
 .chat-area { flex: 1; display: flex; flex-direction: column; background: #f2f5fa; min-width: 0; }
 
 /* 顶部栏 */
-.chat-topbar { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; background: #fff; border-bottom: 1px solid #e4eaf3; flex-shrink: 0; }
+.chat-topbar { display: flex; align-items: center; justify-content: flex-end; padding: 8px 20px; background: #fff; border-bottom: 1px solid #e4eaf3; flex-shrink: 0; }
 .topbar-right { display: flex; align-items: center; gap: 16px; }
 .notif-badge { cursor: pointer; }
 .user-avatar { width: 32px; height: 32px; border-radius: 50%; background: #2563eb; display: flex; align-items: center; justify-content: center; color: #fff; cursor: pointer; }
