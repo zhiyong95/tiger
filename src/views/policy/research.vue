@@ -159,7 +159,7 @@ interface PolicyResult {
   targetObjects: string[]; coreConditions: string[]; subsidyAmounts: string[]
 }
 interface ChatMessage { role: 'user' | 'ai'; content: string; time: string; result?: PolicyResult; isLoading?: boolean }
-interface HistoryItem { name: string; title: string; time: string; count: number; resultKey: number }
+interface HistoryItem { name: string; title: string; time: string; count: number; resultKey: number; messages: ChatMessage[]; source: string }
 
 const urlText = ref('')
 const fileInputRef = ref<HTMLInputElement>()
@@ -308,6 +308,8 @@ const startAnalysis = () => {
       time: new Date().toISOString().slice(0, 10),
       count: 1,
       resultKey: randomIdx,
+      messages: JSON.parse(JSON.stringify(messages.value)),
+      source: currentFile.value?.name || urlText.value || '',
     })
     if (historyList.value.length > 10) historyList.value.pop()
     activeHistoryIdx.value = 0
@@ -319,9 +321,15 @@ const startAnalysis = () => {
 const loadHistory = (idx: number) => {
   activeHistoryIdx.value = idx
   const item = historyList.value[idx]
-  const result = allResults[item.resultKey % allResults.length]
-  messages.value.push({ role: 'user', content: `查看历史研判记录：${item.name}`, time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }) })
-  messages.value.push({ role: 'ai', content: '', time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }), result })
+  if (item.messages && item.messages.length > 0) {
+    messages.value = JSON.parse(JSON.stringify(item.messages))
+  } else {
+    const result = allResults[item.resultKey % allResults.length]
+    messages.value = [
+      { role: 'user', content: `查看历史研判记录：${item.name}`, time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }) },
+      { role: 'ai', content: '', time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }), result },
+    ]
+  }
   scrollToBottom()
 }
 
