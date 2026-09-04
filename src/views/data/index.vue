@@ -202,99 +202,81 @@
 
       <!-- 底部输入区 -->
       <div class="input-footer">
-        <div class="input-hint" v-if="inputMode === 'voice' && !isRecording">点击麦克风开始说话，或切换键盘输入文字</div>
-        <div class="input-hint" v-else-if="isRecording">正在聆听…</div>
-        <div class="input-hint" v-else>直接告诉AI你的问题</div>
-        <div class="input-bar">
-          <!-- 语音输入模式 -->
-          <template v-if="inputMode === 'voice'">
-            <div class="voice-input-area">
-              <button
-                class="voice-btn"
-                :class="{ recording: isRecording }"
-                @click="startRecording"
-                aria-label="语音输入"
-                :title="isRecording ? '点击停止录音' : '点击开始录音'"
-              >
-                <svg v-if="!isRecording" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 15C13.66 15 15 13.66 15 12V6C15 4.34 13.66 3 12 3C10.34 3 9 4.34 9 6V12C9 13.66 10.34 15 12 15Z" fill="#2563eb"/>
-                  <path d="M17 12C17 14.76 14.76 17 12 17C9.24 17 7 14.76 7 12H5C5 15.53 7.61 18.43 11 18.92V21H13V18.92C16.39 18.43 19 15.53 19 12H17Z" fill="#2563eb"/>
-                </svg>
-                <svg v-else width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect x="6" y="6" width="12" height="12" rx="2" fill="#ff4d4f"/>
-                </svg>
-              </button>
-              <div class="voice-status" v-if="isRecording">
-                <span class="voice-pulse"></span>
-                <span class="voice-text">正在聆听…</span>
-              </div>
-              <div class="voice-status" v-else-if="recordingText">
-                <span class="voice-text">{{ recordingText }}</span>
-              </div>
-              <div class="voice-status voice-idle" v-else>
-                <span class="voice-text">点击麦克风开始说话</span>
-              </div>
-              <!-- 切换文字输入按钮 -->
-              <button
-                class="mode-toggle-btn"
-                @click="inputMode = 'text'"
-                title="切换到文字输入"
-                aria-label="切换到文字输入"
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M20 4H4C2.9 4 2 4.9 2 6V18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V6C22 4.9 21.1 4 20 4ZM20 18H4V6H20V18Z" fill="#9ca3af"/>
-                  <circle cx="12" cy="12" r="3" fill="#9ca3af"/>
-                </svg>
-              </button>
-            </div>
-            <div class="input-right" v-if="recordingText">
-              <el-button
-                type="primary"
-                :loading="isThinking"
-                @click="sendQuery"
-                class="send-btn"
-              >
-                <el-icon><Promotion /></el-icon>
-                发送
-              </el-button>
-            </div>
-          </template>
+        <div class="input-bar-wrapper">
+          <!-- 左端：模式切换按钮 -->
+          <button
+            class="mode-toggle-btn"
+            :class="{ active: inputMode === 'voice' }"
+            @click="toggleInputMode"
+            :title="inputMode === 'voice' ? '切换到文字输入' : '切换到语音输入'"
+            :aria-label="inputMode === 'voice' ? '切换到文字输入' : '切换到语音输入'"
+          >
+            <svg v-if="inputMode === 'voice'" width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M20 4H4C2.9 4 2 4.9 2 6V18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V6C22 4.9 21.1 4 20 4ZM20 18H4V6H20V18Z" fill="currentColor"/>
+              <rect x="8" y="8" width="8" height="2" rx="1" fill="currentColor" opacity="0.7"/>
+              <rect x="8" y="12" width="6" height="2" rx="1" fill="currentColor" opacity="0.7"/>
+            </svg>
+            <svg v-else width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M12 15C13.66 15 15 13.66 15 12V6C15 4.34 13.66 3 12 3C10.34 3 9 4.34 9 6V12C9 13.66 10.34 15 12 15Z" fill="currentColor"/>
+              <path d="M17 12C17 14.76 14.76 17 12 17C9.24 17 7 14.76 7 12H5C5 15.53 7.61 18.43 11 18.92V21H13V18.92C16.39 18.43 19 15.53 19 12H17Z" fill="currentColor"/>
+            </svg>
+          </button>
 
-          <!-- 文字输入模式 -->
-          <template v-else>
-            <div class="input-left">
-              <el-icon class="input-q-icon" :size="18"><ChatDotRound /></el-icon>
+          <!-- 中间：输入区域 -->
+          <div class="input-area">
+            <!-- 语音模式 -->
+            <template v-if="inputMode === 'voice'">
+              <!-- 空闲态 -->
+              <div v-if="!isRecording && !recordingText" class="voice-idle">
+                <button class="mic-btn" @click="startRecording" aria-label="开始录音">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 15C13.66 15 15 13.66 15 12V6C15 4.34 13.66 3 12 3C10.34 3 9 4.34 9 6V12C9 13.66 10.34 15 12 15Z" fill="white"/>
+                    <path d="M17 12C17 14.76 14.76 17 12 17C9.24 17 7 14.76 7 12H5C5 15.53 7.61 18.43 11 18.92V21H13V18.92C16.39 18.43 19 15.53 19 12H17Z" fill="white"/>
+                  </svg>
+                </button>
+                <span class="guide-text">点击麦克风开始说话，或切换键盘输入文字</span>
+              </div>
+              <!-- 录音中 -->
+              <div v-else-if="isRecording" class="voice-recording">
+                <button class="mic-btn recording" @click="stopRecording" aria-label="停止录音">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                    <rect x="7" y="7" width="10" height="10" rx="2" fill="white"/>
+                  </svg>
+                </button>
+                <span class="voice-pulse"></span>
+                <span class="recording-text">正在聆听…</span>
+                <span class="recording-duration">{{ recordingDuration }}</span>
+              </div>
+              <!-- 识别完成 -->
+              <div v-else class="voice-recognized">
+                <span class="recognized-text">{{ recordingText }}</span>
+                <el-button link type="primary" size="small" @click="startRecording" class="retry-btn">
+                  <el-icon><Refresh /></el-icon> 重录
+                </el-button>
+              </div>
+            </template>
+
+            <!-- 文字模式 -->
+            <template v-else>
               <el-input
                 v-model="userInput"
-                placeholder="请输入您想查询的人社业务数据问题……"
-                class="data-input"
+                placeholder="请输入您的问题"
+                class="text-input"
                 @keyup.enter="sendQuery"
               />
-              <!-- 切换语音输入按钮 -->
-              <button
-                class="mode-toggle-btn text-mode"
-                @click="inputMode = 'voice'; recordingText = ''"
-                title="切换到语音输入"
-                aria-label="切换到语音输入"
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 15C13.66 15 15 13.66 15 12V6C15 4.34 13.66 3 12 3C10.34 3 9 4.34 9 6V12C9 13.66 10.34 15 12 15Z" fill="#9ca3af"/>
-                  <path d="M17 12C17 14.76 14.76 17 12 17C9.24 17 7 14.76 7 12H5C5 15.53 7.61 18.43 11 18.92V21H13V18.92C16.39 18.43 19 15.53 19 12H17Z" fill="#9ca3af"/>
-                </svg>
-              </button>
-            </div>
-            <div class="input-right">
-              <el-button
-                type="primary"
-                :loading="isThinking"
-                @click="sendQuery"
-                class="send-btn"
-              >
-                <el-icon><Promotion /></el-icon>
-                发送
-              </el-button>
-            </div>
-          </template>
+            </template>
+          </div>
+
+          <!-- 右端：发送按钮 -->
+          <el-button
+            type="primary"
+            :loading="isThinking"
+            @click="sendQuery"
+            class="send-btn"
+            :disabled="(inputMode === 'voice' && !recordingText) || (inputMode === 'text' && !userInput.trim())"
+            :icon="Promotion"
+            circle
+          />
         </div>
       </div>
     </div>
@@ -348,6 +330,7 @@ import {
   ArrowUp,
   ArrowDown,
   Loading,
+  Refresh,
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
@@ -380,7 +363,10 @@ const mainScrollRef = ref<HTMLElement>()
 const inputMode = ref<'voice' | 'text'>('voice')
 const isRecording = ref(false)
 const recordingText = ref('')
+const recordingDuration = ref('00:00')
 let recognition: any = null
+let recordingTimer: ReturnType<typeof setInterval> | null = null
+let recordingSeconds = 0
 
 const hotWords = ['按区县拆分', '同比环比分析', '查看历史趋势', '导出明细', '查看口径说明']
 
@@ -417,6 +403,15 @@ const startRecording = () => {
   }
   isRecording.value = true
   recordingText.value = ''
+  recordingSeconds = 0
+  recordingDuration.value = '00:00'
+  if (recordingTimer) clearInterval(recordingTimer)
+  recordingTimer = setInterval(() => {
+    recordingSeconds++
+    const m = String(Math.floor(recordingSeconds / 60)).padStart(2, '0')
+    const s = String(recordingSeconds % 60).padStart(2, '0')
+    recordingDuration.value = `${m}:${s}`
+  }, 1000)
   const SpeechRecognitionAPI = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
   recognition = new SpeechRecognitionAPI()
   recognition.lang = 'zh-CN'
@@ -431,6 +426,7 @@ const startRecording = () => {
   }
   recognition.onerror = () => {
     isRecording.value = false
+    if (recordingTimer) { clearInterval(recordingTimer); recordingTimer = null }
     ElMessage.warning('语音识别失败，请重试')
   }
   recognition.onend = () => {
@@ -440,6 +436,7 @@ const startRecording = () => {
         recordingText.value = ''
       }
       isRecording.value = false
+      if (recordingTimer) { clearInterval(recordingTimer); recordingTimer = null }
     }
   }
   recognition.start()
@@ -451,6 +448,7 @@ const stopRecording = () => {
     recognition = null
   }
   isRecording.value = false
+  if (recordingTimer) { clearInterval(recordingTimer); recordingTimer = null }
   if (recordingText.value) {
     userInput.value = recordingText.value
     recordingText.value = ''
@@ -458,11 +456,12 @@ const stopRecording = () => {
 }
 
 const toggleInputMode = () => {
+  if (isRecording.value) {
+    stopRecording()
+  }
   if (inputMode.value === 'voice') {
-    if (isRecording.value) {
-      stopRecording()
-    }
     inputMode.value = 'text'
+    recordingText.value = ''
   } else {
     inputMode.value = 'voice'
   }
@@ -1281,73 +1280,217 @@ onUnmounted(() => {
 .input-footer {
   border-top: 1px solid #e5e7eb;
   background: white;
-  padding: 8px 40px 20px;
+  padding: 12px 40px 20px;
 }
 
-.input-hint {
-  max-width: 900px;
-  margin: 0 auto 8px;
-  font-size: 13px;
-  color: #9ca3af;
-  padding-left: 4px;
-}
-
-.input-bar {
+.input-bar-wrapper {
   display: flex;
   align-items: center;
-  gap: 12px;
-  max-width: 900px;
+  gap: 0;
+  max-width: 720px;
   margin: 0 auto;
-  width: 100%;
-}
-
-.input-left {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: #f8f9fa;
-  border-radius: 24px;
-  padding: 4px 4px 4px 16px;
-  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  border: 1px solid #e5e6eb;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  padding: 4px;
   transition: border-color 0.2s;
 }
 
-.input-left:focus-within {
-  border-color: #2563eb;
+.input-bar-wrapper:focus-within {
+  border-color: #2f6bff;
 }
 
-.input-q-icon {
-  color: #2563eb;
+/* 模式切换按钮 */
+.mode-toggle-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #e5e6eb;
+  background: #f8f9fa;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #999;
   flex-shrink: 0;
+  transition: all 0.2s;
+  margin-left: 4px;
 }
 
-.data-input {
+.mode-toggle-btn:hover {
+  border-color: #2f6bff;
+  color: #2f6bff;
+}
+
+.mode-toggle-btn.active {
+  border-color: #2f6bff;
+  background: #eef4ff;
+  color: #2f6bff;
+}
+
+/* 中间输入区域 */
+.input-area {
   flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  height: 40px;
+  margin: 0 8px;
+  position: relative;
 }
 
-.data-input :deep(.el-input__wrapper) {
+/* 语音-空闲态 */
+.voice-idle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  height: 100%;
+}
+
+.guide-text {
+  font-size: 14px;
+  color: #999;
+  white-space: nowrap;
+}
+
+/* 麦克风按钮 */
+.mic-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #2f6bff;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s;
+  box-shadow: 0 2px 6px rgba(47,107,255,0.3);
+}
+
+.mic-btn:hover {
+  background: #1d4ed8;
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(47,107,255,0.4);
+}
+
+.mic-btn.recording {
+  background: #ff4d4f;
+  box-shadow: 0 0 0 0 rgba(255,77,79,0.4);
+  animation: micPulse 1.5s infinite;
+}
+
+@keyframes micPulse {
+  0% { box-shadow: 0 0 0 0 rgba(255,77,79,0.4); }
+  70% { box-shadow: 0 0 0 12px rgba(255,77,79,0); }
+  100% { box-shadow: 0 0 0 0 rgba(255,77,79,0); }
+}
+
+/* 语音-录音中 */
+.voice-recording {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 100%;
+}
+
+.voice-pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ff4d4f;
+  animation: voicePulse 1s ease-in-out infinite;
+}
+
+@keyframes voicePulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.8); }
+}
+
+.recording-text {
+  font-size: 14px;
+  color: #333;
+  font-weight: 500;
+}
+
+.recording-duration {
+  font-size: 13px;
+  color: #999;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 语音-识别完成 */
+.voice-recognized {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 100%;
+  padding: 0 4px;
+}
+
+.recognized-text {
+  flex: 1;
+  font-size: 14px;
+  color: #333;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.retry-btn {
+  flex-shrink: 0;
+  font-size: 12px;
+}
+
+/* 文字输入模式 */
+.text-input {
+  width: 100%;
+}
+
+.text-input :deep(.el-input__wrapper) {
   background: transparent;
   box-shadow: none !important;
-  padding: 0 8px;
+  padding: 0 4px;
 }
 
-.data-input :deep(.el-input__inner) {
+.text-input :deep(.el-input__inner) {
   border: none;
   background: transparent;
   font-size: 14px;
+  color: #333;
+  height: 36px;
 }
 
-.send-btn {
-  border-radius: 20px;
-  padding: 10px 24px;
+.text-input :deep(.el-input__inner::placeholder) {
+  color: #999;
   font-size: 14px;
-  background: #2563eb;
-  border-color: #2563eb;
+}
+
+/* 发送按钮 */
+.send-btn {
+  width: 36px;
+  height: 36px;
+  background: #2f6bff;
+  border-color: #2f6bff;
+  flex-shrink: 0;
+  margin-right: 4px;
 }
 
 .send-btn:hover {
   background: #1d4ed8;
   border-color: #1d4ed8;
+}
+
+.send-btn:disabled {
+  background: #d1d5db;
+  border-color: #d1d5db;
 }
 </style>
