@@ -84,6 +84,7 @@
                     导出报告
                   </el-button>
                 </div>
+                <div class="msg-text" v-if="msg.content" style="white-space:pre-wrap;line-height:1.8;margin-bottom:16px;padding:12px 16px;background:#f8fafc;border-radius:8px;border-left:3px solid #2563eb;">{{ msg.content }}</div>
                 <div class="result-content" v-if="msg.result">
                   <div class="result-title">{{ msg.result.title }}</div>
                   <div class="result-tags">
