@@ -16,7 +16,7 @@
       </div>
 
       <!-- 查看历史报告 -->
-      <el-button class="history-btn" @click="showHistoryDrawer = true">
+      <el-button class="history-btn" :loading="historyLoading" @click="openHistoryDrawer">
         <el-icon><Clock /></el-icon> 查看历史报告
       </el-button>
 
@@ -200,6 +200,7 @@ import {
   School, User, Briefcase, Collection
 } from '@element-plus/icons-vue'
 import dayjs from 'dayjs'
+import { isWorkflowConfigured, queryReportHistoryList, queryReportHistoryDetail } from '@/api/cozeWorkflow'
 
 // ====== 类型定义 ======
 interface Topic {
@@ -398,10 +399,57 @@ function scrollToBottom() {
 
 // ====== 历史 ======
 const showHistoryDrawer = ref(false)
+const historyLoading = ref(false)
 
-function loadHistory(h: HistoryItem) {
+// 点击「查看历史报告」→ 工作流「查询历史报告列表」
+async function openHistoryDrawer() {
+  showHistoryDrawer.value = true
+  if (!isWorkflowConfigured()) {
+    // 工作流未配置：使用本地历史（含配置提示）
+    console.warn('[coze-workflow] 未配置 VITE_WORKFLOW_HISTORY_LIST_ID，历史列表降级为本地数据')
+    return
+  }
+  historyLoading.value = true
+  try {
+    const data = await queryReportHistoryList('research')
+    const list = data?.list || data?.data || (Array.isArray(data) ? data : null)
+    if (Array.isArray(list) && list.length >= 0) {
+      historyList.value = list.map((item: any) => ({
+        id: item.id ?? Date.now() + Math.random(),
+        title: item.title || item.name || '未命名报告',
+        genTime: item.genTime || item.createdAt || item.createTime || '',
+        status: item.status === '已完成' || item.status === 'completed' ? 'completed' : 'generating',
+        messages: item.messages || [],
+      }))
+    }
+  } catch (e: any) {
+    ElMessage.error(`查询历史报告列表失败：${e?.message || e}`)
+  } finally {
+    historyLoading.value = false
+  }
+}
+
+// 点击某条历史报告 → 工作流「查询历史报告详情」，返回完整交互对话
+async function loadHistory(h: HistoryItem) {
   showHistoryDrawer.value = false
-  messages.value = h.messages.slice()
+  if (isWorkflowConfigured() && h.id) {
+    try {
+      const data = await queryReportHistoryDetail(h.id)
+      const detailMessages = data?.messages || data?.conversation || data
+      if (Array.isArray(detailMessages)) {
+        messages.value = detailMessages.slice()
+        scrollToBottom()
+        return
+      }
+    } catch (e: any) {
+      ElMessage.error(`查询历史报告详情失败：${e?.message || e}`)
+      return
+    }
+  }
+  // 降级：使用本地保存的完整对话
+  if (h.messages && h.messages.length) {
+    messages.value = h.messages.slice()
+  }
   scrollToBottom()
 }
 

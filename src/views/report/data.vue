@@ -17,7 +17,7 @@
         </div>
 
         <!-- 查看历史报告 -->
-        <el-button class="history-btn" @click="showHistoryDrawer = true">
+        <el-button class="history-btn" :loading="historyLoading" @click="openHistoryDrawer">
           <el-icon><Clock /></el-icon>查看历史报告
         </el-button>
 
@@ -235,6 +235,7 @@ import { ref, computed, nextTick } from 'vue'
 import { UploadFilled, Document, MagicStick, Download, Back, Clock, EditPen, TrendCharts, ZoomOut, DocumentChecked, ChatLineSquare, Bell, User, Paperclip, Promotion } from '@element-plus/icons-vue'
 import dayjs from 'dayjs'
 import { ElMessage } from 'element-plus'
+import { isWorkflowConfigured, queryReportHistoryList, queryReportHistoryDetail } from '@/api/cozeWorkflow'
 
 const overviewStats = ref([
   { label: '数据分析报告总数', value: '52份', icon: Document, bg: 'linear-gradient(135deg, #2563eb, #1d4ed8)' },
@@ -562,10 +563,55 @@ function handleAttach(e: Event) {
 
 // 历史
 const showHistoryDrawer = ref(false)
-const historyList = ref<Array<{ title: string; mode: string; createdAt: string; status: string; report: any; messages: any[] }>>([])
+const historyLoading = ref(false)
+const historyList = ref<Array<{ id?: string | number; title: string; mode: string; createdAt: string; status: string; report: any; messages: any[] }>>([])
 
-function openHistoryReport(row: any) {
+// 点击「查看历史报告」→ 工作流「查询历史报告列表」
+async function openHistoryDrawer() {
+  showHistoryDrawer.value = true
+  if (!isWorkflowConfigured()) {
+    console.warn('[coze-workflow] 未配置 VITE_WORKFLOW_HISTORY_LIST_ID，历史列表降级为本地数据')
+    return
+  }
+  historyLoading.value = true
+  try {
+    const data = await queryReportHistoryList('data')
+    const list = data?.list || data?.data || (Array.isArray(data) ? data : null)
+    if (Array.isArray(list) && list.length >= 0) {
+      historyList.value = list.map((item: any) => ({
+        id: item.id ?? undefined,
+        title: item.title || item.name || '未命名报告',
+        mode: item.mode === 'upload' || item.mode === '上传' ? 'upload' : 'compare',
+        createdAt: item.createdAt || item.genTime || item.createTime || '',
+        status: item.status || '已完成',
+        report: item.report || null,
+        messages: item.messages || [],
+      }))
+    }
+  } catch (e: any) {
+    ElMessage.error(`查询历史报告列表失败：${e?.message || e}`)
+  } finally {
+    historyLoading.value = false
+  }
+}
+
+// 点击某条历史报告 → 工作流「查询历史报告详情」，返回完整交互对话
+async function openHistoryReport(row: any) {
   showHistoryDrawer.value = false
+  if (isWorkflowConfigured() && row.id) {
+    try {
+      const data = await queryReportHistoryDetail(row.id)
+      const detailMessages = data?.messages || data?.conversation
+      if (Array.isArray(detailMessages)) {
+        messages.value = JSON.parse(JSON.stringify(detailMessages))
+        scrollToBottom()
+        return
+      }
+    } catch (e: any) {
+      ElMessage.error(`查询历史报告详情失败：${e?.message || e}`)
+      return
+    }
+  }
   if (row.messages && row.messages.length > 0) {
     messages.value = JSON.parse(JSON.stringify(row.messages))
   } else {
