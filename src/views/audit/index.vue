@@ -1,13 +1,5 @@
 <template>
   <div class="audit-page">
-    <div class="page-breadcrumb">
-      <span class="crumb-item" @click="$router.push('/dashboard')">首页</span>
-      <span class="crumb-sep">/</span>
-      <span class="crumb-item" @click="$router.push('/dashboard')">工作台</span>
-      <span class="crumb-sep">/</span>
-      <span class="crumb-item active">业务智审</span>
-    </div>
-
     <div class="audit-body">
       <!-- 左侧服务导航 -->
       <div class="service-sidebar">
@@ -600,12 +592,6 @@ function viewDetail(row: any) { auditDetail.value = row; showAuditDetail.value =
 
 <style scoped>
 .audit-page { padding: 16px 20px; height: calc(100vh - 56px); display: flex; flex-direction: column; background: #f5f6fa; }
-.page-breadcrumb { font-size: 13px; margin-bottom: 16px; color: #6b7280; display: flex; align-items: center; gap: 6px; }
-.crumb-item { cursor: pointer; color: #6b7280; }
-.crumb-item:hover { color: #2563eb; }
-.crumb-item.active { color: #1f2937; font-weight: 600; cursor: default; }
-.crumb-sep { color: #d1d5db; }
-
 .audit-body { display: flex; gap: 16px; flex: 1; min-height: 0; }
 .service-sidebar { width: 220px; flex-shrink: 0; background: #fff; border-radius: 10px; padding: 16px; display: flex; flex-direction: column; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
 .sidebar-title { font-size: 15px; font-weight: 600; color: #1f2937; margin-bottom: 12px; }
