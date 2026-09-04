@@ -114,26 +114,6 @@
     <!-- 右侧 AI 对话区 -->
     <div class="right-panel">
       <div class="chat-area" ref="chatAreaRef">
-        <!-- 空状态 -->
-        <div v-if="messages.length === 0" class="empty-state">
-          <div class="empty-icon">
-            <el-icon :size="48"><MagicStick /></el-icon>
-          </div>
-          <h2 class="empty-title">AI 调研分析报告助手</h2>
-          <p class="empty-desc">请在左侧选择调研主题并配置参数，点击"生成调研分析报告"后，AI 将根据您的配置自动生成专业的调研分析报告。生成后可继续对话调整内容。</p>
-          <div class="feature-cards">
-            <div class="feature-card">
-              <el-icon :size="20" color="#2563eb"><Document /></el-icon>
-              <div class="feature-name">结构化报告</div>
-              <div class="feature-desc">完整章节，逻辑清晰</div>
-            </div>
-            <div class="feature-card">
-              <el-icon :size="20" color="#2563eb"><DataAnalysis /></el-icon>
-              <div class="feature-name">AI 智能分析</div>
-              <div class="feature-desc">深度洞察，专业建议</div>
-            </div>
-          </div>
-        </div>
 
         <!-- 消息列表 -->
         <div v-for="(msg, idx) in messages" :key="idx" class="message-item" :class="msg.role">
@@ -144,30 +124,6 @@
               <span></span><span></span><span></span>
             </div>
             <div v-else-if="msg.report" class="report-card">
-              <div class="report-header">
-                <div class="report-title-area">
-                  <h3 class="report-title">{{ msg.report.title }}</h3>
-                  <el-tag :type="msg.report.status === 'completed' ? 'success' : 'warning'" size="small">
-                    {{ msg.report.status === 'completed' ? '已完成' : '生成中' }}
-                  </el-tag>
-                </div>
-                <el-dropdown @command="(cmd: string) => onExport(cmd, msg.report!)">
-                  <el-button size="small"><el-icon><Download /></el-icon> 导出 <el-icon><ArrowDown /></el-icon></el-button>
-                  <template #dropdown>
-                    <el-dropdown-menu>
-                      <el-dropdown-item command="word">导出 Word</el-dropdown-item>
-                      <el-dropdown-item command="pdf">导出 PDF</el-dropdown-item>
-                      <el-dropdown-item command="markdown">导出 Markdown</el-dropdown-item>
-                      <el-dropdown-item command="text">导出文本</el-dropdown-item>
-                    </el-dropdown-menu>
-                  </template>
-                </el-dropdown>
-              </div>
-              <div class="report-meta">
-                <span>调研周期：{{ msg.report.period }}</span>
-                <span class="sep">|</span>
-                <span>生成时间：{{ msg.report.genTime }}</span>
-              </div>
               <!-- 核心指标 -->
               <div class="metrics-grid">
                 <div class="metric-card" v-for="m in msg.report.metrics" :key="m.label">
