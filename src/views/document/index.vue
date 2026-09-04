@@ -2,7 +2,7 @@
   <div class="document-page">
     <!-- 顶部统计卡片区 -->
     <div class="stats-row">
-      <el-card class="stat-card shadow-sm">
+      <el-card class="stat-card shadow-sm" body-style="padding:16px 20px">
         <div class="stat-content">
           <div class="stat-icon bg-blue">
             <el-icon><Document /></el-icon>
@@ -11,9 +11,10 @@
             <div class="stat-value">387</div>
             <div class="stat-label">本月已生成</div>
           </div>
+          <div class="stat-growth up">+12.3%</div>
         </div>
       </el-card>
-      <el-card class="stat-card shadow-sm">
+      <el-card class="stat-card shadow-sm" body-style="padding:16px 20px">
         <div class="stat-content">
           <div class="stat-icon bg-green">
             <el-icon><CircleCheck /></el-icon>
@@ -22,9 +23,10 @@
             <div class="stat-value">98.6%</div>
             <div class="stat-label">合规通过率</div>
           </div>
+          <div class="stat-growth up">+1.2%</div>
         </div>
       </el-card>
-      <el-card class="stat-card shadow-sm">
+      <el-card class="stat-card shadow-sm" body-style="padding:16px 20px">
         <div class="stat-content">
           <div class="stat-icon bg-orange">
             <el-icon><Clock /></el-icon>
@@ -33,9 +35,10 @@
             <div class="stat-value">156h</div>
             <div class="stat-label">AI节省工时</div>
           </div>
+          <div class="stat-growth up">+8.5%</div>
         </div>
       </el-card>
-      <el-card class="stat-card shadow-sm">
+      <el-card class="stat-card shadow-sm" body-style="padding:16px 20px">
         <div class="stat-content">
           <div class="stat-icon bg-gray">
             <el-icon><FolderOpened /></el-icon>
@@ -44,18 +47,10 @@
             <div class="stat-value">12438</div>
             <div class="stat-label">已归档</div>
           </div>
+          <div class="stat-growth up">+5.2%</div>
         </div>
       </el-card>
     </div>
-
-    <!-- 政务公文全流程步骤条 -->
-    <el-steps v-model="currentStep" finish-status="success" align-center class="process-steps">
-      <el-step title="素材调取" description="模板库" style="cursor:pointer" @click="currentStep=0"></el-step>
-      <el-step title="文稿创作" description="AI生成" style="cursor:pointer" @click="currentStep=1"></el-step>
-      <el-step title="风险校验" description="合规审校" style="cursor:pointer" @click="currentStep=2"></el-step>
-      <el-step title="标准化输出" description="排版导出" style="cursor:pointer" @click="currentStep=3"></el-step>
-      <el-step title="资料留存" description="检索归档" style="cursor:pointer" @click="currentStep=4"></el-step>
-      </el-steps>
 
     <!-- 模块Tab导航 -->
     <el-tabs v-model="activeTab" class="document-tabs" type="card">
@@ -548,12 +543,6 @@ import dayjs from 'dayjs'
 import { Document, CircleCheck, Clock, Share, FolderOpened, Search, MagicStick, Promotion, Star, StarFilled, TrendCharts, Check, DocumentCopy, Stamp, Loading, Warning, Plus, InfoFilled } from '@element-plus/icons-vue'
 
 const activeTab = ref('library')
-const currentStep = ref(0)
-// 步骤条与Tab联动：步骤映射到tab name
-const stepToTab = ['library', 'generate', 'audit', 'export', 'archive']
-
-watch(currentStep, (val) => { activeTab.value = stepToTab[val] || 'library' })
-watch(activeTab, (val) => { currentStep.value = ({ library: 0, generate: 1, audit: 2, export: 3, archive: 4 } as Record<string, number>)[val] ?? 0 })
 
 const selectedDocType = ref('all')
 const selectedBizArea = ref('')
@@ -819,7 +808,6 @@ const generateBodyContent = () => {
 }
 const acceptOutline = () => {
   genStep.value = 'content'
-  currentStep.value = 1
   // 模拟生成正文
   generatingOutline.value = true
   setTimeout(() => {
@@ -898,8 +886,6 @@ const renderFlowCharts = () => {
 }
 
 watch(() => activeTab.value, (newTab) => {
-  const idx: Record<string, number> = { library: 0, generate:1, audit:2, export:3, archive:4, flow:5 }
-  currentStep.value = idx[newTab] ?? 0
   if(newTab === 'audit') setTimeout(() => renderAuditChart(), 100)
   if(newTab === 'flow') setTimeout(() => renderFlowCharts(), 100)
 })
@@ -908,20 +894,24 @@ onMounted(() => {})
 </script>
 
 <style scoped>
-.document-page { padding: 20px 0; }
-.stats-row { display:flex; gap:16px; flex-wrap:wrap; margin-bottom:16px; }
-.stat-card { border-radius:12px; }
-.stat-content { display:flex; align-items:center; gap:14px; }
-.stat-icon { width:48px; height:48px; border-radius:10px; display:flex; align-items:center; justify-content:center; color:white; font-size:22px; }
+.document-page { padding: 16px 0; }
+.stats-row { display:flex; gap:16px; flex-wrap:wrap; margin-bottom:12px; }
+.stat-card { flex:1; min-width:0; border-radius:12px; }
+.stat-card .el-card__body { padding:16px 20px; }
+.stat-content { display:flex; align-items:center; gap:12px; }
+.stat-icon { width:44px; height:44px; border-radius:10px; display:flex; align-items:center; justify-content:center; color:white; font-size:20px; flex-shrink:0; }
 .stat-icon.bg-blue { background: #2563eb; }
 .stat-icon.bg-green { background: #10b981; }
 .stat-icon.bg-orange { background: #ff7c00; }
 .stat-icon.bg-purple { background: #7c3aed; }
 .stat-icon.bg-red { background: #ef4444; }
 .stat-icon.bg-gray { background: #6b7280; }
+.stat-text { flex:1; min-width:0; }
 .stat-text .stat-value { font-size:22px; font-weight:bold; color:#1f2937; line-height:1.3; }
-.stat-text .stat-label { font-size:12px; color:#6b7280; }
-.process-steps { background:white; padding: 20px; border-radius:12px; margin-bottom:16px; }
+.stat-text .stat-label { font-size:12px; color:#6b7280; margin-top:2px; }
+.stat-growth { font-size:11px; font-weight:500; padding:2px 8px; border-radius:10px; white-space:nowrap; }
+.stat-growth.up { background:#ecfdf5; color:#10b981; }
+.stat-growth.down { background:#fef2f2; color:#ef4444; }
 .document-tabs { background:white; border-radius:12px; }
 .tab-label { display:flex; align-items:center; gap:6px; }
 .filter-bar { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; padding:12px 0; }
