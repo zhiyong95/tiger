@@ -634,7 +634,7 @@ function openHistoryReport(row: any) {
 .cmp-tab.active { background: #2563eb; color: #fff; font-weight: 600; }
 
 /* 生成按钮 */
-.generate-section { margin-top: 24px; padding-top: 20px; border-top: 1px solid #e4eaf3; }
+.generate-section { margin-top: 16px; padding-top: 0; border-top: none; }
 .generate-btn { width: 100%; height: 44px; font-size: 15px; }
 
 /* ===== 右侧AI对话区 ===== */

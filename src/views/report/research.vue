@@ -103,12 +103,12 @@
             <el-checkbox value="suggestion">AI 工作建议</el-checkbox>
           </el-checkbox-group>
         </div>
-      </div>
 
-      <!-- 生成按钮 -->
-      <el-button type="primary" class="generate-btn" :loading="generating" @click="onGenerate">
-        <el-icon><MagicStick /></el-icon> 生成调研分析报告
-      </el-button>
+        <!-- 生成按钮 -->
+        <el-button type="primary" class="generate-btn" :loading="generating" @click="onGenerate">
+          <el-icon><MagicStick /></el-icon> 生成调研分析报告
+        </el-button>
+      </div>
     </div>
 
     <!-- 右侧 AI 对话区 -->
@@ -558,7 +558,7 @@ function onExport(cmd: string, report: ReportData) {
 /* 生成按钮 */
 .generate-btn {
   width: 100%;
-  margin-top: auto;
+  margin-top: 16px;
   padding: 12px;
   font-size: 14px;
   border-radius: 8px;
