@@ -348,7 +348,8 @@ async function generateReport() {
     mode: activeMode.value,
     createdAt: now,
     status: '已完成',
-    report
+    report,
+    messages: JSON.parse(JSON.stringify(messages.value))
   })
 }
 
@@ -566,16 +567,20 @@ function handleAttach(e: Event) {
 
 // 历史
 const showHistoryDrawer = ref(false)
-const historyList = ref<Array<{ title: string; mode: string; createdAt: string; status: string; report: any }>>([])
+const historyList = ref<Array<{ title: string; mode: string; createdAt: string; status: string; report: any; messages: any[] }>>([])
 
 function openHistoryReport(row: any) {
   showHistoryDrawer.value = false
-  messages.value.push({
-    role: 'ai',
-    content: '',
-    generating: false,
-    report: row.report
-  })
+  if (row.messages && row.messages.length > 0) {
+    messages.value = JSON.parse(JSON.stringify(row.messages))
+  } else {
+    messages.value.push({
+      role: 'ai',
+      content: '',
+      generating: false,
+      report: row.report
+    })
+  }
   scrollToBottom()
 }
 </script>

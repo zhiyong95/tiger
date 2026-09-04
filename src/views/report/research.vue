@@ -233,7 +233,7 @@ interface HistoryItem {
   title: string
   genTime: string
   status: 'completed' | 'generating'
-  msg: Msg
+  messages: Msg[]
 }
 
 // ====== 统计卡片 ======
@@ -358,7 +358,7 @@ function onGenerate() {
       title: report.title,
       genTime: report.genTime,
       status: 'completed',
-      msg: aiMsg
+      messages: messages.value.slice()
     })
   }, 2000)
 }
@@ -401,7 +401,7 @@ const showHistoryDrawer = ref(false)
 
 function loadHistory(h: HistoryItem) {
   showHistoryDrawer.value = false
-  messages.value = [h.msg]
+  messages.value = h.messages.slice()
   scrollToBottom()
 }
 
