@@ -1,0 +1,12 @@
+{
+  "elements": [
+    {
+      "type": "html",
+      "options": {
+        "path": ".cozeproj/prototype/web/labor-rules.html"
+      },
+      "title": "采集规则管理",
+      "size": "web"
+    }
+  ]
+}

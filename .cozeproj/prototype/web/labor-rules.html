@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/jquery/jquery-3.7.1.min.js"></script>
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/lucide/lucide-1.11.0.min.js"></script>
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/tailwindcss/tailwindcss-browser-4.2.4.min.js"></script>
+
+  <style type="text/tailwindcss">
+    @theme {
+      --color-primary:              #2563eb;
+      --color-primary-container:    #e8f0fe;
+      --color-on-primary:           #ffffff;
+      --color-background:                 #f5f7fa;
+      --color-surface-container-lowest:   #ffffff;
+      --color-surface:                    #ffffff;
+      --color-surface-container:          #f0f2f7;
+      --color-surface-container-high:     #e9ecf2;
+      --color-surface-container-highest:  #e2e7ee;
+      --color-on-surface:           #1f2937;
+      --color-on-surface-variant:   #6b7280;
+      --color-success:  #10b981;
+      --color-error:    #ef4444;
+      --color-warning:  #f59e0b;
+      --color-outline:          #d1d5db;
+      --color-outline-variant:  #e5e7eb;
+      --radius-sm:   4px;
+      --radius-md:   6px;
+      --radius-lg:   8px;
+      --radius-xl:   12px;
+      --radius-2xl:  16px;
+      --radius-full: 9999px;
+      --shadow-card:   0 1px 3px rgba(0,0,0,0.06);
+      --shadow-float:  0 4px 12px rgba(0,0,0,0.08);
+      --shadow-dialog: 0 20px 45px rgba(0,0,0,0.16);
+      --font-sans: "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+    }
+    body { font-family: var(--font-sans); }
+    .tab-btn.active { color:#2563eb; }
+    .tab-btn.active::after { transform: scaleX(1); }
+  </style>
+</head>
+
+<body class="bg-background text-on-surface font-sans antialiased">
+  <div class="flex h-screen overflow-hidden">
+
+    <!-- ======== 侧边栏 ======== -->
+    <aside class="w-60 shrink-0 flex-col bg-[linear-gradient(180deg,#0f2a78_0%,#0d1f5f_100%)] text-white flex">
+      <div class="h-14 flex items-center px-5 border-b border-white/10">
+        <span class="text-lg font-bold tracking-wide">DATUM·政途</span>
+      </div>
+      <div class="px-4 py-3 border-b border-white/10">
+        <div class="flex rounded-md overflow-hidden text-xs border border-white/20">
+          <span class="flex-1 text-center py-1.5 bg-white/5 text-white/60">PC工作台</span>
+          <span class="flex-1 text-center py-1.5 bg-[#2563eb] text-white">后台管理</span>
+        </div>
+      </div>
+      <nav class="flex-1 overflow-y-auto py-2 mt-2">
+        <a class="flex items-center gap-3 px-5 py-2.5 text-white/60 hover:bg-white/10 hover:text-white text-sm" href="#"><i data-lucide="data-board" class="w-4 h-4"></i>后台首页</a>
+        <a class="flex items-center gap-3 px-5 py-2.5 text-white/60 hover:bg-white/10 hover:text-white text-sm" href="#"><i data-lucide="users" class="w-4 h-4"></i>用户权限管理</a>
+        <a class="flex items-center gap-3 px-5 py-2.5 text-white/60 hover:bg-white/10 hover:text-white text-sm" href="#"><i data-lucide="book-open" class="w-4 h-4"></i>知识库管理</a>
+        <a class="flex items-center gap-3 px-5 py-2.5 text-white/60 hover:bg-white/10 hover:text-white text-sm" href="#"><i data-lucide="tickets" class="w-4 h-4"></i>公文模板管理</a>
+        <a class="flex items-center gap-3 px-5 py-2.5 text-white/60 hover:bg-white/10 hover:text-white text-sm" href="#"><i data-lucide="price-tag" class="w-4 h-4"></i>政策标签管理</a>
+        <a class="flex items-center gap-3 px-5 py-2.5 text-white/60 hover:bg-white/10 hover:text-white text-sm" href="#"><i data-lucide="data-line" class="w-4 h-4"></i>指标口径管理</a>
+        <!-- 劳动力采集 子菜单 -->
+        <div class="mt-2">
+          <div class="px-5 py-1.5 text-[11px] tracking-wider text-white/40">劳动力采集管理</div>
+          <a class="flex items-center gap-3 pl-5 py-2.5 text-sm bg-white/15 text-white border-l-[3px] border-[#60a5fa] font-semibold" href="#"><i data-lucide="clipboard-list" class="w-4 h-4"></i>采集规则管理</a>
+          <a class="flex items-center gap-3 px-5 py-2.5 text-white/60 hover:bg-white/10 hover:text-white text-sm" href="#"><i data-lucide="list-tree" class="w-4 h-4"></i>字典与行政区划</a>
+          <a class="flex items-center gap-3 px-5 py-2.5 text-white/60 hover:bg-white/10 hover:text-white text-sm" href="#"><i data-lucide="scroll-text" class="w-4 h-4"></i>校验日志与对账</a>
+        </div>
+        <a class="flex items-center gap-3 px-5 py-2.5 text-white/60 hover:bg-white/10 hover:text-white text-sm mt-2" href="#"><i data-lucide="list-checks" class="w-4 h-4"></i>审核规则管理</a>
+        <a class="flex items-center gap-3 px-5 py-2.5 text-white/60 hover:bg-white/10 hover:text-white text-sm" href="#"><i data-lucide="logs" class="w-4 h-4"></i>日志审计</a>
+        <a class="flex items-center gap-3 px-5 py-2.5 text-white/60 hover:bg-white/10 hover:text-white text-sm" href="#"><i data-lucide="settings" class="w-4 h-4"></i>系统参数</a>
+      </nav>
+    </aside>
+
+    <!-- ======== 右侧 ======== -->
+    <div class="flex-1 flex flex-col min-w-0">
+      <!-- 顶栏 -->
+      <header class="h-14 shrink-0 bg-white flex items-center justify-between px-5 shadow-[0_1px_4px_rgba(0,0,0,0.06)]">
+        <div class="flex items-center gap-3 text-sm">
+          <i data-lucide="fold" class="w-5 h-5 text-gray-400"></i>
+          <div class="text-gray-600">首页 <span class="mx-1 text-gray-300">/</span> 劳动力采集 <span class="mx-1 text-gray-300">/</span> <span class="font-bold text-gray-800">采集规则管理</span></div>
+        </div>
+        <div class="flex items-center gap-5">
+          <div class="relative"><i data-lucide="bell" class="w-5 h-5 text-gray-500"></i><span class="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-[#ef4444] text-white text-[9px] flex items-center justify-center">3</span></div>
+          <div class="flex items-center gap-2"><div class="w-8 h-8 rounded-full bg-[#1a56db] text-white flex items-center justify-center text-sm">管</div><span class="text-sm text-gray-700">管理员</span></div>
+        </div>
+      </header>
+
+      <!-- 主内容 -->
+      <main class="flex-1 overflow-y-auto p-5">
+
+        <!-- 页头 -->
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h1 class="text-xl font-bold text-gray-800 flex items-center gap-2"><i data-lucide="clipboard-list" class="w-5 h-5 text-[#2563eb]"></i>采集规则管理</h1>
+            <p class="text-sm text-gray-500 mt-1">维护劳动力信息采集字段的必填、类型、字典、联动与校验提示，规则发布后小程序采集端实时生效</p>
+          </div>
+          <button class="flex items-center gap-2 bg-[#2563eb] text-white text-sm px-4 py-2 rounded-lg hover:bg-[#1d4ed8] shadow-sm"><i data-lucide="plus" class="w-4 h-4"></i>新增规则</button>
+        </div>
+
+        <!-- 统计卡片 -->
+        <div class="grid grid-cols-4 gap-4 mb-5">
+          <div class="bg-surface rounded-xl p-4 shadow-card border border-outline-variant flex items-center gap-3">
+            <div class="w-11 h-11 rounded-lg bg-blue-50 flex items-center justify-center"><i data-lucide="file-text" class="w-5 h-5 text-[#2563eb]"></i></div>
+            <div><div class="text-2xl font-bold text-gray-800">68</div><div class="text-xs text-gray-500">字段规则总数</div></div>
+          </div>
+          <div class="bg-surface rounded-xl p-4 shadow-card border border-outline-variant flex items-center gap-3">
+            <div class="w-11 h-11 rounded-lg bg-amber-50 flex items-center justify-center"><i data-lucide="filter" class="w-5 h-5 text-amber-500"></i></div>
+            <div><div class="text-2xl font-bold text-gray-800">42</div><div class="text-xs text-gray-500">基础+就失业规则</div></div>
+          </div>
+          <div class="bg-surface rounded-xl p-4 shadow-card border border-outline-variant flex items-center gap-3">
+            <div class="w-11 h-11 rounded-lg bg-emerald-50 flex items-center justify-center"><i data-lucide="factory" class="w-5 h-5 text-emerald-500"></i></div>
+            <div><div class="text-2xl font-bold text-gray-800">26</div><div class="text-xs text-gray-500">单位+空岗规则</div></div>
+          </div>
+          <div class="bg-surface rounded-xl p-4 shadow-card border border-outline-variant flex items-center gap-3">
+            <div class="w-11 h-11 rounded-lg bg-red-50 flex items-center justify-center"><i data-lucide="alert-triangle" class="w-5 h-5 text-red-500"></i></div>
+            <div><div class="text-2xl font-bold text-gray-800">6</div><div class="text-xs text-gray-500">待补充规则</div></div>
+          </div>
+        </div>
+
+        <!-- 规则列表卡片 -->
+        <div class="bg-surface rounded-xl shadow-card border border-outline-variant overflow-hidden">
+          <!-- 模块 Tab -->
+          <div class="px-5 pt-4 border-b border-outline-variant flex items-center gap-1">
+            <button class="tab-btn active relative px-3 py-2 text-sm font-medium text-gray-600 after:absolute after:left-0 after:right-0 after:-bottom-[1px] after:h-0.5 after:bg-[#2563eb] after:origin-left after:transition-transform">全部</button>
+            <button class="tab-btn relative px-3 py-2 text-sm text-gray-500 after:absolute after:left-0 after:right-0 after:-bottom-[1px] after:h-0.5 after:bg-[#2563eb]">基础信息</button>
+            <button class="tab-btn relative px-3 py-2 text-sm text-gray-500 after:absolute after:left-0 after:right-0 after:-bottom-[1px] after:h-0.5 after:bg-[#2563eb]">就失业信息</button>
+            <button class="tab-btn relative px-3 py-2 text-sm text-gray-500 after:absolute after:left-0 after:right-0 after:-bottom-[1px] after:h-0.5 after:bg-[#2563eb]">技能培训</button>
+            <button class="tab-btn relative px-3 py-2 text-sm text-gray-500 after:absolute after:left-0 after:right-0 after:-bottom-[1px] after:h-0.5 after:bg-[#2563eb]">单位信息</button>
+            <button class="tab-btn relative px-3 py-2 text-sm text-gray-500 after:absolute after:left-0 after:right-0 after:-bottom-[1px] after:h-0.5 after:bg-[#2563eb]">空岗信息</button>
+          </div>
+
+          <!-- 筛选栏 -->
+          <div class="px-5 py-3 flex items-center gap-3 border-b border-outline-variant">
+            <div class="flex items-center gap-2 bg-surface-container rounded-lg px-3 h-9 border border-outline-variant flex-1 max-w-xs">
+              <i data-lucide="search" class="w-4 h-4 text-gray-400"></i>
+              <input class="bg-transparent outline-none text-sm text-gray-700 w-full" placeholder="搜索字段名 / 规则说明" />
+            </div>
+            <select class="h-9 px-3 text-sm border border-outline-variant rounded-lg bg-white text-gray-600"><option>全部必填状态</option><option>必填</option><option>选填</option><option>回显</option></select>
+            <select class="h-9 px-3 text-sm border border-outline-variant rounded-lg bg-white text-gray-600"><option>全部类型</option><option>文本输入</option><option>单选</option><option>行政区划</option><option>时间选择</option></select>
+            <div class="flex-1"></div>
+            <span class="text-xs text-gray-400">共 68 条规则</span>
+          </div>
+
+          <!-- 表格 -->
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-left text-gray-500 bg-[#fafbfc] border-b border-outline-variant">
+                <th class="px-5 py-3 font-medium w-10"><input type="checkbox" /></th>
+                <th class="px-4 py-3 font-medium">字段名</th>
+                <th class="px-4 py-3 font-medium">所属模块</th>
+                <th class="px-4 py-3 font-medium">必填</th>
+                <th class="px-4 py-3 font-medium">类型</th>
+                <th class="px-4 py-3 font-medium">校验方式</th>
+                <th class="px-4 py-3 font-medium">字典/联动</th>
+                <th class="px-4 py-3 font-medium w-40">操作</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-outline-variant">
+              <!-- 基础信息 -->
+              <tr class="hover:bg-[#f8fafc]">
+                <td class="px-5 py-3"><input type="checkbox" /></td>
+                <td class="px-4 py-3 font-medium text-gray-800">身份证号码</td>
+                <td class="px-4 py-3"><span class="px-2 py-0.5 rounded text-xs bg-blue-50 text-blue-600">基础信息</span></td>
+                <td class="px-4 py-3"><span class="text-xs px-2 py-0.5 rounded bg-red-50 text-red-600">必填</span></td>
+                <td class="px-4 py-3 text-gray-600">文本输入</td>
+                <td class="px-4 py-3 text-gray-600">18位身份证规则 + 出生日期/性别回显</td>
+                <td class="px-4 py-3 text-gray-400">—</td>
+                <td class="px-4 py-3"><a href="#" class="text-[#2563eb] hover:underline mr-2">编辑</a><a href="#" class="text-gray-400 hover:text-[#2563eb]">复制</a></td>
+              </tr>
+              <tr class="hover:bg-[#f8fafc]">
+                <td class="px-5 py-3"><input type="checkbox" /></td>
+                <td class="px-4 py-3 font-medium text-gray-800">姓名</td>
+                <td class="px-4 py-3"><span class="px-2 py-0.5 rounded text-xs bg-blue-50 text-blue-600">基础信息</span></td>
+                <td class="px-4 py-3"><span class="text-xs px-2 py-0.5 rounded bg-red-50 text-red-600">必填</span></td>
+                <td class="px-4 py-3 text-gray-600">文本输入</td>
+                <td class="px-4 py-3 text-gray-600">支持·的输入</td>
+                <td class="px-4 py-3 text-gray-400">—</td>
+                <td class="px-4 py-3"><a href="#" class="text-[#2563eb] hover:underline mr-2">编辑</a><a href="#" class="text-gray-400 hover:text-[#2563eb]">复制</a></td>
+              </tr>
+              <tr class="hover:bg-[#f8fafc]">
+                <td class="px-5 py-3"><input type="checkbox" /></td>
+                <td class="px-4 py-3 font-medium text-gray-800">学历</td>
+                <td class="px-4 py-3"><span class="px-2 py-0.5 rounded text-xs bg-blue-50 text-blue-600">基础信息</span></td>
+                <td class="px-4 py-3"><span class="text-xs px-2 py-0.5 rounded bg-red-50 text-red-600">必填</span></td>
+                <td class="px-4 py-3 text-gray-600">单选</td>
+                <td class="px-4 py-3 text-gray-600">与年龄联动（6岁/18岁）</td>
+                <td class="px-4 py-3"><span class="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600">13项字典</span></td>
+                <td class="px-4 py-3"><a href="#" class="text-[#2563eb] hover:underline mr-2">编辑</a><a href="#" class="text-gray-400 hover:text-[#2563eb]">复制</a></td>
+              </tr>
+              <!-- 就失业 -->
+              <tr class="hover:bg-[#f8fafc]">
+                <td class="px-5 py-3"><input type="checkbox" /></td>
+                <td class="px-4 py-3 font-medium text-gray-800">个人月收入</td>
+                <td class="px-4 py-3"><span class="px-2 py-0.5 rounded text-xs bg-indigo-50 text-indigo-600">就失业信息</span></td>
+                <td class="px-4 py-3"><span class="text-xs px-2 py-0.5 rounded bg-red-50 text-red-600">必填</span></td>
+                <td class="px-4 py-3 text-gray-600">文本输入</td>
+                <td class="px-4 py-3 text-gray-600">1750-20000元范围 + 按月补录</td>
+                <td class="px-4 py-3"><span class="text-xs px-2 py-0.5 rounded bg-amber-50 text-amber-600">联动就业日期</span></td>
+                <td class="px-4 py-3"><a href="#" class="text-[#2563eb] hover:underline mr-2">编辑</a><a href="#" class="text-gray-400 hover:text-[#2563eb]">复制</a></td>
+              </tr>
+              <tr class="hover:bg-[#f8fafc]">
+                <td class="px-5 py-3"><input type="checkbox" /></td>
+                <td class="px-4 py-3 font-medium text-gray-800">人员类别</td>
+                <td class="px-4 py-3"><span class="px-2 py-0.5 rounded text-xs bg-indigo-50 text-indigo-600">就失业信息</span></td>
+                <td class="px-4 py-3"><span class="text-xs px-2 py-0.5 rounded bg-red-50 text-red-600">必填</span></td>
+                <td class="px-4 py-3 text-gray-600">单选</td>
+                <td class="px-4 py-3 text-gray-600">与年龄/就业方式/单位类型联动自动改判</td>
+                <td class="px-4 py-3"><span class="text-xs px-2 py-0.5 rounded bg-amber-50 text-amber-600">联动矩阵</span></td>
+                <td class="px-4 py-3"><a href="#" class="text-[#2563eb] hover:underline mr-2">编辑</a><a href="#" class="text-gray-400 hover:text-[#2563eb]">复制</a></td>
+              </tr>
+              <!-- 单位 -->
+              <tr class="hover:bg-[#f8fafc]">
+                <td class="px-5 py-3"><input type="checkbox" /></td>
+                <td class="px-4 py-3 font-medium text-gray-800">单位类型</td>
+                <td class="px-4 py-3"><span class="px-2 py-0.5 rounded text-xs bg-emerald-50 text-emerald-600">单位信息</span></td>
+                <td class="px-4 py-3"><span class="text-xs px-2 py-0.5 rounded bg-red-50 text-red-600">必填</span></td>
+                <td class="px-4 py-3 text-gray-600">单选</td>
+                <td class="px-4 py-3 text-gray-600">名称关键词判断 + 与人员类别联动</td>
+                <td class="px-4 py-3"><span class="text-xs px-2 py-0.5 rounded bg-amber-50 text-amber-600">关键词规则</span></td>
+                <td class="px-4 py-3"><a href="#" class="text-[#2563eb] hover:underline mr-2">编辑</a><a href="#" class="text-gray-400 hover:text-[#2563eb]">复制</a></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- 分页 -->
+          <div class="px-5 py-3 flex items-center justify-between border-t border-outline-variant">
+            <span class="text-xs text-gray-400">显示 1-6 / 68 条</span>
+            <div class="flex items-center gap-1">
+              <button class="w-8 h-8 rounded border border-outline-variant text-gray-500 text-xs disabled:opacity-40" disabled>上一页</button>
+              <button class="w-8 h-8 rounded bg-[#2563eb] text-white text-xs">1</button>
+              <button class="w-8 h-8 rounded border border-outline-variant text-gray-500 text-xs">2</button>
+              <button class="w-8 h-8 rounded border border-outline-variant text-gray-500 text-xs">3</button>
+              <button class="w-8 h-8 rounded border border-outline-variant text-gray-500 text-xs">下一页</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 待补充规则提示 -->
+        <div class="mt-5 bg-amber-50 border border-amber-200 rounded-xl p-4 flex gap-3">
+          <i data-lucide="alert-circle" class="w-5 h-5 text-amber-500 shrink-0"></i>
+          <div class="text-sm text-amber-700">
+            <div class="font-semibold mb-1">待补充规则（6项）</div>
+            <ul class="list-disc pl-4 space-y-0.5 text-amber-600">
+              <li>政治面貌、婚姻状况提示语误写为"民族"，需更正 + 补齐字典值</li>
+              <li>身份证与出生日期/性别回显的一致性校验</li>
+              <li>年龄计算基准日（建议采集日期）与跨边界判定口径</li>
+              <li>劳动合同终止日期 &gt; 开始日期、开始日期 ≤ 采集日期的显式校验</li>
+              <li>行业字典统一映射（就业 / 单位两套字典对齐）</li>
+              <li>行政区划新疆须下钻至村级方可提交</li>
+            </ul>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <script>lucide.createIcons();</script>
+</body>
+
+</html>
