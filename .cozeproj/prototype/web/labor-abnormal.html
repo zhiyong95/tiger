@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/jquery/jquery-3.7.1.min.js"></script>
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/lucide/lucide-1.11.0.min.js"></script>
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/tailwindcss/tailwindcss-browser-4.2.4.min.js"></script>
+
+  <style type="text/tailwindcss">
+    @theme {
+      --color-primary:              #2563eb;
+      --color-primary-container:    #e8f0fe;
+      --color-on-primary:           #ffffff;
+      --color-background:                 #f5f7fa;
+      --color-surface-container-lowest:   #ffffff;
+      --color-surface:                    #ffffff;
+      --color-surface-container:          #f0f2f7;
+      --color-surface-container-high:     #e9ecf2;
+      --color-surface-container-highest:  #e2e7ee;
+      --color-on-surface:           #1f2937;
+      --color-on-surface-variant:   #6b7280;
+      --color-success:  #10b981;
+      --color-error:    #ef4444;
+      --color-warning:  #f59e0b;
+      --color-outline:          #d1d5db;
+      --color-outline-variant:  #e5e7eb;
+      --radius-sm:   4px;
+      --radius-md:   6px;
+      --radius-lg:   8px;
+      --radius-xl:   12px;
+      --radius-2xl:  16px;
+      --radius-full: 9999px;
+      --shadow-card:   0 1px 3px rgba(0,0,0,0.06);
+      --shadow-float:  0 4px 12px rgba(0,0,0,0.08);
+      --shadow-dialog: 0 20px 45px rgba(0,0,0,0.16);
+      --font-sans: "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+    }
+    body { font-family: var(--font-sans); }
+    .tab-btn.active { color:#2563eb; }
+    .tab-btn.active::after { transform: scaleX(1); }
+  </style>
+</head>
+
+<body class="bg-background text-on-surface font-sans antialiased">
+  <div class="flex h-screen overflow-hidden">
+
+    <!-- ======== 侧边栏 ======== -->
+    <aside class="w-60 shrink-0 flex-col bg-[linear-gradient(180deg,#0f2a78_0%,#0d1f5f_100%)] text-white flex">
+      <div class="h-14 flex items-center px-5 border-b border-white/10">
+        <span class="text-lg font-bold tracking-wide">DATUM·政途</span>
+      </div>
+      <div class="px-4 py-3 border-b border-white/10">
+        <div class="flex rounded-md overflow-hidden text-xs border border-white/20">
+          <span class="flex-1 text-center py-1.5 bg-white/5 text-white/60">PC工作台</span>
+          <span class="flex-1 text-center py-1.5 bg-[#2563eb] text-white">后台管理</span>
+        </div>
+      </div>
+      <nav class="flex-1 overflow-y-auto py-2 mt-2">
+        <a class="flex items-center gap-3 px-5 py-2.5 text-white/60 hover:bg-white/10 hover:text-white text-sm" href="#"><i data-lucide="data-board" class="w-4 h-4"></i>后台首页</a>
+        <a class="flex items-center gap-3 px-5 py-2.5 text-white/60 hover:bg-white/10 hover:text-white text-sm" href="#"><i data-lucide="users" class="w-4 h-4"></i>用户权限管理</a>
+        <a class="flex items-center gap-3 px-5 py-2.5 text-white/60 hover:bg-white/10 hover:text-white text-sm" href="#"><i data-lucide="book-open" class="w-4 h-4"></i>知识库管理</a>
+        <a class="flex items-center gap-3 px-5 py-2.5 text-white/60 hover:bg-white/10 hover:text-white text-sm" href="#"><i data-lucide="tickets" class="w-4 h-4"></i>公文模板管理</a>
+        <a class="flex items-center gap-3 px-5 py-2.5 text-white/60 hover:bg-white/10 hover:text-white text-sm" href="#"><i data-lucide="price-tag" class="w-4 h-4"></i>政策标签管理</a>
+        <a class="flex items-center gap-3 px-5 py-2.5 text-white/60 hover:bg-white/10 hover:text-white text-sm" href="#"><i data-lucide="data-line" class="w-4 h-4"></i>指标口径管理</a>
+        <!-- 劳动力采集 子菜单 -->
+        <div class="mt-2">
+          <div class="px-5 py-1.5 text-[11px] tracking-wider text-white/40">劳动力采集管理</div>
+          <a class="flex items-center gap-3 pl-5 py-2.5 text-white/60 hover:bg-white/10 hover:text-white text-sm" href="#"><i data-lucide="clipboard-list" class="w-4 h-4"></i>采集规则管理</a>
+          <a class="flex items-center gap-3 pl-5 py-2.5 text-sm bg-white/15 text-white border-l-[3px] border-[#60a5fa] font-semibold" href="#"><i data-lucide="scan-search" class="w-4 h-4"></i>异常数据展示</a>
+          <a class="flex items-center gap-3 px-5 py-2.5 text-white/60 hover:bg-white/10 hover:text-white text-sm" href="#"><i data-lucide="list-tree" class="w-4 h-4"></i>字典与行政区划</a>
+          <a class="flex items-center gap-3 px-5 py-2.5 text-white/60 hover:bg-white/10 hover:text-white text-sm" href="#"><i data-lucide="scroll-text" class="w-4 h-4"></i>校验日志与对账</a>
+        </div>
+        <a class="flex items-center gap-3 px-5 py-2.5 text-white/60 hover:bg-white/10 hover:text-white text-sm mt-2" href="#"><i data-lucide="list-checks" class="w-4 h-4"></i>审核规则管理</a>
+        <a class="flex items-center gap-3 px-5 py-2.5 text-white/60 hover:bg-white/10 hover:text-white text-sm" href="#"><i data-lucide="logs" class="w-4 h-4"></i>日志审计</a>
+        <a class="flex items-center gap-3 px-5 py-2.5 text-white/60 hover:bg-white/10 hover:text-white text-sm" href="#"><i data-lucide="settings" class="w-4 h-4"></i>系统参数</a>
+      </nav>
+    </aside>
+
+    <!-- ======== 右侧 ======== -->
+    <div class="flex-1 flex flex-col min-w-0">
+      <!-- 顶栏 -->
+      <header class="h-14 shrink-0 bg-white flex items-center justify-between px-5 shadow-[0_1px_4px_rgba(0,0,0,0.06)]">
+        <div class="flex items-center gap-3 text-sm">
+          <i data-lucide="fold" class="w-5 h-5 text-gray-400"></i>
+          <div class="text-gray-600">首页 <span class="mx-1 text-gray-300">/</span> 劳动力采集 <span class="mx-1 text-gray-300">/</span> <span class="font-bold text-gray-800">异常数据展示</span></div>
+        </div>
+        <div class="flex items-center gap-5">
+          <div class="relative"><i data-lucide="bell" class="w-5 h-5 text-gray-500"></i><span class="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-[#ef4444] text-white text-[9px] flex items-center justify-center">7</span></div>
+          <div class="flex items-center gap-2"><div class="w-8 h-8 rounded-full bg-[#1a56db] text-white flex items-center justify-center text-sm">管</div><span class="text-sm text-gray-700">管理员</span></div>
+        </div>
+      </header>
+
+      <!-- 主内容 -->
+      <main class="flex-1 overflow-y-auto p-5">
+
+        <!-- 页头 -->
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h1 class="text-xl font-bold text-gray-800 flex items-center gap-2"><i data-lucide="scan-search" class="w-5 h-5 text-[#2563eb]"></i>异常数据展示</h1>
+            <p class="text-sm text-gray-500 mt-1">集中展示采集数据中未通过校验的记录（字段冲突、缺失、越界、格式错误等），支持定位、复查与批量整改</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button class="flex items-center gap-2 border border-outline-variant bg-white text-gray-600 text-sm px-4 py-2 rounded-lg hover:bg-gray-50"><i data-lucide="download" class="w-4 h-4"></i>导出异常清单</button>
+            <button class="flex items-center gap-2 bg-[#2563eb] text-white text-sm px-4 py-2 rounded-lg hover:bg-[#1d4ed8]"><i data-lucide="refresh-cw" class="w-4 h-4"></i>重新校验</button>
+          </div>
+        </div>
+
+        <!-- 统计卡片 -->
+        <div class="grid grid-cols-4 gap-4 mb-5">
+          <div class="bg-surface rounded-xl p-4 shadow-card border border-outline-variant flex items-center gap-3">
+            <div class="w-11 h-11 rounded-lg bg-red-50 flex items-center justify-center"><i data-lucide="alert-triangle" class="w-5 h-5 text-red-500"></i></div>
+            <div><div class="text-2xl font-bold text-gray-800">186<span class="text-sm font-normal text-gray-400 ml-1">条</span></div><div class="text-xs text-gray-500">异常数据总数</div></div>
+          </div>
+          <div class="bg-surface rounded-xl p-4 shadow-card border border-outline-variant flex items-center gap-3">
+            <div class="w-11 h-11 rounded-lg bg-amber-50 flex items-center justify-center"><i data-lucide="scale" class="w-5 h-5 text-amber-500"></i></div>
+            <div><div class="text-2xl font-bold text-gray-800">74<span class="text-sm font-normal text-gray-400 ml-1">条</span></div><div class="text-xs text-gray-500">字段冲突</div></div>
+          </div>
+          <div class="bg-surface rounded-xl p-4 shadow-card border border-outline-variant flex items-center gap-3">
+            <div class="w-11 h-11 rounded-lg bg-indigo-50 flex items-center justify-center"><i data-lucide="unlink" class="w-5 h-5 text-indigo-500"></i></div>
+            <div><div class="text-2xl font-bold text-gray-800">89<span class="text-sm font-normal text-gray-400 ml-1">条</span></div><div class="text-xs text-gray-500">字段缺失/不完整</div></div>
+          </div>
+          <div class="bg-surface rounded-xl p-4 shadow-card border border-outline-variant flex items-center gap-3">
+            <div class="w-11 h-11 rounded-lg bg-emerald-50 flex items-center justify-center"><i data-lucide="clock" class="w-5 h-5 text-emerald-500"></i></div>
+            <div><div class="text-2xl font-bold text-gray-800">23<span class="text-sm font-normal text-gray-400 ml-1">条</span></div><div class="text-xs text-gray-500">待复查</div></div>
+          </div>
+        </div>
+
+        <!-- 异常类型说明条 -->
+        <div class="mb-5 bg-white border border-outline-variant rounded-xl p-3 px-4 flex items-center gap-6 text-xs text-gray-600 shadow-card">
+          <span class="font-medium text-gray-500">异常类型：</span>
+          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span><b class="text-gray-700">字段冲突</b> 字段值互相矛盾（如人员类别与就业单位不符）</span>
+          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span><b class="text-gray-700">字段缺失</b> 必填字段未填或信息不完整</span>
+          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-red-500"></span><b class="text-gray-700">越界/格式错</b> 数值超范围、格式不符合规则</span>
+        </div>
+
+        <!-- 异常列表卡片 -->
+        <div class="bg-surface rounded-xl shadow-card border border-outline-variant overflow-hidden">
+          <!-- 筛选栏 -->
+          <div class="px-5 py-3 flex items-center gap-3 border-b border-outline-variant flex-wrap">
+            <div class="flex items-center gap-2 bg-surface-container rounded-lg px-3 h-9 border border-outline-variant flex-1 max-w-xs">
+              <i data-lucide="search" class="w-4 h-4 text-gray-400"></i>
+              <input class="bg-transparent outline-none text-sm text-gray-700 w-full" placeholder="搜索姓名 / 身份证 / 单位名称" />
+            </div>
+            <select class="h-9 px-3 text-sm border border-outline-variant rounded-lg bg-white text-gray-600"><option>全部异常类型</option><option>字段冲突</option><option>字段缺失</option><option>越界/格式错</option></select>
+            <select class="h-9 px-3 text-sm border border-outline-variant rounded-lg bg-white text-gray-600"><option>全部采集模块</option><option>基础信息</option><option>就失业信息</option><option>技能培训</option><option>单位信息</option><option>空岗信息</option></select>
+            <select class="h-9 px-3 text-sm border border-outline-variant rounded-lg bg-white text-gray-600"><option>全部处理状态</option><option>待处理</option><option>整改中</option><option>已整改</option><option>已忽略</option></select>
+            <input type="date" class="h-9 px-3 text-sm border border-outline-variant rounded-lg bg-white text-gray-600" value="2025-07-01" />
+            <div class="flex-1"></div>
+            <span class="text-xs text-gray-400">共 186 条异常</span>
+          </div>
+
+          <!-- 表格 -->
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-left text-gray-500 bg-[#fafbfc] border-b border-outline-variant">
+                <th class="px-5 py-3 font-medium w-10"><input type="checkbox" /></th>
+                <th class="px-4 py-3 font-medium">采集对象</th>
+                <th class="px-4 py-3 font-medium">异常类型</th>
+                <th class="px-4 py-3 font-medium">所属模块</th>
+                <th class="px-4 py-3 font-medium">异常描述</th>
+                <th class="px-4 py-3 font-medium">采集员 / 村社区</th>
+                <th class="px-4 py-3 font-medium">采集时间</th>
+                <th class="px-4 py-3 font-medium">状态</th>
+                <th class="px-4 py-3 font-medium w-40">操作</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-outline-variant">
+              <!-- 示例1：人员类别与单位冲突 -->
+              <tr class="hover:bg-[#f8fafc]">
+                <td class="px-5 py-3"><input type="checkbox" /></td>
+                <td class="px-4 py-3"><div class="text-gray-800 font-medium">艾某·XXXX</div><div class="text-xs text-gray-400">6529**********1234</div></td>
+                <td class="px-4 py-3"><span class="text-xs px-2 py-0.5 rounded bg-amber-50 text-amber-600 border border-amber-200">字段冲突</span></td>
+                <td class="px-4 py-3"><span class="text-xs px-2 py-0.5 rounded bg-indigo-50 text-indigo-600">就失业信息</span></td>
+                <td class="px-4 py-3 text-gray-600">人员类别为「机关事业单位在职人员」，但就业单位为「XX商贸有限责任公司」（民营企业）</td>
+                <td class="px-4 py-3 text-gray-600">古丽** / 库车市·XX村</td>
+                <td class="px-4 py-3 text-gray-500">2025-08-04 15:32</td>
+                <td class="px-4 py-3"><span class="text-xs px-2 py-0.5 rounded bg-red-50 text-red-600">待处理</span></td>
+                <td class="px-4 py-3"><a href="#" class="text-[#2563eb] hover:underline mr-2">详情</a><a href="#" class="text-gray-400 hover:text-[#2563eb]">整改</a></td>
+              </tr>
+              <!-- 示例2：字段缺失 -->
+              <tr class="hover:bg-[#f8fafc]">
+                <td class="px-5 py-3"><input type="checkbox" /></td>
+                <td class="px-4 py-3"><div class="text-gray-800 font-medium">买某·XX</div><div class="text-xs text-gray-400">6529**********5678</div></td>
+                <td class="px-4 py-3"><span class="text-xs px-2 py-0.5 rounded bg-indigo-50 text-indigo-600 border border-indigo-200">字段缺失</span></td>
+                <td class="px-4 py-3"><span class="text-xs px-2 py-0.5 rounded bg-blue-50 text-blue-600">基础信息</span></td>
+                <td class="px-4 py-3 text-gray-600">字段「常住地详细地址」「户口所在地地址」缺失，人员类别也未填写</td>
+                <td class="px-4 py-3 text-gray-600">亚某** / 阿克苏·XX社区</td>
+                <td class="px-4 py-3 text-gray-500">2025-08-04 10:05</td>
+                <td class="px-4 py-3"><span class="text-xs px-2 py-0.5 rounded bg-red-50 text-red-600">待处理</span></td>
+                <td class="px-4 py-3"><a href="#" class="text-[#2563eb] hover:underline mr-2">详情</a><a href="#" class="text-gray-400 hover:text-[#2563eb]">整改</a></td>
+              </tr>
+              <!-- 示例3：月收入越界 -->
+              <tr class="hover:bg-[#f8fafc]">
+                <td class="px-5 py-3"><input type="checkbox" /></td>
+                <td class="px-4 py-3"><div class="text-gray-800 font-medium">王某·X</div><div class="text-xs text-gray-400">6529**********9012</div></td>
+                <td class="px-4 py-3"><span class="text-xs px-2 py-0.5 rounded bg-red-50 text-red-600 border border-red-200">越界/格式错</span></td>
+                <td class="px-4 py-3"><span class="text-xs px-2 py-0.5 rounded bg-indigo-50 text-indigo-600">就失业信息</span></td>
+                <td class="px-4 py-3 text-gray-600">「个人月收入」填写 8500 元超出范围（1750-20000 元区间/ex. 口径待核）</td>
+                <td class="px-4 py-3 text-gray-600">艾某** / 温宿县·XX村</td>
+                <td class="px-4 py-3 text-gray-500">2025-08-03 16:48</td>
+                <td class="px-4 py-3"><span class="text-xs px-2 py-0.5 rounded bg-amber-50 text-amber-600">整改中</span></td>
+                <td class="px-4 py-3"><a href="#" class="text-[#2563eb] hover:underline mr-2">详情</a><a href="#" class="text-gray-400 hover:text-[#2563eb]">整改</a></td>
+              </tr>
+              <!-- 示例4：灵活就业信息多余 -->
+              <tr class="hover:bg-[#f8fafc]">
+                <td class="px-5 py-3"><input type="checkbox" /></td>
+                <td class="px-4 py-3"><div class="text-gray-800 font-medium">张某·某某</div><div class="text-xs text-gray-400">6529**********3456</div></td>
+                <td class="px-4 py-3"><span class="text-xs px-2 py-0.5 rounded bg-amber-50 text-amber-600 border border-amber-200">字段冲突</span></td>
+                <td class="px-4 py-3"><span class="text-xs px-2 py-0.5 rounded bg-indigo-50 text-indigo-600">就失业信息</span></td>
+                <td class="px-4 py-3 text-gray-600">就失业状态为「失业登记」，但同时填写了灵活就业方式/工作内容（已就业字段不能出现）</td>
+                <td class="px-4 py-3 text-gray-600">赵某** / 沙雅县·XX社区</td>
+                <td class="px-4 py-3 text-gray-500">2025-08-03 09:20</td>
+                <td class="px-4 py-3"><span class="text-xs px-2 py-0.5 rounded bg-red-50 text-red-600">待处理</span></td>
+                <td class="px-4 py-3"><a href="#" class="text-[#2563eb] hover:underline mr-2">详情</a><a href="#" class="text-gray-400 hover:text-[#2563eb]">整改</a></td>
+              </tr>
+              <!-- 示例5：单位地址作为单位名称 -->
+              <tr class="hover:bg-[#f8fafc]">
+                <td class="px-5 py-3"><input type="checkbox" /></td>
+                <td class="px-4 py-3"><div class="text-gray-800 font-medium">库某·XX</div><div class="text-xs text-gray-400">6529**********7890</div></td>
+                <td class="px-4 py-3"><span class="text-xs px-2 py-0.5 rounded bg-red-50 text-red-600 border border-red-200">越界/格式错</span></td>
+                <td class="px-4 py-3"><span class="text-xs px-2 py-0.5 rounded bg-indigo-50 text-indigo-600">就失业信息</span></td>
+                <td class="px-4 py-3 text-gray-600">「就业单位」填写内容为纯地址/行政区划（如"库车市"），不能作为单位名称</td>
+                <td class="px-4 py-3 text-gray-600">买某** / 库车市·XX村</td>
+                <td class="px-4 py-3 text-gray-500">2025-08-02 17:11</td>
+                <td class="px-4 py-3"><span class="text-xs px-2 py-0.5 rounded bg-emerald-50 text-emerald-600">已整改</span></td>
+                <td class="px-4 py-3"><a href="#" class="text-[#2563eb] hover:underline mr-2">详情</a><a href="#" class="text-gray-400 hover:text-[#2563eb]">整改</a></td>
+              </tr>
+              <!-- 示例6：毕业日期逻辑 -->
+              <tr class="hover:bg-[#f8fafc]">
+                <td class="px-5 py-3"><input type="checkbox" /></td>
+                <td class="px-4 py-3"><div class="text-gray-800 font-medium">刘某·X</div><div class="text-xs text-gray-400">6529**********1122</div></td>
+                <td class="px-4 py-3"><span class="text-xs px-2 py-0.5 rounded bg-indigo-50 text-indigo-600 border border-indigo-200">字段缺失</span></td>
+                <td class="px-4 py-3"><span class="text-xs px-2 py-0.5 rounded bg-blue-50 text-blue-600">基础信息</span></td>
+                <td class="px-4 py-3 text-gray-600">「学历」选择为大学本科，但缺少毕业院校、学历学信网校验信息不完整</td>
+                <td class="px-4 py-3 text-gray-600">艾某** / 阿克苏市·XX街道</td>
+                <td class="px-4 py-3 text-gray-500">2025-08-02 11:36</td>
+                <td class="px-4 py-3"><span class="text-xs px-2 py-0.5 rounded bg-red-50 text-red-600">待处理</span></td>
+                <td class="px-4 py-3"><a href="#" class="text-[#2563eb] hover:underline mr-2">详情</a><a href="#" class="text-gray-400 hover:text-[#2563eb]">整改</a></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- 分页 -->
+          <div class="px-5 py-3 flex items-center justify-between border-t border-outline-variant">
+            <div class="flex items-center gap-3">
+              <span class="text-xs text-gray-400">显示 1-6 / 186 条</span>
+              <button class="flex items-center gap-1 text-xs text-[#2563eb] hover:underline"><i data-lucide="filter" class="w-3.5 h-3.5"></i>批量整改所选</button>
+            </div>
+            <div class="flex items-center gap-1">
+              <button class="w-8 h-8 rounded border border-outline-variant text-gray-500 text-xs disabled:opacity-40" disabled>上一页</button>
+              <button class="w-8 h-8 rounded bg-[#2563eb] text-white text-xs">1</button>
+              <button class="w-8 h-8 rounded border border-outline-variant text-gray-500 text-xs">2</button>
+              <button class="w-8 h-8 rounded border border-outline-variant text-gray-500 text-xs">3</button>
+              <button class="w-8 h-8 rounded border border-outline-variant text-gray-500 text-xs">下一页</button>
+            </div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <script>lucide.createIcons();</script>
+</body>
+
+</html>

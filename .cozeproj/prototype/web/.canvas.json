@@ -7,6 +7,14 @@
       },
       "title": "采集规则管理",
       "size": "web"
+    },
+    {
+      "type": "html",
+      "options": {
+        "path": ".cozeproj/prototype/web/labor-abnormal.html"
+      },
+      "title": "异常数据展示",
+      "size": "web"
     }
   ]
 }
