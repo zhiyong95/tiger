@@ -238,10 +238,10 @@ import { ElMessage } from 'element-plus'
 import { isWorkflowConfigured, queryReportHistoryList, queryReportHistoryDetail } from '@/api/cozeWorkflow'
 
 const overviewStats = ref([
-  { label: '数据分析报告总数', value: '52份', icon: Document, bg: 'linear-gradient(135deg, #2563eb, #1d4ed8)' },
-  { label: '待生成报告', value: '6份', icon: Clock, bg: 'linear-gradient(135deg, #f59e0b, #d97706)' },
-  { label: '生成中', value: '2份', icon: ChatLineSquare, bg: 'linear-gradient(135deg, #3b82f6, #2563eb)' },
-  { label: '已完成', value: '30份', icon: UploadFilled, bg: 'linear-gradient(135deg, #10b981, #059669)' }
+  { label: '数据分析报告总数', value: '3份', icon: Document, bg: 'linear-gradient(135deg, #2563eb, #1d4ed8)' },
+  { label: '本地上传分析', value: '1份', icon: UploadFilled, bg: 'linear-gradient(135deg, #f59e0b, #d97706)' },
+  { label: '系统报表对比', value: '2份', icon: TrendCharts, bg: 'linear-gradient(135deg, #10b981, #059669)' },
+  { label: 'AI 工作建议', value: '6条', icon: MagicStick, bg: 'linear-gradient(135deg, #8b5cf6, #7c3aed)' }
 ])
 
 // 模式选择
