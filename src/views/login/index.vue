@@ -664,6 +664,60 @@ onUnmounted(() => {
   text-transform: uppercase;
 }
 
+.login-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  padding: 5px;
+  margin-bottom: 30px;
+  background: #f1f4f9;
+  border-radius: 12px;
+  position: relative;
+}
+
+.tab-btn {
+  appearance: none;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 42px;
+  padding: 0 8px;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: inherit;
+  color: #5b6679;
+  background: transparent;
+  border-radius: 9px;
+  transition: color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease, transform 0.15s ease;
+  white-space: nowrap;
+}
+
+.tab-btn .el-icon {
+  font-size: 17px;
+}
+
+.tab-btn:hover {
+  color: #1a56db;
+}
+
+.tab-btn.active {
+  color: #fff;
+  background: linear-gradient(135deg, #2563eb 0%, #1a4bd6 100%);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.32);
+}
+
+.tab-btn.active:hover {
+  color: #fff;
+}
+
+.tab-btn:active {
+  transform: scale(0.97);
+}
+
 .login-form {
   margin-top: 8px;
 }
