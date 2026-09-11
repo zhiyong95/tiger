@@ -750,6 +750,53 @@ onUnmounted(() => {
   font-size: 18px;
 }
 
+/* 验证码输入框 + 获取按钮并排 */
+.code-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+.code-input {
+  flex: 1;
+  min-width: 0;
+}
+.code-input .el-input__wrapper {
+  height: 48px;
+  border-radius: 8px;
+  box-shadow: 0 0 0 1px #e5e7eb;
+}
+.code-input .el-input__wrapper:hover {
+  box-shadow: 0 0 0 1px #1a56db;
+}
+.code-input .el-input__wrapper.is-focus {
+  box-shadow: 0 0 0 2px #1a56db;
+}
+.code-btn {
+  flex-shrink: 0;
+  width: 120px;
+  height: 48px;
+  margin-left: 0;
+  padding: 0;
+  border: 1px solid #2563eb;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.25s;
+}
+.code-btn:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+.code-btn:disabled {
+  border-color: #cbd5e1;
+  background: #eef2f7;
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
 .role-select {
   width: 100%;
 }
