@@ -32,6 +32,37 @@
           </div>
         </div>
 
+        <!-- 选择报告模板（分析方式选定后展示，两种模式共用） -->
+        <div class="section-block" v-if="reportTemplates.length > 0">
+          <div class="section-title"><el-icon><MagicStick /></el-icon> 选择报告模板</div>
+          <div class="template-list">
+            <div
+              class="template-card"
+              v-for="t in reportTemplates"
+              :key="t.id"
+              :class="{ active: selectedTemplate?.id === t.id }"
+              @click="selectTemplate(t)"
+            >
+              <div class="template-icon" :style="{ background: t.bg }">
+                <el-icon :size="18"><component :is="t.icon" /></el-icon>
+              </div>
+              <div class="template-info">
+                <div class="template-name">
+                  {{ t.name }}
+                  <el-tag v-if="t.tag" size="small" :type="t.tagType as any" effect="plain">{{ t.tag }}</el-tag>
+                  <el-icon v-if="selectedTemplate?.id === t.id" class="template-check"><CircleCheck /></el-icon>
+                </div>
+                <div class="template-desc">{{ t.desc }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- 无可用模板空态 -->
+        <div v-else class="template-empty">
+          <el-icon :size="24" color="#9ca3af"><Document /></el-icon>
+          <span>暂无可选报告模板，请先在公文模板管理中配置</span>
+        </div>
+
         <!-- 上传本地数据模式 -->
         <template v-if="activeMode === 'upload'">
           <div class="section-title">上传数据文件</div>
@@ -65,16 +96,6 @@
 
         <!-- 系统报表对比模式 -->
         <template v-if="activeMode === 'compare'">
-          <div class="section-title">选择业务报表</div>
-          <el-select v-model="compareReport" placeholder="选择业务报表" style="width:100%">
-            <el-option label="城镇新增就业报表" value="城镇新增就业报表" />
-            <el-option label="失业登记与就业援助报表" value="失业登记与就业援助报表" />
-            <el-option label="公益性岗位安置报表" value="公益性岗位安置报表" />
-            <el-option label="职业技能培训报表" value="职业技能培训报表" />
-            <el-option label="创业担保贷款发放报表" value="创业担保贷款发放报表" />
-            <el-option label="零工市场用工报表" value="零工市场用工报表" />
-          </el-select>
-
           <div class="section-title">对比方式</div>
           <div class="compare-mode-tabs">
             <div class="cmp-tab" :class="{ active: compareMethod === '环比' }" @click="compareMethod = '环比'">环比</div>
@@ -218,11 +239,13 @@
 
 <script setup lang="ts">
 import { ref, computed, nextTick } from 'vue'
-import { UploadFilled, Document, MagicStick, Download, Back, Clock, EditPen, TrendCharts, ZoomOut, DocumentChecked, ChatLineSquare, Paperclip, Promotion } from '@element-plus/icons-vue'
+import { UploadFilled, Document, MagicStick, Download, Back, Clock, EditPen, TrendCharts, ZoomOut, DocumentChecked, ChatLineSquare, Paperclip, Promotion, CircleCheck } from '@element-plus/icons-vue'
 import dayjs from 'dayjs'
 import { ElMessage } from 'element-plus'
 import { isWorkflowConfigured, queryReportHistoryList, queryReportHistoryDetail } from '@/api/cozeWorkflow'
 import { exportElementToPdf, exportHtmlToWord } from '@/utils/reportExport'
+import { getDataReportTemplates } from '@/api/reportTemplates'
+import type { ReportTemplate } from '@/api/reportTemplates'
 import TutuEmpty from '@/components/TutuEmpty.vue'
 
 const overviewStats = ref([
@@ -257,16 +280,24 @@ function handleDrop(e: DragEvent) {
   }
 }
 
+// 报告模板（取自公文模板管理，仅已发布且归属智能报告/数据分析报告）
+const reportTemplates = ref<ReportTemplate[]>(getDataReportTemplates())
+const selectedTemplate = ref<ReportTemplate | null>(null)
+
+function selectTemplate(t: ReportTemplate) {
+  selectedTemplate.value = t
+}
+
 // 对比模式
-const compareReport = ref('')
 const compareMethod = ref('环比')
 const compareFocus = ref('')
 
 // 生成
 const isGenerating = ref(false)
 const canGenerate = computed(() => {
+  if (!selectedTemplate.value) return false
   if (activeMode.value === 'upload') return !!uploadFile.value
-  if (activeMode.value === 'compare') return !!compareReport.value
+  if (activeMode.value === 'compare') return true
   return false
 })
 
@@ -296,17 +327,20 @@ function onAskRecommend(q: string) {
   if (messages.value.length > 0) return
   if (q.includes('城镇新增就业趋势')) {
     activeMode.value = 'compare'
-    compareReport.value = '城镇新增就业报表'
+    const tpl = reportTemplates.value.find(t => t.name === '城镇新增就业报表')
+    if (tpl) selectedTemplate.value = tpl
     compareMethod.value = '环比'
     compareFocus.value = '城镇新增就业趋势'
   } else if (q.includes('社保参保结构')) {
     activeMode.value = 'compare'
-    compareReport.value = '城镇新增就业报表'
+    const tpl = reportTemplates.value.find(t => t.name === '城镇新增就业报表')
+    if (tpl) selectedTemplate.value = tpl
     compareMethod.value = '同比'
     compareFocus.value = '重点群体帮扶成效'
   } else if (q.includes('社保基金收支')) {
     activeMode.value = 'compare'
-    compareReport.value = '城镇新增就业报表'
+    const tpl = reportTemplates.value.find(t => t.name === '创业担保贷款发放报表')
+    if (tpl) selectedTemplate.value = tpl
     compareMethod.value = '双对比'
     compareFocus.value = '重点行业用工波动'
   }
@@ -315,18 +349,18 @@ function onAskRecommend(q: string) {
 
 async function generateReport() {
   if (!canGenerate.value) {
-    if (activeMode.value === 'upload' && !uploadFile.value) {
+    if (!selectedTemplate.value) {
+      ElMessage.warning('请先选择报告模板')
+    } else if (activeMode.value === 'upload' && !uploadFile.value) {
       ElMessage.warning('请先上传本地数据文件')
-    } else if (activeMode.value === 'compare' && !compareReport.value) {
-      ElMessage.warning('请先选择业务报表')
     }
     return
   }
 
   isGenerating.value = true
   const configDesc = activeMode.value === 'upload'
-    ? `数据分析模式：上传本地数据\n文件：${uploadFile.value?.name}\n报告标题：${reportTitle.value || '数据分析报告'}\n分析重点：${analysisFocus.value || '帮扶成效评估'}`
-    : `数据分析模式：系统报表对比\n报表：${compareReport.value}\n对比方式：${compareMethod.value}\n分析重点：${compareFocus.value || '重点群体帮扶成效'}`
+    ? `数据分析模式：上传本地数据\n报告模板：${selectedTemplate.value?.name}\n文件：${uploadFile.value?.name}\n报告标题：${reportTitle.value || '数据分析报告'}\n分析重点：${analysisFocus.value || '帮扶成效评估'}`
+    : `数据分析模式：系统报表对比\n报告模板：${selectedTemplate.value?.name}\n对比方式：${compareMethod.value}\n分析重点：${compareFocus.value || '重点群体帮扶成效'}`
 
   messages.value.push({ role: 'user', content: configDesc })
   scrollToBottom()
@@ -440,13 +474,14 @@ function generateCompareReportData(now: string) {
   }
 
   // Default to 城镇新增就业 if not found
-  const data = reportMap[compareReport.value] || reportMap['城镇新增就业报表']
+  const reportName = selectedTemplate.value?.name || '城镇新增就业报表'
+  const data = reportMap[reportName] || reportMap['城镇新增就业报表']
 
   return {
     title: data.title,
     createdAt: now,
     metrics: data.metrics,
-    chartSvg: generateCompareChartSvg(compareReport.value, compareMethod.value),
+    chartSvg: generateCompareChartSvg(reportName, compareMethod.value),
     body: data.body,
     suggestions: data.suggestions
   }
@@ -715,6 +750,28 @@ async function openHistoryReport(row: any) {
 .mode-tab { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 0; border-radius: 8px; border: 1px solid #e4eaf3; cursor: pointer; font-size: 13px; color: #6b7280; transition: all .2s; }
 .mode-tab:hover { border-color: #2563eb; color: #2563eb; }
 .mode-tab.active { background: #eaf0fe; border-color: #2563eb; color: #2563eb; font-weight: 600; }
+
+/* 报告模板卡片（参考"选择调研主题"卡片） */
+.template-list { display: flex; flex-direction: column; gap: 8px; }
+.template-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  cursor: pointer;
+  transition: all .2s;
+  position: relative;
+}
+.template-card:hover { border-color: #2563eb; background: #f0f5ff; }
+.template-card.active { border-color: #2563eb; background: #f0f5ff; border-left: 3px solid #2563eb; }
+.template-icon { width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #2563eb; flex-shrink: 0; }
+.template-info { flex: 1; min-width: 0; }
+.template-name { font-size: 13px; font-weight: 600; color: #1f2937; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.template-check { color: #2563eb; font-size: 16px; margin-left: auto; }
+.template-desc { font-size: 12px; color: #6b7280; margin-top: 2px; line-height: 1.5; }
+.template-empty { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 18px 0; color: #9ca3af; font-size: 13px; text-align: center; }
 
 /* 上传区域 */
 .upload-area { border: 2px dashed #d1d9e6; border-radius: 10px; padding: 24px; text-align: center; cursor: pointer; transition: all .2s; background: #f8fafd; }
