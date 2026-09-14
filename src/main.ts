@@ -19,4 +19,15 @@ app.use(createPinia())
 app.use(router)
 app.use(ElementPlus, { locale: zhCn })
 
+// 全局错误兜底：捕获页面渲染异常，避免导致整页白屏
+app.config.errorHandler = (err, instance, info) => {
+  console.warn('[Vue全局捕获]', info, err)
+}
+
+window.addEventListener('error', (ev) => {
+  if ((ev as ErrorEvent).message) {
+    console.warn('[全局捕获]', (ev as ErrorEvent).message)
+  }
+})
+
 app.mount('#app')
