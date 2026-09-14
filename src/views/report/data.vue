@@ -106,9 +106,8 @@
         <!-- 空状态 -->
         <div v-if="messages.length === 0" class="empty-state">
           <div class="empty-icon">
-            <svg width="56" height="56" viewBox="0 0 56 56"><path d="M28 8C16.954 8 8 16.954 8 28s8.954 20 20 20 20-8.954 20-20S39.046 8 28 8z" fill="url(#g1)"/><defs><linearGradient id="g1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#2563eb"/><stop offset="100%" stop-color="#1d4fa8"/></linearGradient></defs><text x="28" y="34" text-anchor="middle" fill="#fff" font-size="18" font-weight="bold">AI</text></svg>
+            <img src="/assistant-tutu.png" alt="途途助手" class="tutu-logo" />
           </div>
-          <h3 class="empty-title">AI 数据分析报告助手</h3>
           <p class="empty-desc">请在左侧选择分析方式并配置参数，点击「生成数据分析报告」即可生成报告，生成后可继续输入调整要求进行优化。</p>
           <div class="feature-cards">
             <div class="feature-card"><el-icon color="#2563eb"><Document /></el-icon><span>结构化报告</span><span class="fc-sub">完整章节逻辑清晰</span></div>
@@ -680,6 +679,8 @@ async function openHistoryReport(row: any) {
 .chat-messages { flex: 1; overflow-y: auto; padding: 20px; }
 .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; }
 .empty-icon { margin-bottom: 16px; }
+.tutu-logo { width: 240px; height: auto; max-width: 80%; object-fit: contain; }
+.empty-icon + .empty-desc { margin-top: 8px; }
 .empty-title { font-size: 20px; font-weight: 600; color: #1f2937; margin: 0 0 12px; }
 .empty-desc { font-size: 14px; color: #6b7280; max-width: 420px; line-height: 1.6; margin: 0 0 24px; }
 .feature-cards { display: flex; gap: 16px; }
