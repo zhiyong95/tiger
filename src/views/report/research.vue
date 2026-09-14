@@ -142,7 +142,12 @@
             <div v-if="msg.typing" class="typing-dots">
               <span></span><span></span><span></span>
             </div>
-            <div v-else-if="msg.report" class="report-card">
+            <div v-else-if="msg.report" class="report-card" :id="'research-report-' + idx">
+              <!-- 下载操作 -->
+              <div class="report-actions">
+                <el-button size="small" :icon="Download" @click="onExport('pdf', msg.report, idx)">下载 PDF</el-button>
+                <el-button size="small" :icon="Document" @click="onExport('word', msg.report, idx)">下载 Word</el-button>
+              </div>
               <!-- 核心指标 -->
               <div class="metrics-grid">
                 <div class="metric-card" v-for="m in msg.report.metrics" :key="m.label">
@@ -232,6 +237,7 @@ import {
 } from '@element-plus/icons-vue'
 import dayjs from 'dayjs'
 import { isWorkflowConfigured, queryReportHistoryList, queryReportHistoryDetail } from '@/api/cozeWorkflow'
+import { exportElementToPdf, exportHtmlToWord } from '@/utils/reportExport'
 
 // ====== 类型定义 ======
 interface Topic {
@@ -531,10 +537,45 @@ async function loadHistory(h: HistoryItem) {
 }
 
 // ====== 导出 ======
-function onExport(cmd: string, report: ReportData) {
-  const extMap: Record<string, string> = { word: 'docx', pdf: 'pdf', markdown: 'md', text: 'txt' }
-  const fileName = `${report.title}.${extMap[cmd] || 'txt'}`
-  ElMessage.success(`正在导出 ${fileName}，请稍候...`)
+const exporting = ref(false)
+
+async function onExport(cmd: string, report: ReportData, idx: number) {
+  if (exporting.value) return
+  const baseName = `${report.title}_${dayjs().format('YYYYMMDD_HHmm')}`
+  if (cmd === 'pdf') {
+    const el = document.getElementById(`research-report-${idx}`)
+    if (!el) return
+    exporting.value = true
+    ElMessage.success('正在生成 PDF，请稍候...')
+    try {
+      await exportElementToPdf(el, report.title)
+    } catch (e) {
+      console.error(e)
+      ElMessage.error('PDF 导出失败，请重试')
+    } finally {
+      exporting.value = false
+    }
+  } else if (cmd === 'word') {
+    exportHtmlToWord(buildWordHtml(report), baseName)
+    ElMessage.success('Word 文档已开始下载')
+  }
+}
+
+function buildWordHtml(report: ReportData): string {
+  const metricRows = report.metrics
+    .map((m) => `<tr><td>${m.label}</td><td>${m.value}</td><td>${m.change >= 0 ? '上升' : '下降'} ${Math.abs(m.change)}%</td></tr>`)
+    .join('')
+  const sections = report.sections
+    .map((s) => `<h4>${s.title}</h4><div>${s.content}</div>`)
+    .join('')
+  return `
+    <h2 class="report-doc-title">${report.title}</h2>
+    <div class="report-doc-meta">调研周期：${report.period} ｜ 生成时间：${report.genTime}</div>
+    <h3>一、核心指标概览</h3>
+    <table><thead><tr><th>指标</th><th>数值</th><th>环比情况</th></tr></thead><tbody>${metricRows}</tbody></table>
+    <h3>二、调研分析正文</h3>
+    ${sections}
+    <p class="report-doc-disclaimer">AI 生成内容仅供参考，请结合实际情况审核使用</p>`
 }
 </script>
 
@@ -800,11 +841,19 @@ function onExport(cmd: string, report: ReportData) {
 
 /* 报告卡片 */
 .report-card {
+  position: relative;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   padding: 16px;
   margin-top: 8px;
 }
+.report-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.report-actions .el-button { padding: 6px 12px; }
 .report-header {
   display: flex;
   justify-content: space-between;

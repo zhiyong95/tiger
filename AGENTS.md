@@ -21,6 +21,7 @@ src/
 ── router/index.ts      # 路由配置
 ── stores/app.ts        # 应用状态（Pinia）
 ├── types/index.ts       # TypeScript 类型定义
+├── utils/reportExport.ts # 报告导出工具（PDF：jspdf+html2canvas；Word：.doc HTML）
 ├── views/
 │   ├── dashboard/       # 首页工作台
 │   ├── qa/              # 人社知识智能问答

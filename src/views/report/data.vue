@@ -129,13 +129,19 @@
                 <span>AI 正在生成报告，请稍候…</span>
               </div>
               <!-- 报告卡片 -->
-              <div v-else-if="msg.report" class="report-card">
+              <div v-else-if="msg.report" class="report-card" :id="'data-report-' + idx">
                 <div class="rc-header">
                   <h3 class="rc-title">{{ msg.report.title }}</h3>
-                  <div class="rc-meta">
-                    <span class="rc-tag">数据分析报告</span>
-                    <span class="rc-tag rc-tag-blue">AI 自动生成</span>
-                    <span class="rc-date">{{ msg.report.createdAt }}</span>
+                  <div class="rc-header-right">
+                    <div class="report-actions">
+                      <el-button size="small" :icon="Download" @click="exportReport('pdf', msg.report, idx)">下载 PDF</el-button>
+                      <el-button size="small" :icon="Document" @click="exportReport('word', msg.report, idx)">下载 Word</el-button>
+                    </div>
+                    <div class="rc-meta">
+                      <span class="rc-tag">数据分析报告</span>
+                      <span class="rc-tag rc-tag-blue">AI 自动生成</span>
+                      <span class="rc-date">{{ msg.report.createdAt }}</span>
+                    </div>
                   </div>
                 </div>
 
@@ -223,6 +229,7 @@ import { UploadFilled, Document, MagicStick, Download, Back, Clock, EditPen, Tre
 import dayjs from 'dayjs'
 import { ElMessage } from 'element-plus'
 import { isWorkflowConfigured, queryReportHistoryList, queryReportHistoryDetail } from '@/api/cozeWorkflow'
+import { exportElementToPdf, exportHtmlToWord } from '@/utils/reportExport'
 
 const overviewStats = ref([
   { label: '数据分析报告总数', value: '3份', icon: Document, bg: 'linear-gradient(135deg, #2563eb, #1d4ed8)' },
@@ -548,6 +555,50 @@ function handleAttach(e: Event) {
   }
 }
 
+// ====== 报告导出（PDF / Word）======
+const exporting = ref(false)
+async function exportReport(cmd: string, report: any, idx: number) {
+  if (exporting.value) return
+  const baseName = `${report.title || '数据分析报告'}_${dayjs().format('YYYYMMDD_HHmm')}`
+  if (cmd === 'pdf') {
+    const el = document.getElementById(`data-report-${idx}`)
+    if (!el) return
+    exporting.value = true
+    ElMessage.success('正在生成 PDF，请稍候...')
+    try {
+      await exportElementToPdf(el, report.title || '数据分析报告')
+    } catch (e) {
+      console.error(e)
+      ElMessage.error('PDF 导出失败，请重试')
+    } finally {
+      exporting.value = false
+    }
+  } else if (cmd === 'word') {
+    exportHtmlToWord(buildDataWordHtml(report), baseName)
+    ElMessage.success('Word 文档已开始下载')
+  }
+}
+
+function buildDataWordHtml(report: any): string {
+  const metricRows = (report.metrics || [])
+    .map((m: any) => `<tr><td>${m.label}</td><td>${m.value}</td><td>${m.trend >= 0 ? '上升' : '下降'} ${Math.abs(m.trend)}%</td></tr>`)
+    .join('')
+  const suggestions = (report.suggestions || [])
+    .map((s: any, i: number) => `<li><strong>${s.title || '建议' + (i + 1)}：</strong>${s.detail || s}</li>`)
+    .join('')
+  const chart = report.chartSvg ? `<p style="text-align:center;">（图表请见导出的 PDF 版本）</p>` : ''
+  return `
+    <h2 class="report-doc-title">${report.title}</h2>
+    <div class="report-doc-meta">数据分析报告 ｜ 生成时间：${report.createdAt || ''}</div>
+    <h3>一、关键指标</h3>
+    <table><thead><tr><th>指标</th><th>数值</th><th>环比情况</th></tr></thead><tbody>${metricRows}</tbody></table>
+    ${chart}
+    <h3>二、分析正文</h3>
+    <div>${report.body || ''}</div>
+    ${suggestions ? `<h3>三、AI 针对性工作建议</h3><ul>${suggestions}</ul>` : ''}
+    <p class="report-doc-disclaimer">AI 生成内容仅供参考，请结合实际情况审核使用</p>`
+}
+
 // 历史
 const showHistoryDrawer = ref(false)
 const historyLoading = ref(false)
@@ -703,7 +754,11 @@ async function openHistoryReport(row: any) {
 
 /* 报告卡片 */
 .report-card { width: 100%; }
-.rc-header { background: linear-gradient(135deg, #eaf0fe, #f0f5ff); border-radius: 10px; padding: 16px 20px; margin-bottom: 16px; }
+.rc-header { background: linear-gradient(135deg, #eaf0fe, #f0f5ff); border-radius: 10px; padding: 16px 20px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.rc-header .rc-title { flex: 1; }
+.rc-header-right { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+.report-actions { display: flex; gap: 8px; }
+.report-actions .el-button { padding: 6px 12px; }
 .rc-title { font-size: 17px; font-weight: 600; color: #1f2937; margin: 0 0 8px; }
 .rc-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .rc-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; background: #2563eb; color: #fff; font-size: 11px; }
