@@ -1,12 +1,13 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 import { useAppStore } from '@/stores/app'
+import { lazyView } from '@/utils/lazyView'
 
 const routes: RouteRecordRaw[] = [
   {
     path: '/login',
     name: 'Login',
-    component: () => import('@/views/login/index.vue'),
+    component: lazyView(() => import('@/views/login/index.vue')),
     meta: { requiresAuth: false }
   },
   {
@@ -17,19 +18,19 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/qa',
     name: 'QA',
-    component: () => import('@/views/qa/index.vue'),
+    component: lazyView(() => import('@/views/qa/index.vue')),
     meta: { requiresAuth: true, roles: ['staff', 'leader'] }
   },
   {
     path: '/document',
     name: 'Document',
-    component: () => import('@/views/document/index.vue'),
+    component: lazyView(() => import('@/views/document/index.vue')),
     meta: { requiresAuth: true, roles: ['staff', 'leader'] }
   },
   {
     path: '/data',
     name: 'Data',
-    component: () => import('@/views/data/index.vue'),
+    component: lazyView(() => import('@/views/data/index.vue')),
     meta: { requiresAuth: true, roles: ['staff', 'leader'] }
   },
   {
@@ -40,13 +41,13 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/report/research',
     name: 'ReportResearch',
-    component: () => import('@/views/report/research.vue'),
+    component: lazyView(() => import('@/views/report/research.vue')),
     meta: { requiresAuth: true, roles: ['staff', 'leader'] }
   },
   {
     path: '/report/data',
     name: 'ReportData',
-    component: () => import('@/views/report/data.vue'),
+    component: lazyView(() => import('@/views/report/data.vue')),
     meta: { requiresAuth: true, roles: ['staff', 'leader'] }
   },
   {
@@ -57,37 +58,37 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/policy/research',
     name: 'PolicyResearch',
-    component: () => import('@/views/policy/research.vue'),
+    component: lazyView(() => import('@/views/policy/research.vue')),
     meta: { requiresAuth: true, roles: ['staff', 'leader'] }
   },
   {
     path: '/policy/compare',
     name: 'PolicyCompare',
-    component: () => import('@/views/policy/compare.vue'),
+    component: lazyView(() => import('@/views/policy/compare.vue')),
     meta: { requiresAuth: true, roles: ['staff', 'leader'] }
   },
   {
     path: '/policy/draft',
     name: 'PolicyDraft',
-    component: () => import('@/views/policy/draft.vue'),
+    component: lazyView(() => import('@/views/policy/draft.vue')),
     meta: { requiresAuth: true, roles: ['staff', 'leader'] }
   },
   {
     path: '/policy/qa',
     name: 'PolicyQA',
-    component: () => import('@/views/policy/qa.vue'),
+    component: lazyView(() => import('@/views/policy/qa.vue')),
     meta: { requiresAuth: true, roles: ['staff', 'leader'] }
   },
   {
     path: '/audit',
     name: 'Audit',
-    component: () => import('@/views/audit/index.vue'),
+    component: lazyView(() => import('@/views/audit/index.vue')),
     meta: { requiresAuth: true, roles: ['staff', 'leader'] }
   },
   {
     path: '/audit/policy-service',
     name: 'PolicyService',
-    component: () => import('@/views/audit/policy-service.vue'),
+    component: lazyView(() => import('@/views/audit/policy-service.vue')),
     meta: { requiresAuth: true, roles: ['staff', 'leader'] }
   },
   // 领导驾驶舱
@@ -99,31 +100,31 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/cockpit/labor',
     name: 'CockpitLabor',
-    component: () => import('@/views/cockpit/labor.vue'),
+    component: lazyView(() => import('@/views/cockpit/labor.vue')),
     meta: { requiresAuth: true, roles: ['staff', 'leader'] }
   },
   {
     path: '/cockpit/enterprise',
     name: 'CockpitEnterprise',
-    component: () => import('@/views/cockpit/enterprise.vue'),
+    component: lazyView(() => import('@/views/cockpit/enterprise.vue')),
     meta: { requiresAuth: true, roles: ['staff', 'leader'] }
   },
   {
     path: '/cockpit/industry',
     name: 'CockpitIndustry',
-    component: () => import('@/views/cockpit/industry.vue'),
+    component: lazyView(() => import('@/views/cockpit/industry.vue')),
     meta: { requiresAuth: true, roles: ['staff', 'leader'] }
   },
   {
     path: '/cockpit/service',
     name: 'CockpitService',
-    component: () => import('@/views/cockpit/service.vue'),
+    component: lazyView(() => import('@/views/cockpit/service.vue')),
     meta: { requiresAuth: true, roles: ['staff', 'leader'] }
   },
   {
     path: '/profile',
     name: 'Profile',
-    component: () => import('@/views/profile/index.vue'),
+    component: lazyView(() => import('@/views/profile/index.vue')),
     meta: { requiresAuth: true }
   },
   // 后台管理端路由
@@ -134,73 +135,73 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/admin/dashboard',
     name: 'AdminDashboard',
-    component: () => import('@/views/admin/dashboard.vue'),
+    component: lazyView(() => import('@/views/admin/dashboard.vue')),
     meta: { requiresAuth: true, roles: ['sysadmin', 'bizadmin', 'auditor'] }
   },
   {
     path: '/admin/users',
     name: 'AdminUsers',
-    component: () => import('@/views/admin/users.vue'),
+    component: lazyView(() => import('@/views/admin/users.vue')),
     meta: { requiresAuth: true, roles: ['sysadmin'] }
   },
   {
     path: '/admin/knowledge',
     name: 'AdminKnowledge',
-    component: () => import('@/views/admin/knowledge.vue'),
+    component: lazyView(() => import('@/views/admin/knowledge.vue')),
     meta: { requiresAuth: true, roles: ['sysadmin', 'bizadmin'] }
   },
   {
     path: '/admin/feedback',
     name: 'AdminFeedback',
-    component: () => import('@/views/admin/feedback.vue'),
+    component: lazyView(() => import('@/views/admin/feedback.vue')),
     meta: { requiresAuth: true, roles: ['sysadmin', 'bizadmin'] }
   },
   {
     path: '/admin/templates',
     name: 'AdminTemplates',
-    component: () => import('@/views/admin/templates.vue'),
+    component: lazyView(() => import('@/views/admin/templates.vue')),
     meta: { requiresAuth: true, roles: ['sysadmin', 'bizadmin'] }
   },
   {
     path: '/admin/policytags',
     name: 'AdminPolicyTags',
-    component: () => import('@/views/admin/policytags.vue'),
+    component: lazyView(() => import('@/views/admin/policytags.vue')),
     meta: { requiresAuth: true, roles: ['sysadmin', 'bizadmin'] }
   },
   {
     path: '/admin/metrics',
     name: 'AdminMetrics',
-    component: () => import('@/views/admin/metrics.vue'),
+    component: lazyView(() => import('@/views/admin/metrics.vue')),
     meta: { requiresAuth: true, roles: ['sysadmin', 'bizadmin'] }
   },
   {
     path: '/admin/rules',
     name: 'AdminRules',
-    component: () => import('@/views/admin/rules.vue'),
+    component: lazyView(() => import('@/views/admin/rules.vue')),
     meta: { requiresAuth: true, roles: ['sysadmin', 'bizadmin'] }
   },
   {
     path: '/admin/datasource',
     name: 'AdminDatasource',
-    component: () => import('@/views/admin/datasource.vue'),
+    component: lazyView(() => import('@/views/admin/datasource.vue')),
     meta: { requiresAuth: true, roles: ['sysadmin'] }
   },
   {
     path: '/admin/taskflow',
     name: 'AdminTaskFlow',
-    component: () => import('@/views/admin/taskflow.vue'),
+    component: lazyView(() => import('@/views/admin/taskflow.vue')),
     meta: { requiresAuth: true, roles: ['sysadmin', 'bizadmin'] }
   },
   {
     path: '/admin/logs',
     name: 'AdminLogs',
-    component: () => import('@/views/admin/logs.vue'),
+    component: lazyView(() => import('@/views/admin/logs.vue')),
     meta: { requiresAuth: true, roles: ['sysadmin', 'bizadmin', 'auditor'] }
   },
   {
     path: '/admin/system',
     name: 'AdminSystem',
-    component: () => import('@/views/admin/system.vue'),
+    component: lazyView(() => import('@/views/admin/system.vue')),
     meta: { requiresAuth: true, roles: ['sysadmin'] }
   }
 ]
