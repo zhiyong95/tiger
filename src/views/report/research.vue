@@ -115,6 +115,16 @@
     <div class="right-panel">
       <div class="chat-area" ref="chatAreaRef">
 
+        <!-- 空状态 -->
+        <div v-if="messages.length === 0" class="empty-state">
+          <img src="/assistant-tutu.png" alt="途途" class="tutu-logo" />
+          <p class="empty-desc">请在左侧选择调研主题并配置参数，点击「生成调研分析报告」即可生成报告，生成后可继续输入调整要求进行优化。</p>
+          <div class="feature-cards">
+            <div class="feature-card"><el-icon color="#2563eb"><Document /></el-icon><span>结构化报告</span><span class="fc-sub">背景分析到建议完整呈现</span></div>
+            <div class="feature-card"><el-icon color="#2563eb"><DataAnalysis /></el-icon><span>AI 智能分析</span><span class="fc-sub">数据洞察与工作建议</span></div>
+          </div>
+        </div>
+
         <!-- 消息列表 -->
         <div v-for="(msg, idx) in messages" :key="idx" class="message-item" :class="msg.role">
           <div v-if="msg.role === 'user'" class="user-bubble">
@@ -734,17 +744,21 @@ function onExport(cmd: string, report: ReportData) {
 }
 .feature-card {
   background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 16px 20px;
+  border: 1px solid #e4eaf3;
+  border-radius: 12px;
+  padding: 20px 28px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 6px;
   min-width: 160px;
 }
+.feature-card .el-icon { font-size: 22px; margin-bottom: 2px; }
+.feature-card span { font-size: 13px; color: #1f2937; }
 .feature-name { font-size: 14px; font-weight: 600; color: #1f2937; }
 .feature-desc { font-size: 12px; color: #9ca3af; }
+.fc-sub { font-size: 11px !important; color: #9ca3af !important; }
+.tutu-logo { width: 240px; height: auto; max-width: 80%; object-fit: contain; margin-bottom: 16px; }
 
 /* 消息 */
 .message-item { margin-bottom: 16px; }
