@@ -74,7 +74,7 @@
             </el-breadcrumb>
           </div>
           <div class="header-right">
-            <el-popover v-if="!isReportData"
+            <el-popover
               placement="bottom-end"
               :width="360"
               trigger="click"
@@ -113,7 +113,7 @@
                 </div>
               </div>
             </el-popover>
-            <el-dropdown v-if="!isReportData" @command="handleDropdownCommand">
+            <el-dropdown @command="handleDropdownCommand">
               <div class="user-info">
                 <el-avatar :size="32" class="user-avatar">{{ appStore.userInfo.name[0] }}</el-avatar>
                 <span class="user-name">{{ appStore.userInfo.name }}</span>
@@ -155,7 +155,7 @@ const router = useRouter()
 const appStore = useAppStore()
 
 // 数据分析报告模块：隐藏右侧通知铃铛与用户头像（保留顶部导航栏）
-const isReportData = computed(() => route.path === '/report/data')
+
 
 // 站内通知数据
 const notifications = ref([

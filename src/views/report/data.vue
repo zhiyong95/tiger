@@ -101,18 +101,6 @@
 
     <!-- 右侧AI对话区 -->
     <div class="chat-area">
-      <!-- 顶部 -->
-      <div class="chat-topbar">
-        <div class="topbar-right">
-          <el-badge :value="3" class="notif-badge">
-            <el-icon :size="20"><Bell /></el-icon>
-          </el-badge>
-          <div class="user-avatar">
-            <el-icon :size="18"><User /></el-icon>
-          </div>
-        </div>
-      </div>
-
       <!-- 对话内容 -->
       <div class="chat-messages" ref="msgContainerRef">
         <!-- 空状态 -->
@@ -232,7 +220,7 @@
 
 <script setup lang="ts">
 import { ref, computed, nextTick } from 'vue'
-import { UploadFilled, Document, MagicStick, Download, Back, Clock, EditPen, TrendCharts, ZoomOut, DocumentChecked, ChatLineSquare, Bell, User, Paperclip, Promotion } from '@element-plus/icons-vue'
+import { UploadFilled, Document, MagicStick, Download, Back, Clock, EditPen, TrendCharts, ZoomOut, DocumentChecked, ChatLineSquare, Paperclip, Promotion } from '@element-plus/icons-vue'
 import dayjs from 'dayjs'
 import { ElMessage } from 'element-plus'
 import { isWorkflowConfigured, queryReportHistoryList, queryReportHistoryDetail } from '@/api/cozeWorkflow'
@@ -686,11 +674,7 @@ async function openHistoryReport(row: any) {
 /* ===== 右侧AI对话区 ===== */
 .chat-area { flex: 1; display: flex; flex-direction: column; background: #f2f5fa; min-width: 0; }
 
-/* 顶部栏 */
-.chat-topbar { display: flex; align-items: center; justify-content: flex-end; padding: 8px 20px; background: #fff; border-bottom: 1px solid #e4eaf3; flex-shrink: 0; }
-.topbar-right { display: flex; align-items: center; gap: 16px; }
-.notif-badge { cursor: pointer; }
-.user-avatar { width: 32px; height: 32px; border-radius: 50%; background: #2563eb; display: flex; align-items: center; justify-content: center; color: #fff; cursor: pointer; }
+
 
 /* 对话内容 */
 .chat-messages { flex: 1; overflow-y: auto; padding: 20px; }
