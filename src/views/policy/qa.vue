@@ -37,25 +37,22 @@
     </div>
     <div class="policy-main">
       <div v-if="qaMessages.length===0" class="qa-welcome">
-        <div class="empty-icon">💬</div>
-        <div class="empty-title">政策智能问答</div>
-        <div class="empty-desc">输入您的政策问题，AI 将基于政策知识库为您解答</div>
-        <div class="qa-suggestions">
-          <div class="suggest-title">💡 常见问题</div>
-          <div class="suggest-grid">
-            <div v-for="q in suggestQuestions" :key="q" class="suggest-item" @click="askQuestion(q)">{{ q }}</div>
-          </div>
-        </div>
+        <TutuEmpty :welcome="welcomeText" :questions="recommendQuestions" :on-ask="askQuestion" />
       </div>
       <div v-else class="qa-chat-area">
         <div class="qa-messages" ref="qaMessagesRef">
           <div v-for="(m,idx) in qaMessages" :key="idx" class="qa-msg" :class="m.role==='user'?'qa-user':'qa-ai'">
-            <div class="qa-avatar">{{ m.role==='user'?'我':'🤖' }}</div>
+            <div v-if="m.role==='ai'" class="qa-ai-head">
+              <div class="qa-tutu-avatar">途</div>
+              <span class="qa-ai-name">途途</span>
+              <span class="qa-ai-label">政策问答</span>
+            </div>
             <div class="qa-bubble">
               <div v-if="m.role==='ai' && m.references" class="qa-refs">
                 <el-tag v-for="r in m.references" :key="r" size="small" style="margin-right:4px;margin-bottom:4px">{{ r }}</el-tag>
               </div>
               <div v-html="m.content"></div>
+              <div v-if="m.role==='ai'" class="qa-source">📄 政策依据：{{ (m.references && m.references.length ? m.references.join('、') : '政策知识库') }} · 生成时间：{{ nowText() }}</div>
             </div>
           </div>
         </div>
@@ -72,6 +69,7 @@
 import { ref, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
+import TutuEmpty from '@/components/TutuEmpty.vue'
 
 const qaSource = ref('all')
 const qaInput = ref('')
@@ -85,12 +83,11 @@ const policyFiles = ref([
   { id: 2, name: '失业保险条例.docx' },
   { id: 3, name: '社保补贴管理办法.pdf' }
 ])
-const suggestQuestions = [
-  '灵活就业人员社保补贴如何申请？',
-  '失业保险金领取条件是什么？',
-  '就业困难人员认定标准有哪些？',
-  '高校毕业生就业补贴标准是多少？',
-  '创业担保贷款额度是多少？'
+const welcomeText = '我可以依据政策法规库，解答你关于人社政策的各类疑问。'
+const recommendQuestions = [
+  '灵活就业人员如何参加职工医保？',
+  '失业保险金的领取条件是什么？',
+  '申请工伤认定需要准备哪些材料？'
 ]
 
 const mockQaHistory = [
@@ -107,6 +104,14 @@ const mockAnswers: Record<string, {content:string;refs:string[]}> = {
   '失业保险金领取条件是什么？': {
     content: '<p><strong>失业保险金领取条件：</strong></p><ol><li><strong>缴费条件</strong>：失业前用人单位和本人已缴纳失业保险费满<strong>1年</strong></li><li><strong>非自愿失业</strong>：非因本人意愿中断就业（如合同期满、被辞退、企业破产等）</li><li><strong>已办理失业登记</strong>：并已进行求职登记，有求职要求</li><li><strong>领取期限</strong>：缴费满1年不足5年，最长12个月；满5年不足10年，最长18个月；10年以上，最长24个月</li><li><strong>领取标准</strong>：不低于当地城市居民最低生活保障标准，不高于当地最低工资标准</li></ol>',
     refs: ['失业保险条例']
+  },
+  '灵活就业人员如何参加职工医保？': {
+    content: '<p><strong>灵活就业人员参加职工医保指南：</strong></p><ol><li><strong>参保对象</strong>：无雇工的个体工商户、未在用人单位参加职工医保的非全日制从业人员及其他灵活就业人员。</li><li><strong>登记方式</strong>：本人持身份证/社保卡到户籍地或居住地医保经办机构办理参保登记，或在"XX省医保公共服务平台"线上申报。</li><li><strong>缴费方式</strong>：按当地设区市上年度全口径城镇单位就业人员平均工资的一定比例（通常<strong>8%~10%</strong>）按月或按年缴纳。</li><li><strong>待遇享受</strong>：缴费后按职工医保规定享受个人账户与住院、门诊统筹等待遇，连续缴费与待遇享受期按当地规定执行。</li><li><strong>咨询渠道</strong>：可拨打 <strong>12393</strong> 医保服务热线或当地经办窗口咨询。</li></ol>',
+    refs: ['国家医保局政策文件', 'XX省医保局文件']
+  },
+  '申请工伤认定需要准备哪些材料？': {
+    content: '<p><strong>申请工伤认定所需材料：</strong></p><ol><li><strong>工伤认定申请表</strong>：内容包括事故时间、地点、原因以及职工伤害程度等基本情况。</li><li><strong>劳动关系证明材料</strong>：劳动合同、工资支付凭证、考勤记录、工作证等能够证明劳动关系的材料。</li><li><strong>医疗诊断证明</strong>：医疗机构出具的受伤后诊断证明书或职业病诊断证明书。</li><li><strong>事故相关材料</strong>：事故现场照片、监控录像、目击证人证言、公安机关或安全生产监管部门出具的事故认定书（视情况）。</li><li><strong>申请时限</strong>：用人单位应在事故伤害发生之日起<strong>30日内</strong>提出申请；用人单位未申请的，职工或近亲属可在<strong>1年内</strong>自行申请。</li></ol>',
+    refs: ['工伤保险条例']
   }
 }
 
@@ -153,6 +158,12 @@ const scrollToBottom = async () => {
   }
 }
 
+const nowText = () => {
+  const d = new Date()
+  const p = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`
+}
+
 const clearQAChat = () => { qaMessages.value = []; qaInput.value = '' }
 const loadQaHistory = (h: any) => { /* 加载历史 */ }
 </script>
@@ -174,7 +185,7 @@ const loadQaHistory = (h: any) => { /* 加载历史 */ }
 .history-item:hover { background:#f3f4f6; }
 .history-name { font-size:13px; color:#374151; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .history-time { font-size:11px; color:#9ca3af; margin-top:2px; }
-.qa-welcome { display:flex; flex-direction:column; align-items:center; justify-content:center; flex:1; }
+.qa-welcome { display:flex; flex-direction:column; align-items:center; justify-content:center; flex:1; min-height:400px; padding:24px; }
 .empty-icon { font-size:48px; margin-bottom:12px; }
 .empty-title { font-size:18px; font-weight:600; color:#374151; margin-bottom:8px; }
 .empty-desc { font-size:13px; color:#9ca3af; margin-bottom:20px; }
@@ -190,6 +201,11 @@ const loadQaHistory = (h: any) => { /* 加载历史 */ }
 .qa-user { flex-direction:row-reverse; }
 .qa-ai .qa-avatar { background:#dbeafe; }
 .qa-user .qa-avatar { background:#2563eb; color:#fff; }
+.qa-ai-head { display:flex; align-items:center; gap:8px; margin-top:4px; }
+.qa-tutu-avatar { width:36px; height:36px; border-radius:50%; background:#2563eb; color:#fff; font-size:16px; font-weight:600; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.qa-ai-name { font-size:14px; font-weight:600; color:#111827; }
+.qa-ai-label { font-size:12px; background:#eff6ff; color:#2563eb; border-radius:4px; padding:2px 8px; }
+.qa-source { margin-top:10px; font-size:12px; color:#6b7280; border-top:1px dashed #e5e7eb; padding-top:8px; }
 .qa-bubble { max-width:75%; padding:12px 16px; border-radius:10px; font-size:13px; line-height:1.7; }
 .qa-ai .qa-bubble { background:#fff; border:1px solid #e5e7eb; }
 .qa-user .qa-bubble { background:#2563eb; color:#fff; }

@@ -105,14 +105,7 @@
       <div class="chat-messages" ref="msgContainerRef">
         <!-- 空状态 -->
         <div v-if="messages.length === 0" class="empty-state">
-          <div class="empty-icon">
-            <img src="/assistant-tutu.png" alt="途途助手" class="tutu-logo" />
-          </div>
-          <p class="empty-desc">请在左侧选择分析方式并配置参数，点击「生成数据分析报告」即可生成报告，生成后可继续输入调整要求进行优化。</p>
-          <div class="feature-cards">
-            <div class="feature-card"><el-icon color="#2563eb"><Document /></el-icon><span>结构化报告</span><span class="fc-sub">完整章节逻辑清晰</span></div>
-            <div class="feature-card"><el-icon color="#2563eb"><TrendCharts /></el-icon><span>AI 智能分析</span><span class="fc-sub">深度洞察专业建议</span></div>
-          </div>
+          <TutuEmpty :welcome="welcomeText" :questions="recommendQuestions" :on-ask="onAskRecommend" />
         </div>
 
         <!-- 消息流 -->
@@ -230,6 +223,7 @@ import dayjs from 'dayjs'
 import { ElMessage } from 'element-plus'
 import { isWorkflowConfigured, queryReportHistoryList, queryReportHistoryDetail } from '@/api/cozeWorkflow'
 import { exportElementToPdf, exportHtmlToWord } from '@/utils/reportExport'
+import TutuEmpty from '@/components/TutuEmpty.vue'
 
 const overviewStats = ref([
   { label: '数据分析报告总数', value: '3份', icon: Document, bg: 'linear-gradient(135deg, #2563eb, #1d4ed8)' },
@@ -295,6 +289,30 @@ function scrollToBottom() {
 }
 
 // 生成报告
+const welcomeText = '我可以对业务数据做多维统计与趋势分析，自动产出分析报告。'
+const recommendQuestions = ['分析近一年城镇新增就业趋势', '各地区社保参保结构对比分析', '本月社保基金收支异动分析报告']
+
+function onAskRecommend(q: string) {
+  if (messages.value.length > 0) return
+  if (q.includes('城镇新增就业趋势')) {
+    activeMode.value = 'compare'
+    compareReport.value = '城镇新增就业报表'
+    compareMethod.value = '环比'
+    compareFocus.value = '城镇新增就业趋势'
+  } else if (q.includes('社保参保结构')) {
+    activeMode.value = 'compare'
+    compareReport.value = '城镇新增就业报表'
+    compareMethod.value = '同比'
+    compareFocus.value = '重点群体帮扶成效'
+  } else if (q.includes('社保基金收支')) {
+    activeMode.value = 'compare'
+    compareReport.value = '城镇新增就业报表'
+    compareMethod.value = '双对比'
+    compareFocus.value = '重点行业用工波动'
+  }
+  generateReport()
+}
+
 async function generateReport() {
   if (!canGenerate.value) {
     if (activeMode.value === 'upload' && !uploadFile.value) {
@@ -728,16 +746,7 @@ async function openHistoryReport(row: any) {
 
 /* 对话内容 */
 .chat-messages { flex: 1; overflow-y: auto; padding: 20px; }
-.empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; }
-.empty-icon { margin-bottom: 16px; }
-.tutu-logo { width: 240px; height: auto; max-width: 80%; object-fit: contain; }
-.empty-icon + .empty-desc { margin-top: 8px; }
-.empty-title { font-size: 20px; font-weight: 600; color: #1f2937; margin: 0 0 12px; }
-.empty-desc { font-size: 14px; color: #6b7280; max-width: 420px; line-height: 1.6; margin: 0 0 24px; }
-.feature-cards { display: flex; gap: 16px; }
-.feature-card { display: flex; flex-direction: column; align-items: center; gap: 6px; background: #fff; border: 1px solid #e4eaf3; border-radius: 12px; padding: 20px 28px; min-width: 140px; }
-.feature-card span { font-size: 13px; color: #1f2937; }
-.fc-sub { font-size: 11px !important; color: #9ca3af !important; }
+.empty-state { display: flex; height: 100%; }
 
 /* 消息 */
 .msg-item { margin-bottom: 16px; }

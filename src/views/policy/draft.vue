@@ -68,21 +68,7 @@
     <!-- 右侧对话区 -->
     <div class="draft-right" ref="chatRef">
       <div class="empty-state" v-if="messages.length === 0 && !isGenerating">
-        <div class="empty-icon">
-          <el-icon :size="48"><EditPen /></el-icon>
-        </div>
-        <h3 class="empty-title">AI 政策文件起草助手</h3>
-        <p class="empty-desc">请在左侧配置政策文件参数，点击"AI辅助起草"生成政策文件</p>
-        <div class="feature-cards">
-          <div class="feature-card">
-            <el-icon :size="20"><Document /></el-icon>
-            <span>标准公文结构</span>
-          </div>
-          <div class="feature-card">
-            <el-icon :size="20"><DataAnalysis /></el-icon>
-            <span>AI智能起草</span>
-          </div>
-        </div>
+        <TutuEmpty :welcome="welcomeText" :questions="recommendQuestions" :on-ask="onAskRecommend" />
       </div>
 
       <div class="message-list" v-else ref="messageListRef">
@@ -95,10 +81,11 @@
           <div v-else class="ai-msg">
             <div class="ai-bubble">
               <div class="ai-header">
-                <span class="ai-label">AI 政策起草助手</span>
+                <span class="ai-label">途途 · 政策编制</span>
                 <span class="msg-time">{{ msg.time }}</span>
               </div>
               <div class="ai-content" v-html="msg.content"></div>
+              <div class="ai-source">📄 参考依据：上位政策法规库 / 公文范本库 · 生成时间：{{ getNow() }}</div>
               <div class="disclaimer">AI生成内容仅供参考，请结合实际情况审核使用</div>
               <div class="ai-actions" v-if="msg.draftResult">
                 <el-button size="small" @click="exportDraft(msg.draftResult, 'word')">导出 Word</el-button>
@@ -146,6 +133,43 @@
 import { ref, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
 import { MagicStick, EditPen, Document, DataAnalysis, Promotion } from '@element-plus/icons-vue'
+import TutuEmpty from '@/components/TutuEmpty.vue'
+
+const welcomeText = '我可以依据上位政策与公文规范，帮你起草政策文稿初稿。'
+const recommendQuestions = ['起草灵活就业人员参加职工养老保险实施办法', '撰写稳岗补贴经办服务通知初稿', '生成年度政策落实工作方案框架']
+
+function onAskRecommend(q: string) {
+  if (messages.value.length > 0 || isGenerating.value) return
+  const map: Record<string, { type: string; title: string; dept: string; basis: string; requirements: string[] }> = {
+    '起草灵活就业人员参加职工养老保险实施办法': {
+      type: '社会保障政策', title: '灵活就业人员参加职工养老保险实施办法', dept: 'xx市人力资源和社会保障局',
+      basis: '《社会保险法》《关于灵活就业人员参加企业职工基本养老保险有关问题的通知》', requirements: ['结构规范', '数据支撑', '风险评估']
+    },
+    '撰写稳岗补贴经办服务通知初稿': {
+      type: '就业促进政策', title: '关于开展稳岗补贴经办服务的通知（初稿）', dept: 'xx市人力资源和社会保障局',
+      basis: '《失业保险条例》及稳岗返还相关文件精神', requirements: ['结构规范', '公众意见']
+    },
+    '生成年度政策落实工作方案框架': {
+      type: '就业促进政策', title: '20XX年度人社惠民政策落实工作方案（框架）', dept: 'xx市人力资源和社会保障局',
+      basis: '年度人社重点工作部署', requirements: ['结构规范', '风险评估', '公众意见']
+    }
+  }
+  const c = map[q]
+  if (c) {
+    policyType.value = c.type
+    draftTitle.value = c.title
+    draftDept.value = c.dept
+    referenceBasis.value = c.basis
+    draftRequirements.value = c.requirements
+    startDraft()
+  }
+}
+
+const getNow = () => {
+  const d = new Date()
+  const p = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`
+}
 
 interface DraftResult {
   title: string
@@ -551,10 +575,7 @@ const loadHistory = (item: HistoryItem) => {
 .empty-state {
   flex: 1;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px;
+  overflow: hidden;
 }
 .empty-icon {
   width: 80px;
@@ -646,13 +667,24 @@ const loadHistory = (item: HistoryItem) => {
   margin-bottom: 10px;
 }
 .ai-label {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 500;
   color: #2563eb;
+  background: #eff6ff;
+  padding: 2px 8px;
+  border-radius: 4px;
 }
 .msg-time {
   font-size: 11px;
   color: #9ca3af;
+}
+.ai-source {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px dashed #e5e7eb;
+  line-height: 1.6;
 }
 .ai-content {
   font-size: 14px;

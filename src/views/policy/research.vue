@@ -52,22 +52,14 @@
     <div class="right-chat">
       <!-- 空状态 -->
       <div v-if="messages.length === 0" class="chat-empty">
-        <div class="empty-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="1.5"><path d="M9 12l2 2 4-4"/><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
-        </div>
-        <div class="empty-title">AI 政策研判助手</div>
-        <div class="empty-desc">在左侧上传政策文件或输入链接，点击"开始 AI 解读"生成政策研判报告</div>
-        <div class="empty-cards">
-          <div class="empty-card"><div class="ec-icon" style="background:#e8f0fe;">📄</div><div class="ec-title">政策深度解读</div><div class="ec-desc">自动提取政策核心条款、适用对象、补贴标准等关键信息</div></div>
-          <div class="empty-card"><div class="ec-icon" style="background:#fef3c7;">💬</div><div class="ec-title">多轮对话追问</div><div class="ec-desc">支持对研判结果进行多轮对话式追问，深入分析政策细节</div></div>
-        </div>
+        <TutuEmpty :welcome="welcomeText" :questions="recommendQuestions" :on-ask="onAskRecommend" />
       </div>
 
       <!-- 消息列表 -->
       <div v-else class="chat-messages" ref="msgListRef">
         <div v-for="(msg, idx) in messages" :key="idx" class="msg-item" :class="msg.role">
-          <div class="msg-avatar">
-            <svg v-if="msg.role === 'ai'" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 2a4 4 0 0 1 4 4v2a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4z"/><path d="M16 14H8a4 4 0 0 0-4 4v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2a4 4 0 0 0-4-4z"/></svg>
+          <div class="msg-avatar" :class="msg.role === 'ai' ? 'avatar-ai' : 'avatar-user'">
+            <span v-if="msg.role === 'ai'" class="avatar-tutu">途</span>
             <svg v-else xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
           </div>
           <div class="msg-content">
@@ -77,7 +69,7 @@
               </template>
               <template v-else>
                 <div class="ai-header">
-                  <span class="ai-badge">AI 研判</span>
+                  <span class="ai-badge">途途 · 政策研判</span>
                   <span class="msg-time">{{ msg.time }}</span>
                   <el-button v-if="msg.result" text size="small" @click="exportReport(msg.result)" style="margin-left:auto;color:#2563eb;font-size:12px;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -122,6 +114,7 @@
                   <span class="dot-pulse"></span>
                   <span class="loading-text">正在生成研判报告…</span>
                 </div>
+                <div class="ai-source">📄 研判依据：政策文件库 / 公开权威资讯 · 更新时间：{{ getNow() }}</div>
                 <div class="disclaimer">AI生成内容仅供参考，请结合实际情况审核使用</div>
               </template>
             </div>
@@ -153,6 +146,27 @@
 <script setup lang="ts">
 import { ref, reactive, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
+import TutuEmpty from '@/components/TutuEmpty.vue'
+
+const welcomeText = '我可以结合现行政策与行业动态，研判政策走向及其影响面。'
+const recommendQuestions = ['研判稳岗返还政策下半年走向', '分析新就业形态劳动者政策趋势', '评估渐进式延迟法定退休年龄的影响面']
+
+function onAskRecommend(q: string) {
+  if (messages.value.length > 0) return
+  // 与左侧文件无关，直接按预设形成研判
+  let result: PolicyResult
+  if (q.includes('稳岗返还')) {
+    result = allResults[0]
+  } else if (q.includes('新就业形态')) {
+    result = allResults[2]
+  } else {
+    result = allResults[1]
+  }
+  lastResultKey.value = allResults.indexOf(result)
+  messages.value.push({ role: 'user', content: q, time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }) })
+  messages.value.push({ role: 'ai', content: '', time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }), result })
+  scrollToBottom()
+}
 
 interface PolicyResult {
   title: string; level: string; tags: string[]; background: string
@@ -267,6 +281,12 @@ const removeFile = () => {
 const scrollToBottom = async () => {
   await nextTick()
   msgBottomRef.value?.scrollIntoView({ behavior: 'smooth' })
+}
+
+const getNow = () => {
+  const d = new Date()
+  const p = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`
 }
 
 const startAnalysis = () => {
@@ -464,11 +484,7 @@ const highlightAmount = (text: string) => {
 .chat-empty {
   flex: 1;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 40px;
+  overflow: hidden;
 }
 .empty-icon { margin-bottom: 8px; }
 .empty-title { font-size: 20px; font-weight: 600; color: #1f2937; }
@@ -491,6 +507,9 @@ const highlightAmount = (text: string) => {
 }
 .msg-item.user .msg-avatar { background: #2563eb; }
 .msg-item.ai .msg-avatar { background: #0a2480; }
+.avatar-ai { background: #2563eb !important; }
+.avatar-user { background: #2563eb !important; }
+.avatar-tutu { color: #fff; font-size: 14px; font-weight: 600; }
 .msg-content { min-width: 0; }
 .msg-bubble {
   padding: 12px 16px; border-radius: 10px; font-size: 13px; line-height: 1.7;
@@ -503,6 +522,8 @@ const highlightAmount = (text: string) => {
 .ai-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
 .ai-badge { font-size: 11px; background: #e8f0fe; color: #2563eb; padding: 2px 8px; border-radius: 4px; font-weight: 500; }
 .msg-time { font-size: 11px; color: #9ca3af; }
+.ai-source { font-size: 12px; color: #6b7280; margin-top: 12px; padding-top: 10px; border-top: 1px dashed #e5e7eb; line-height: 1.6; }
+.avatar-ai { background: #2563eb !important; }
 .result-content { display: flex; flex-direction: column; gap: 12px; }
 .result-title { font-size: 16px; font-weight: 600; color: #1f2937; }
 .result-tags { display: flex; flex-wrap: wrap; gap: 4px; }

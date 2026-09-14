@@ -71,9 +71,7 @@
     <!-- 右侧对话区 -->
     <div class="policy-main chat-main">
       <div v-if="messages.length === 0" class="empty-state">
-        <div class="empty-icon">🔍</div>
-        <div class="empty-title">多政策横向比对</div>
-        <div class="empty-desc">上传至少 2 份政策文件，配置比对维度后开始分析</div>
+        <TutuEmpty :welcome="welcomeText" :questions="recommendQuestions" :on-ask="onAskRecommend" />
       </div>
       <div v-else ref="chatContainerRef" class="chat-messages">
         <div v-for="(msg, idx) in messages" :key="idx" class="chat-message" :class="msg.role === 'user' ? 'msg-user' : 'msg-ai'">
@@ -82,9 +80,9 @@
             <div class="bubble-time">{{ msg.time }}</div>
           </div>
           <div v-else class="ai-bubble">
-            <div class="ai-avatar">AI</div>
+            <div class="ai-avatar">途</div>
             <div class="ai-body">
-              <div class="ai-name">政策比对助手</div>
+              <div class="ai-name">途途 <span class="module-tag">政策比对</span></div>
               <!-- 加载中状态 -->
               <div v-if="msg.status === 'loading'" class="ai-loading">
                 <span class="loading-dot"></span>
@@ -128,6 +126,7 @@
                   <div class="section-label">📝 变化总结报告</div>
                   <div class="summary-content" v-html="msg.changeSummary"></div>
                 </div>
+                <div class="ai-source">📄 比对依据：政策文件库（含文号与印发日期）· 版本时间：{{ getNow() }}</div>
                 <!-- 底部标注 -->
                 <div class="ai-footer-note">AI生成内容仅供参考，请结合实际情况审核使用</div>
                 <!-- 导出按钮 -->
@@ -163,6 +162,29 @@
 import { ref, nextTick, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Promotion, Download, Position } from '@element-plus/icons-vue'
+import TutuEmpty from '@/components/TutuEmpty.vue'
+
+const welcomeText = '我可以对新旧政策或不同地区政策逐条比对，清晰列出差异。'
+const recommendQuestions = ['对比现行与上一版稳岗返还政策差异', '比对两市人才补贴政策条款异同', '新旧工伤保险条例条款逐条对照']
+
+function onAskRecommend(q: string) {
+  if (messages.value.length > 0) return
+  const userMsg: AiMessage = { role: 'user', content: q, time: new Date().toLocaleString() }
+  messages.value.push(userMsg)
+  const loadingMsg: AiMessage = { role: 'ai', content: '', time: new Date().toLocaleString(), status: 'loading' }
+  messages.value.push(loadingMsg)
+  isGenerating.value = true
+  scrollToBottom()
+  setTimeout(() => {
+    appendAiMessage(q, q)
+  }, 1500)
+}
+
+const getNow = () => {
+  const d = new Date()
+  const p = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`
+}
 
 interface DiffRow {
   dimension: string
@@ -504,7 +526,7 @@ const compareResultData = ref<any>(null)
 .history-time { font-size:11px; color:#9ca3af; margin-top:2px; }
 
 /* 空状态 */
-.empty-state { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:#9ca3af; }
+.empty-state { display:flex; height:100%; overflow:hidden; }
 .empty-icon { font-size:48px; margin-bottom:12px; }
 .empty-title { font-size:18px; font-weight:600; color:#374151; margin-bottom:8px; }
 .empty-desc { font-size:13px; }
@@ -518,9 +540,11 @@ const compareResultData = ref<any>(null)
 .bubble-content { font-size:13px; line-height:1.6; white-space:pre-wrap; word-break:break-word; }
 .bubble-time { font-size:11px; color:rgba(255,255,255,0.6); margin-top:4px; text-align:right; }
 .ai-bubble { max-width:85%; display:flex; gap:10px; }
-.ai-avatar { width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg,#0a2480,#2563eb); color:#fff; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:600; flex-shrink:0; }
+.ai-avatar { width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg,#0a2480,#2563eb); color:#fff; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:600; flex-shrink:0; }
 .ai-body { flex:1; background:#fff; border-radius:12px; padding:16px; border:1px solid #e5e7eb; }
-.ai-name { font-size:13px; font-weight:600; color:#1f2937; margin-bottom:8px; }
+.ai-name { font-size:13px; font-weight:600; color:#1f2937; margin-bottom:8px; display:flex; align-items:center; gap:8px; }
+.module-tag { font-size:11px; font-weight:500; color:#2563eb; background:#eff6ff; padding:2px 8px; border-radius:4px; }
+.ai-source { font-size:12px; color:#6b7280; margin-top:12px; padding-top:10px; border-top:1px dashed #e5e7eb; line-height:1.6; }
 
 /* 加载动画 */
 .ai-loading { display:flex; align-items:center; gap:6px; padding:8px 0; }

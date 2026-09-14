@@ -374,11 +374,10 @@ const chartMap = new Map<number, echarts.ECharts | null>()
 
 const quickCards = [
   { title: '本月城镇新增就业人数是多少？', question: '本月城镇新增就业人数是多少？' },
+  { title: '今年养老保险参保率同比变化如何？', question: '今年养老保险参保率同比变化如何？' },
+  { title: '近半年失业保险金发放人数趋势', question: '近半年失业保险金发放人数趋势' },
   { title: '就业核心指标城镇调查失业率最新数据？', question: '就业核心指标城镇调查失业率最新数据？' },
   { title: '就业质量预警失业人员再就业和困难人员就业完成情况？', question: '就业质量预警失业人员再就业和困难人员就业完成情况？' },
-  { title: '重点群体帮扶高校毕业生就业去向落实率？', question: '重点群体帮扶高校毕业生就业去向落实率？' },
-  { title: '年度攻坚指标农村劳动力转移就业规模及变化？', question: '年度攻坚指标农村劳动力转移就业规模及变化？' },
-  { title: '乡村振兴关联就业补助资金支出进度？', question: '乡村振兴关联就业补助资金支出进度？' },
 ]
 
 const startNewChat = () => {

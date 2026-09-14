@@ -117,12 +117,7 @@
 
         <!-- 空状态 -->
         <div v-if="messages.length === 0" class="empty-state">
-          <img src="/assistant-tutu.png" alt="途途" class="tutu-logo" />
-          <p class="empty-desc">请在左侧选择调研主题并配置参数，点击「生成调研分析报告」即可生成报告，生成后可继续输入调整要求进行优化。</p>
-          <div class="feature-cards">
-            <div class="feature-card"><el-icon color="#2563eb"><Document /></el-icon><span>结构化报告</span><span class="fc-sub">背景分析到建议完整呈现</span></div>
-            <div class="feature-card"><el-icon color="#2563eb"><DataAnalysis /></el-icon><span>AI 智能分析</span><span class="fc-sub">数据洞察与工作建议</span></div>
-          </div>
+          <TutuEmpty :welcome="welcomeText" :questions="recommendQuestions" :on-ask="onAskRecommend" />
         </div>
 
         <!-- 消息列表 -->
@@ -238,6 +233,27 @@ import {
 import dayjs from 'dayjs'
 import { isWorkflowConfigured, queryReportHistoryList, queryReportHistoryDetail } from '@/api/cozeWorkflow'
 import { exportElementToPdf, exportHtmlToWord } from '@/utils/reportExport'
+import TutuEmpty from '@/components/TutuEmpty.vue'
+
+// ====== 空状态（统一模板：途途 + 欢迎语 + 推荐问题）======
+const welcomeText = '我可以基于问卷、访谈与业务素材，自动汇总生成调研分析报告。'
+const recommendQuestions = ['生成本季度就业形势调研分析报告', '整理高校毕业生就业意向调研结论', '汇总基层社保经办调研中的突出问题']
+
+function onAskRecommend(q: string) {
+  if (messages.value.length > 0) return
+  const map: Record<string, string> = {
+    '生成本季度就业形势调研分析报告': '就业形势调研',
+    '整理高校毕业生就业意向调研结论': '高校毕业生就业调研',
+    '汇总基层社保经办调研中的突出问题': '就业困难人员帮扶调研'
+  }
+  const topicName = map[q]
+  if (topicName) {
+    const idx = topics.findIndex((t) => t.name.includes(topicName))
+    if (idx > -1) selectedTopic.value = idx
+  }
+  if (!dateRange.value[0]) setQuickDate('quarter')
+  onGenerate()
+}
 
 // ====== 类型定义 ======
 interface Topic {
@@ -748,9 +764,6 @@ function buildWordHtml(report: ReportData): string {
 /* 空状态 */
 .empty-state {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
   height: 100%;
   min-height: 400px;
 }
