@@ -489,7 +489,7 @@ const compareResultData = ref<any>(null)
 .policy-page { display:flex; height:100%; background:#f5f6fa; }
 .policy-sidebar { width:340px; min-width:340px; background:#fff; border-right:1px solid #e5e7eb; display:flex; flex-direction:column; overflow-y:auto; padding:16px; }
 .policy-main { flex:1; overflow-y:auto; padding:0; display:flex; flex-direction:column; }
-.chat-main { overflow:hidden; }
+.chat-main { overflow:hidden; flex:1; display:flex; }
 .section-title { font-size:14px; font-weight:600; color:#1f2937; display:flex; align-items:center; gap:8px; margin-bottom:12px; }
 .title-bar { display:inline-block; width:3px; height:14px; background:#2563eb; border-radius:2px; }
 .url-input-area { margin-bottom:12px; }

@@ -26,6 +26,7 @@ defineProps<{
   align-items: center;
   justify-content: center;
   height: 100%;
+  min-height: 420px;
   text-align: center;
   padding: 24px;
 }
