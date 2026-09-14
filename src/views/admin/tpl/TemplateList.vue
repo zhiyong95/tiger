@@ -62,6 +62,17 @@
             <span class="label">使用次数：</span>
             <span class="usage-num">{{ t.usage }}</span>
           </div>
+          <div class="meta-row module-row" v-if="t.modules && t.modules.length">
+            <span class="label">归属模块：</span>
+            <el-tag
+              v-for="m in t.modules"
+              :key="m"
+              size="small"
+              :type="m === 'report/data' ? 'warning' : 'success'"
+              effect="plain"
+              class="module-tag"
+            >{{ moduleLabel(m) }}</el-tag>
+          </div>
           <div class="desc-text">{{ t.desc }}</div>
         </div>
         <div class="card-footer">
@@ -81,7 +92,7 @@
   </div>
 </template>
 
-<script setup lang="ts" generic="T extends { id: string; name: string; type: string; system?: boolean; scope: string; usage: number; desc: string; org: string; status: string; updatedAt: string }">
+<script setup lang="ts" generic="T extends { id: string; name: string; type: string; system?: boolean; scope: string; usage: number; desc: string; org: string; status: string; updatedAt: string; modules?: string[] }">
 import { ref, computed, watch } from 'vue'
 import { Document } from '@element-plus/icons-vue'
 
@@ -129,6 +140,16 @@ function scopeLabel(s: string) {
   if (s === 'public') return '公开共享'
   if (s === 'department') return '部门内部'
   return '个人私有'
+}
+
+const MODULE_LABELS: Record<string, string> = {
+  'report/research': '调研分析报告',
+  'report/data': '数据分析报告',
+  document: '公文助手',
+  audit: '业务智审'
+}
+function moduleLabel(m: string) {
+  return MODULE_LABELS[m] || m
 }
 
 function resetFilter() {
@@ -228,6 +249,15 @@ watch(() => props.templates, () => {}, { immediate: true, deep: true })
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+.module-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+.module-tag {
+  margin: 0;
 }
 .card-footer {
   display: flex;
