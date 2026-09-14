@@ -186,11 +186,9 @@ export const useAppStore = defineStore('app', () => {
       path, title, icon,
       children: children ? children.map(c => ({ path: c.path, title: c.title })) : undefined
     }))
-    // 根据角色过滤菜单
-    if (role === 'staff') return items
-    if (role === 'leader') return items
-    // 管理员默认不显示PC工作台
-    return []
+    // 工作人员与领导可见全部；管理员切换到 PC 工作台模块时同样可见
+    if (role === 'staff' || role === 'leader') return items
+    return items
   })
 
   // 后台管理端权限矩阵

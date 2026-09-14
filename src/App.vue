@@ -13,8 +13,8 @@
           </div>
         </div>
 
-        <!-- 模块切换（仅管理员身份可见） -->
-        <div class="module-switch" v-if="!appStore.sidebarCollapsed && appStore.isAdminRole && appStore.currentModule === 'admin'">
+        <!-- 模块切换（仅管理员身份可见，PC/管理端均可切换） -->
+        <div class="module-switch" v-if="!appStore.sidebarCollapsed && appStore.isAdminRole">
           <el-radio-group v-model="appStore.currentModule" size="small" @change="onModuleChange">
             <el-radio-button value="pc">PC工作台</el-radio-button>
             <el-radio-button value="admin">后台管理</el-radio-button>
@@ -123,7 +123,21 @@
                 <el-dropdown-menu>
                   <el-dropdown-item>{{ appStore.userInfo.department }}</el-dropdown-item>
                   <el-dropdown-item>{{ appStore.userInfo.role }}</el-dropdown-item>
-                  <el-dropdown-item divided command="profile">个人中心</el-dropdown-item>
+                  <el-dropdown-item
+                    v-if="appStore.isAdminRole && appStore.currentModule === 'pc'"
+                    divided
+                    command="enterAdmin"
+                  >
+                    <el-icon style="margin-right: 6px"><Setting /></el-icon>进入管理后台
+                  </el-dropdown-item>
+                  <el-dropdown-item
+                    v-if="appStore.currentModule === 'admin'"
+                    divided
+                    command="backPc"
+                  >
+                    <el-icon style="margin-right: 6px"><Monitor /></el-icon>返回工作台
+                  </el-dropdown-item>
+                  <el-dropdown-item command="profile">个人中心</el-dropdown-item>
                   <el-dropdown-item command="logout">退出登录</el-dropdown-item>
                 </el-dropdown-menu>
               </template>
@@ -196,6 +210,12 @@ const onModuleChange = (module: string | number | boolean | undefined) => {
 const handleDropdownCommand = async (command: string) => {
   if (command === 'profile') {
     router.push('/profile')
+  } else if (command === 'enterAdmin') {
+    appStore.switchModule('admin')
+    router.push('/admin/dashboard')
+  } else if (command === 'backPc') {
+    appStore.switchModule('pc')
+    router.push('/data')
   } else if (command === 'logout') {
     try {
       await ElMessageBox.confirm('确定要退出登录吗？', '提示', {

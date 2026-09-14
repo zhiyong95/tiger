@@ -229,14 +229,20 @@ router.beforeEach((to, _from, next) => {
   const routeRoles = to.meta.roles as string[] | undefined
 
   // 检查路由角色权限
+  const adminRoles = ['sysadmin', 'bizadmin', 'auditor']
   if (routeRoles && !routeRoles.includes(role)) {
-    // 工作人员角色进入智能问数
+    // 工作人员/领导不能进入后台管理，回到智能问数
     if (['staff', 'leader'].includes(role)) {
       next({ path: '/data' })
       return
     }
-    // 管理员角色进入后台首页
-    if (['sysadmin', 'bizadmin', 'auditor'].includes(role)) {
+    // 管理员既可用后台，也可切换到 PC 工作台（PC 页面默认放行）
+    if (adminRoles.includes(role) && !to.path.startsWith('/admin')) {
+      next()
+      return
+    }
+    // 管理员无权访问的后台页面，回到后台首页
+    if (adminRoles.includes(role)) {
       next({ path: '/admin/dashboard' })
       return
     }
