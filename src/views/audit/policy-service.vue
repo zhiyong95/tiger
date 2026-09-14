@@ -1,698 +1,1115 @@
 <template>
-  <div class="policy-service-page">
-    <!-- 左侧侧边栏 -->
-    <div class="ps-sidebar">
-      <!-- 服务/任务选择 -->
-      <div class="ps-sidebar-section">
-        <div class="ps-sidebar-title">
-          <el-icon><List /></el-icon>
-          <span>服务/任务选择</span>
-        </div>
-        <el-select v-model="selectedService" placeholder="选择服务/任务" style="width:100%;margin-bottom:12px">
-          <el-option v-for="s in serviceList" :key="s.value" :label="s.label" :value="s.value" />
-        </el-select>
-        <el-input v-model="taskSearch" placeholder="搜索任务名称" clearable size="small" style="margin-bottom:12px">
-          <template #prefix><el-icon><Search /></el-icon></template>
-        </el-input>
-        <div class="ps-task-list">
-          <div v-for="t in filteredTasks" :key="t.id"
-            class="ps-task-item"
-            :class="{ active: activeTask?.id === t.id }"
-            @click="activeTask = t">
-            <div class="ps-task-name">{{ t.name }}</div>
-            <div class="ps-task-meta">
-              <el-tag :type="t.status === '进行中' ? 'warning' : t.status === '已完成' ? 'success' : 'info'" size="small">{{ t.status }}</el-tag>
-              <span class="ps-task-time">{{ t.time }}</span>
-            </div>
-          </div>
-          <div v-if="filteredTasks.length === 0" class="ps-empty">暂无匹配任务</div>
-        </div>
-      </div>
-      <!-- 推送历史 -->
-      <div class="ps-sidebar-section">
-        <div class="ps-sidebar-title">
-          <el-icon><Clock /></el-icon>
-          <span>推送历史</span>
-        </div>
-        <div class="ps-history-list">
-          <div v-for="h in pushHistory" :key="h.id" class="ps-history-item" @click="viewHistory(h)">
-            <div class="ps-history-name">{{ h.name }}</div>
-            <div class="ps-history-meta">
-              <span>{{ h.target }}</span>
-              <span>{{ h.time }}</span>
-            </div>
-            <el-tag v-if="h.status === '成功'" type="success" size="small">成功</el-tag>
-            <el-tag v-else-if="h.status === '部分成功'" type="warning" size="small">部分成功</el-tag>
-            <el-tag v-else type="danger" size="small">失败</el-tag>
-          </div>
-          <div v-if="pushHistory.length === 0" class="ps-empty">暂无推送记录</div>
-        </div>
-      </div>
+  <div class="ps-root">
+    <div class="ps-page-head">
+      <span class="ps-page-title">政策主动服务</span>
     </div>
-    <!-- 右侧主内容 -->
     <div class="ps-main">
-      <el-tabs v-model="activeTab" class="ps-tabs">
-        <el-tab-pane label="政策匹配引擎" name="engine">
-          <div class="ps-tab-content">
-            <!-- 匹配配置区 -->
-            <div class="ps-config-section">
-              <div class="ps-section-title">匹配配置</div>
-              <el-form :model="matchConfig" label-width="100px" size="small">
-                <el-row :gutter="16">
-                  <el-col :span="8">
-                    <el-form-item label="服务/任务">
-                      <el-select v-model="matchConfig.service" placeholder="选择服务/任务" style="width:100%">
-                        <el-option v-for="s in serviceList" :key="s.value" :label="s.label" :value="s.value" />
-                      </el-select>
-                    </el-form-item>
-                  </el-col>
-                  <el-col :span="8">
-                    <el-form-item label="匹配维度">
-                      <el-select v-model="matchConfig.dimension" placeholder="选择匹配维度" style="width:100%">
-                        <el-option label="年龄" value="age" />
-                        <el-option label="户籍" value="household" />
-                        <el-option label="就业状态" value="employment" />
-                        <el-option label="社保缴纳" value="social" />
-                        <el-option label="综合匹配" value="comprehensive" />
-                      </el-select>
-                    </el-form-item>
-                  </el-col>
-                  <el-col :span="8">
-                    <el-form-item label="数据批次">
-                      <el-select v-model="matchConfig.batch" placeholder="选择数据批次" style="width:100%">
-                        <el-option label="2026年7月批次" value="202607" />
-                        <el-option label="2026年6月批次" value="202606" />
-                        <el-option label="2026年5月批次" value="202605" />
-                      </el-select>
-                    </el-form-item>
-                  </el-col>
-                </el-row>
-                <el-row :gutter="16">
-                  <el-col :span="8">
-                    <el-form-item label="政策类型">
-                      <el-select v-model="matchConfig.policyType" placeholder="选择政策类型" style="width:100%">
-                        <el-option label="就业补贴政策" value="subsidy" />
-                        <el-option label="社保减免政策" value="social" />
-                        <el-option label="创业扶持政策" value="entrepreneur" />
-                        <el-option label="培训补贴政策" value="training" />
-                        <el-option label="全部政策" value="all" />
-                      </el-select>
-                    </el-form-item>
-                  </el-col>
-                  <el-col :span="8">
-                    <el-form-item label="匹配阈值">
-                      <el-slider v-model="matchConfig.threshold" :min="50" :max="100" :step="5" show-input />
-                    </el-form-item>
-                  </el-col>
-                  <el-col :span="8" style="display:flex;align-items:flex-end;justify-content:flex-end">
-                    <el-button type="primary" @click="runMatch">开始匹配</el-button>
-                    <el-button @click="resetMatchConfig">重置</el-button>
-                  </el-col>
-                </el-row>
-              </el-form>
-            </div>
-            <!-- 匹配结果 -->
-            <div v-if="matchResults.length > 0" class="ps-result-section">
-              <div class="ps-section-title">
-                匹配结果
-                <span class="ps-result-count">共匹配 {{ matchResults.length }} 人</span>
-              </div>
-              <el-table :data="matchResults" stripe border size="small" style="width:100%">
-                <el-table-column type="index" label="序号" width="60" />
-                <el-table-column prop="name" label="姓名" width="100" />
-                <el-table-column prop="idCard" label="身份证号" width="180" />
-                <el-table-column prop="age" label="年龄" width="60" />
-                <el-table-column prop="household" label="户籍" width="100" />
-                <el-table-column prop="employment" label="就业状态" width="100" />
-                <el-table-column label="匹配政策" min-width="200">
-                  <template #default="{ row }">
-                    <el-tag v-for="p in row.matchedPolicies" :key="p" size="small" style="margin:2px">{{ p }}</el-tag>
-                  </template>
-                </el-table-column>
-                <el-table-column label="匹配度" width="100">
-                  <template #default="{ row }">
-                    <el-progress :percentage="row.matchRate" :color="row.matchRate >= 80 ? '#10b981' : row.matchRate >= 60 ? '#f59e0b' : '#ef4444'" />
-                  </template>
-                </el-table-column>
-                <el-table-column label="操作" width="120" fixed="right">
-                  <template #default="{ row }">
-                    <el-button type="primary" link size="small" @click="viewMatchDetail(row)">详情</el-button>
-                    <el-button type="primary" link size="small" @click="pushToTarget(row)">推送</el-button>
-                  </template>
-                </el-table-column>
-              </el-table>
-              <div class="ps-match-actions">
-                <el-button type="primary" @click="batchPush">批量推送匹配结果</el-button>
-                <el-button @click="exportMatchResult">导出匹配结果</el-button>
-              </div>
-            </div>
-            <!-- 空状态 -->
-            <div v-else class="ps-empty-state">
-              <el-icon class="ps-empty-icon"><Search /></el-icon>
-              <p>配置匹配参数后点击「开始匹配」</p>
-              <p class="ps-empty-desc">系统将自动匹配符合条件的政策与人员</p>
-            </div>
-          </div>
-        </el-tab-pane>
-        <el-tab-pane label="推送管理" name="push">
-          <div class="ps-tab-content">
-            <div class="ps-config-section">
-              <div class="ps-section-title">推送任务配置</div>
-              <el-form :model="pushConfig" label-width="100px" size="small">
-                <el-row :gutter="16">
-                  <el-col :span="8">
-                    <el-form-item label="推送渠道">
-                      <el-select v-model="pushConfig.channel" placeholder="选择推送渠道" style="width:100%">
-                        <el-option label="短信通知" value="sms" />
-                        <el-option label="微信服务号" value="wechat" />
-                        <el-option label="APP推送" value="app" />
-                        <el-option label="电话外呼" value="phone" />
-                        <el-option label="综合推送" value="all" />
-                      </el-select>
-                    </el-form-item>
-                  </el-col>
-                  <el-col :span="8">
-                    <el-form-item label="推送模板">
-                      <el-select v-model="pushConfig.template" placeholder="选择推送模板" style="width:100%">
-                        <el-option label="就业补贴通知模板" value="subsidy" />
-                        <el-option label="社保减免通知模板" value="social" />
-                        <el-option label="创业扶持通知模板" value="entrepreneur" />
-                        <el-option label="培训通知模板" value="training" />
-                      </el-select>
-                    </el-form-item>
-                  </el-col>
-                  <el-col :span="8">
-                    <el-form-item label="推送时间">
-                      <el-date-picker v-model="pushConfig.time" type="datetime" placeholder="选择推送时间" style="width:100%" />
-                    </el-form-item>
-                  </el-col>
-                </el-row>
-                <el-row :gutter="16">
-                  <el-col :span="8">
-                    <el-form-item label="推送对象">
-                      <el-select v-model="pushConfig.target" placeholder="选择推送对象" style="width:100%">
-                        <el-option label="全部匹配人员" value="all" />
-                        <el-option label="匹配度≥80%人员" value="high" />
-                        <el-option label="指定人员" value="custom" />
-                      </el-select>
-                    </el-form-item>
-                  </el-col>
-                  <el-col :span="8">
-                    <el-form-item label="批量限制">
-                      <el-input-number v-model="pushConfig.limit" :min="10" :max="10000" :step="100" />
-                    </el-form-item>
-                  </el-col>
-                  <el-col :span="8" style="display:flex;align-items:flex-end;justify-content:flex-end">
-                    <el-button type="primary" @click="createPushTask">创建推送任务</el-button>
-                    <el-button @click="resetPushConfig">重置</el-button>
-                  </el-col>
-                </el-row>
-              </el-form>
-            </div>
-            <!-- 推送任务列表 -->
-            <div class="ps-result-section">
-              <div class="ps-section-title">推送任务列表</div>
-              <el-table :data="pushTasks" stripe border size="small" style="width:100%">
-                <el-table-column type="index" label="序号" width="60" />
-                <el-table-column prop="name" label="任务名称" width="160" />
-                <el-table-column prop="channel" label="推送渠道" width="100" />
-                <el-table-column prop="target" label="推送对象" width="160" />
-                <el-table-column prop="total" label="推送人数" width="80" />
-                <el-table-column prop="succeed" label="成功" width="80" />
-                <el-table-column prop="failed" label="失败" width="80" />
-                <el-table-column label="状态" width="100">
-                  <template #default="{ row }">
-                    <el-tag :type="row.status === '已完成' ? 'success' : row.status === '进行中' ? 'warning' : 'info'">{{ row.status }}</el-tag>
-                  </template>
-                </el-table-column>
-                <el-table-column label="操作" width="160" fixed="right">
-                  <template #default="{ row }">
-                    <el-button type="primary" link size="small" @click="viewPushDetail(row)">详情</el-button>
-                    <el-button v-if="row.status === '进行中'" type="warning" link size="small" @click="cancelPush(row)">取消</el-button>
-                    <el-button v-if="row.status === '失败'" type="primary" link size="small" @click="retryPush(row)">重试</el-button>
-                  </template>
-                </el-table-column>
-              </el-table>
-            </div>
-          </div>
-        </el-tab-pane>
-        <el-tab-pane label="推送效果跟踪" name="track">
-          <div class="ps-tab-content">
-            <!-- 概览统计 -->
-            <el-row :gutter="16" class="ps-stats-row">
-              <el-col :span="6"><div class="ps-stat-card"><div class="ps-stat-label">推送总人次</div><div class="ps-stat-value">12,580</div><div class="ps-stat-trend up">↑ 12.3%</div></div></el-col>
-              <el-col :span="6"><div class="ps-stat-card"><div class="ps-stat-label">成功触达</div><div class="ps-stat-value">11,246</div><div class="ps-stat-trend up">↑ 8.7%</div></div></el-col>
-              <el-col :span="6"><div class="ps-stat-card"><div class="ps-stat-label">已读/点击率</div><div class="ps-stat-value">68.5%</div><div class="ps-stat-trend up">↑ 3.2%</div></div></el-col>
-              <el-col :span="6"><div class="ps-stat-card"><div class="ps-stat-label">政策办理转化率</div><div class="ps-stat-value">23.8%</div><div class="ps-stat-trend up">↑ 5.1%</div></div></el-col>
-            </el-row>
-            <!-- 效果分析 -->
-            <el-row :gutter="16" style="margin-top:16px">
-              <el-col :span="12">
-                <div class="ps-chart-card">
-                  <div class="ps-section-title">推送渠道效果对比</div>
-                  <div ref="channelChartRef" style="width:100%;height:300px"></div>
-                </div>
-              </el-col>
-              <el-col :span="12">
-                <div class="ps-chart-card">
-                  <div class="ps-section-title">月度推送趋势</div>
-                  <div ref="trendChartRef" style="width:100%;height:300px"></div>
-                </div>
-              </el-col>
-            </el-row>
-            <!-- 推送明细 -->
-            <div class="ps-result-section" style="margin-top:16px">
-              <div class="ps-section-title">推送明细记录</div>
-              <el-table :data="pushDetails" stripe border size="small" style="width:100%">
-                <el-table-column type="index" label="序号" width="60" />
-                <el-table-column prop="name" label="任务名称" width="140" />
-                <el-table-column prop="channel" label="渠道" width="80" />
-                <el-table-column prop="time" label="推送时间" width="160" />
-                <el-table-column prop="total" label="推送数" width="70" />
-                <el-table-column prop="reach" label="触达数" width="70" />
-                <el-table-column prop="read" label="已读数" width="70" />
-                <el-table-column prop="convert" label="转化数" width="70" />
-                <el-table-column prop="rate" label="转化率" width="80">
-                  <template #default="{ row }"><span style="color:#10b981">{{ row.rate }}%</span></template>
-                </el-table-column>
-                <el-table-column label="操作" width="100" fixed="right">
-                  <template #default="{ row }"><el-button type="primary" link size="small" @click="viewTrackDetail(row)">详情</el-button></template>
-                </el-table-column>
-              </el-table>
-            </div>
-          </div>
-        </el-tab-pane>
-        <el-tab-pane label="匹配结果支撑" name="support">
-          <div class="ps-tab-content">
-            <div class="ps-config-section">
-              <div class="ps-section-title">匹配结果查询</div>
-              <el-form :model="supportQuery" label-width="100px" size="small" inline>
-                <el-form-item label="匹配批次">
-                  <el-select v-model="supportQuery.batch" placeholder="选择批次" style="width:180px">
-                    <el-option label="2026年7月" value="202607" />
-                    <el-option label="2026年6月" value="202606" />
-                    <el-option label="2026年5月" value="202605" />
-                  </el-select>
-                </el-form-item>
-                <el-form-item label="政策类型">
-                  <el-select v-model="supportQuery.type" placeholder="选择政策" style="width:180px">
-                    <el-option label="就业补贴政策" value="subsidy" />
-                    <el-option label="社保减免政策" value="social" />
-                    <el-option label="创业扶持政策" value="entrepreneur" />
-                  </el-select>
-                </el-form-item>
-                <el-form-item label="匹配度">
-                  <el-select v-model="supportQuery.minMatch" placeholder="最低匹配度" style="width:120px">
-                    <el-option label="≥ 90%" :value="90" />
-                    <el-option label="≥ 80%" :value="80" />
-                    <el-option label="≥ 70%" :value="70" />
-                    <el-option label="≥ 60%" :value="60" />
-                  </el-select>
-                </el-form-item>
-                <el-form-item>
-                  <el-button type="primary" @click="querySupportResults">查询</el-button>
-                  <el-button @click="resetSupportQuery">重置</el-button>
-                </el-form-item>
-              </el-form>
-            </div>
-            <!-- 支撑数据 -->
-            <div v-if="supportResults.length > 0" class="ps-result-section">
-              <div class="ps-section-title">
-                匹配结果支撑数据
-                <span class="ps-result-count">共 {{ supportResults.length }} 条</span>
-              </div>
-              <el-table :data="supportResults" stripe border size="small" style="width:100%">
-                <el-table-column type="index" label="序号" width="60" />
-                <el-table-column prop="name" label="姓名" width="100" />
-                <el-table-column prop="idCard" label="身份证号" width="180" />
-                <el-table-column prop="policy" label="匹配政策" min-width="160" />
-                <el-table-column prop="matchRate" label="匹配度" width="100">
-                  <template #default="{ row }"><el-progress :percentage="row.matchRate" :color="row.matchRate >= 80 ? '#10b981' : row.matchRate >= 60 ? '#f59e0b' : '#ef4444'" /></template>
-                </el-table-column>
-                <el-table-column label="匹配依据" min-width="200">
-                  <template #default="{ row }">
-                    <el-tag v-for="b in row.basis" :key="b" size="small" style="margin:2px">{{ b }}</el-tag>
-                  </template>
-                </el-table-column>
-                <el-table-column label="支撑材料" width="120">
-                  <template #default="{ row }">
-                    <el-button type="primary" link size="small" @click="viewSupportMaterial(row)">查看材料</el-button>
-                  </template>
-                </el-table-column>
-                <el-table-column label="操作" width="120" fixed="right">
-                  <template #default="{ row }">
-                    <el-button type="primary" link size="small" @click="viewMatchDetail(row)">详情</el-button>
-                    <el-button type="primary" link size="small" @click="exportSupport(row)">导出</el-button>
-                  </template>
-                </el-table-column>
-              </el-table>
-            </div>
-            <div v-else class="ps-empty-state">
-              <el-icon class="ps-empty-icon"><Search /></el-icon>
-              <p>设置查询条件后点击「查询」</p>
-              <p class="ps-empty-desc">查看匹配结果的详细支撑数据</p>
-            </div>
-          </div>
-        </el-tab-pane>
-      </el-tabs>
-    </div>
-    <!-- 详情弹窗 -->
-    <el-dialog v-model="detailDialog.visible" :title="detailDialog.title" width="600px" :close-on-click-modal="false">
-      <div v-if="detailDialog.data">
-        <el-descriptions :column="2" border size="small">
-          <el-descriptions-item label="姓名">{{ detailDialog.data.name }}</el-descriptions-item>
-          <el-descriptions-item label="身份证号">{{ detailDialog.data.idCard }}</el-descriptions-item>
-          <el-descriptions-item label="年龄">{{ detailDialog.data.age }}</el-descriptions-item>
-          <el-descriptions-item label="户籍">{{ detailDialog.data.household }}</el-descriptions-item>
-          <el-descriptions-item label="就业状态">{{ detailDialog.data.employment }}</el-descriptions-item>
-          <el-descriptions-item label="匹配度">{{ detailDialog.data.matchRate }}%</el-descriptions-item>
-        </el-descriptions>
-        <div style="margin-top:12px">
-          <div class="ps-section-title">匹配政策详情</div>
-          <div v-for="p in detailDialog.data.matchedPolicies || []" :key="p" class="ps-match-policy-item">
-            <el-icon><Document /></el-icon>
-            <span>{{ p }}</span>
+      <!-- 二级菜单 Tab 切换 -->
+      <div class="ps-tabs">
+          <div
+            v-for="t in innerTabs"
+            :key="t.key"
+            class="ps-tab"
+            :class="{ active: activeTab === t.key }"
+            @click="activeTab = t.key"
+          >
+            <el-icon><component :is="t.icon" /></el-icon>
+            <span>{{ t.label }}</span>
           </div>
         </div>
-        <div style="margin-top:12px">
-          <div class="ps-section-title">匹配依据</div>
-          <div v-if="detailDialog.data.basis" class="ps-basis-list">
-            <div v-for="(b, i) in detailDialog.data.basis" :key="i" class="ps-basis-item">
-              <span class="ps-basis-dot" />
-              <span>{{ b }}</span>
+
+        <!-- Tab1：AI政策库 -->
+        <div v-show="activeTab === 'policyLib'" class="ps-pane">
+          <div class="ps-pane-body">
+            <!-- 左：分类树 -->
+            <div class="ps-tree-panel">
+              <div class="ps-panel-head">
+                <span>政策分类</span>
+                <el-icon class="ps-fold-btn" @click="treeCollapsed = !treeCollapsed">
+                  <Menu />
+                </el-icon>
+              </div>
+              <el-input
+                v-model="treeSearch"
+                class="ps-tree-search"
+                placeholder="输入关键字进行过滤"
+                :prefix-icon="Search"
+                clearable
+                size="small"
+              />
+              <el-tree
+                ref="treeRef"
+                v-show="!treeCollapsed"
+                :data="categoryTree"
+                :props="{ label: 'label' }"
+                node-key="id"
+                :default-expanded-keys="['1']"
+                :filter-node-method="filterTree"
+                highlight-current
+                @node-click="onTreeClick"
+                class="ps-tree"
+              >
+                <template #default="{ data }">
+                  <span class="ps-tree-node">{{ data.label }}</span>
+                </template>
+              </el-tree>
+            </div>
+
+            <!-- 右：筛选 + 卡片 -->
+            <div class="ps-policy-area">
+              <div class="ps-filter-bar">
+                <el-input v-model="libQuery.name" placeholder="请输入" clearable class="ps-f-name" :prefix-icon="Search" />
+                <el-select v-model="libQuery.target" placeholder="请选择" clearable class="ps-f-target">
+                  <el-option label="个人" value="个人" />
+                  <el-option label="企业" value="企业" />
+                </el-select>
+                <el-button type="primary" @click="onLibSearch">搜索</el-button>
+                <el-button @click="onLibReset">重置</el-button>
+                <el-button type="primary" @click="goParse">智能解析</el-button>
+              </div>
+
+              <div class="ps-policy-grid">
+                <div
+                  v-for="p in filteredPolicies"
+                  :key="p.id"
+                  class="ps-policy-card"
+                >
+                  <div class="ps-policy-title">{{ p.name }}</div>
+                  <div class="ps-policy-meta">
+                    <span class="ps-meta-item">对象：<b>{{ p.target }}</b></span>
+                    <span class="ps-meta-item">数量：<b>{{ p.count }}条</b></span>
+                  </div>
+                  <div class="ps-policy-time">创建时间：{{ p.createdAt }}</div>
+                  <div class="ps-policy-actions">
+                    <span class="ps-act green" @click="viewGrant(p)">发放记录</span>
+                    <span class="ps-act blue" @click="openConfig(p)">配置</span>
+                    <span class="ps-act red" @click="delPolicy(p)">删除</span>
+                  </div>
+                </div>
+                <el-empty v-if="filteredPolicies.length === 0" description="暂无政策" />
+              </div>
+
+              <div class="ps-footer-bar">
+                <span>共 {{ filteredPolicies.length }} 条</span>
+                <el-pagination
+                  layout="sizes, prev, pager, next, jumper"
+                  :total="filteredPolicies.length"
+                  :page-size="10"
+                  :page-sizes="[10, 20, 50]"
+                  background
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab2：政策解析 -->
+        <div v-show="activeTab === 'parse'" class="ps-pane">
+          <div class="ps-steps">
+            <div
+              v-for="(s, i) in parseSteps"
+              :key="s.key"
+              class="ps-step"
+              :class="{ done: i < parseStep, active: i === parseStep }"
+              @click="i < parseStep && (parseStep = i)"
+            >
+              <span class="ps-step-dot">{{ i + 1 }}</span>
+              <span class="ps-step-label">{{ s.label }}</span>
+            </div>
+          </div>
+
+          <!-- Step1 上传 -->
+          <div v-if="parseStep === 0" class="ps-step-panel">
+            <p class="ps-step-tip">请上传补贴类的政策依据，将自动解析并精准匹配适用对象，助力政策主动兑现。</p>
+            <el-form :model="parseForm" label-width="90px" class="ps-form">
+              <el-form-item label="政策名称" required>
+                <el-input v-model="parseForm.name" placeholder="请输入政策名称" />
+              </el-form-item>
+              <el-form-item label="对象" required>
+                <el-radio-group v-model="parseForm.target">
+                  <el-radio value="个人">个人</el-radio>
+                  <el-radio value="企业">企业</el-radio>
+                </el-radio-group>
+              </el-form-item>
+              <el-form-item label="政策分类">
+                <el-cascader
+                  v-model="parseForm.category"
+                  :options="categoryOptions"
+                  :props="{ label: 'label', value: 'id' }"
+                  placeholder="请选择"
+                  clearable
+                  style="width:100%"
+                />
+              </el-form-item>
+              <el-form-item label="政策条件" required>
+                <el-input
+                  v-model="parseForm.condition"
+                  type="textarea"
+                  :rows="3"
+                  placeholder="请输入政策条件"
+                />
+              </el-form-item>
+              <el-form-item label="政策文件">
+                <el-button type="primary" plain @click="parseFileInput.click()">上传</el-button>
+                <input
+                  ref="parseFileInput"
+                  type="file"
+                  accept=".doc,.docx,.pdf"
+                  style="display:none"
+                  @change="onParseFile"
+                />
+                <span v-if="parseFileName" class="ps-file-name">📄 {{ parseFileName }} ✓</span>
+              </el-form-item>
+            </el-form>
+            <div class="ps-step-actions">
+              <el-button type="primary" @click="goParseStep2">下一步</el-button>
+            </div>
+          </div>
+
+          <!-- Step2 条件解析 -->
+          <div v-else-if="parseStep === 1" class="ps-step-panel">
+            <p class="ps-step-tip">AI 已自动解析政策条件，可编辑、删除或手动补充条件条目。</p>
+            <div class="ps-parse-list">
+              <div v-for="(c, i) in parseConditions" :key="i" class="ps-parse-item">
+                <el-input v-model="c.text" size="small" />
+                <el-icon class="ps-del" @click="parseConditions.splice(i, 1)"><Delete /></el-icon>
+              </div>
+              <el-button size="small" type="primary" plain @click="parseConditions.push({ text: '' })">
+                ＋ 手动补充
+              </el-button>
+            </div>
+            <div class="ps-step-actions">
+              <el-button @click="parseStep = 0">上一步</el-button>
+              <el-button type="primary" @click="parseStep = 2">下一步</el-button>
+            </div>
+          </div>
+
+          <!-- Step3 生成规则 -->
+          <div v-else class="ps-step-panel">
+            <p class="ps-step-tip">AI 已生成匹配规则，可继续编辑与补充。</p>
+            <div class="ps-rule-list">
+              <div v-for="(r, i) in genRules" :key="i" class="ps-rule-card">
+                <el-select v-model="r.type" size="small" class="ps-rule-type">
+                  <el-option label="必须满足" value="必须满足" />
+                  <el-option label="可达条件" value="可达条件" />
+                </el-select>
+                <el-input v-model="r.desc" size="small" class="ps-rule-desc" />
+                <span class="ps-rule-tag">已生效</span>
+                <el-icon class="ps-del" @click="genRules.splice(i, 1)"><Delete /></el-icon>
+              </div>
+              <el-button size="small" type="primary" plain @click="genRules.push({ type: '必须满足', desc: '' })">
+                ＋ 添加规则
+              </el-button>
+            </div>
+            <div class="ps-step-actions">
+              <el-button @click="parseStep = 1">上一步</el-button>
+              <el-button type="primary" @click="finishParse">完成</el-button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab3：政策找人 -->
+        <div v-show="activeTab === 'person'" class="ps-pane">
+          <div class="ps-pane-body column">
+            <div class="ps-filter-bar">
+              <el-select v-model="personQuery.target" placeholder="请选择" clearable class="ps-f-target">
+                <el-option label="个人" value="个人" />
+                <el-option label="企业" value="企业" />
+              </el-select>
+              <el-input v-model="personQuery.name" placeholder="请输入" clearable class="ps-f-name" :prefix-icon="Search" />
+              <el-select v-model="personQuery.progress" placeholder="请选择" clearable class="ps-f-target">
+                <el-option label="待匹配" value="待匹配" />
+                <el-option label="匹配中" value="匹配中" />
+                <el-option label="已匹配" value="已匹配" />
+              </el-select>
+              <el-button type="primary" @click="openNewBatch">新增</el-button>
+              <el-button type="primary" @click="onPersonSearch">搜索</el-button>
+              <el-button @click="onPersonReset">重置</el-button>
+            </div>
+
+            <el-table :data="filteredBatches" stripe border class="ps-table" @selection-change="selBatches = $event">
+              <el-table-column type="selection" width="46" />
+              <el-table-column prop="batchNo" label="批次号" width="200" />
+              <el-table-column prop="name" label="政策名称" min-width="180" />
+              <el-table-column prop="target" label="对象" width="70" />
+              <el-table-column prop="matchCount" label="匹配结果(条)" width="120" />
+              <el-table-column label="匹配进度" width="100">
+                <template #default="{ row }">
+                  <el-tag :type="row.progress === '已匹配' ? 'success' : row.progress === '匹配中' ? 'warning' : 'info'">
+                    {{ row.progress }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column prop="matchTime" label="匹配时间" width="170" />
+              <el-table-column label="操作" width="230" fixed="right">
+                <template #default="{ row }">
+                  <el-button type="primary" link size="small" @click="openMatchResult(row)">匹配结果</el-button>
+                  <el-button type="primary" link size="small" @click="openPush(row)">推送</el-button>
+                  <el-button type="warning" link size="small" @click="exportBatch(row)">导出</el-button>
+                  <el-button link size="small" @click="openBatchDetail(row)">详情</el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+
+            <div class="ps-footer-bar">
+              <span>共 {{ filteredBatches.length }} 条</span>
+              <el-pagination layout="sizes, prev, pager, next, jumper" :total="filteredBatches.length" :page-size="10" :page-sizes="[10,20,50]" background />
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab4：推送记录 -->
+        <div v-show="activeTab === 'record'" class="ps-pane">
+          <div class="ps-pane-body column">
+            <div class="ps-filter-bar right">
+              <el-select v-model="recordQuery.target" placeholder="请选择" clearable class="ps-f-target">
+                <el-option label="个人" value="个人" />
+                <el-option label="企业" value="企业" />
+              </el-select>
+              <el-input v-model="recordQuery.name" placeholder="请输入" clearable class="ps-f-name" :prefix-icon="Search" />
+              <el-button type="primary" @click="onRecordSearch">搜索</el-button>
+              <el-button @click="onRecordReset">重置</el-button>
+            </div>
+
+            <el-table :data="filteredRecords" stripe border class="ps-table">
+              <el-table-column type="index" label="序号" width="60" />
+              <el-table-column prop="name" label="政策名称" min-width="220" />
+              <el-table-column prop="target" label="对象" width="80" />
+              <el-table-column prop="count" label="推送数量" width="100" />
+              <el-table-column label="推送状态" width="100">
+                <template #default="{ row }">
+                  <el-tag :type="row.status === '成功' ? 'success' : row.status === '失败' ? 'danger' : 'warning'">
+                    {{ row.status }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column prop="time" label="推送时间" width="170" />
+              <el-table-column label="操作" width="120">
+                <template #default="{ row }">
+                  <el-button type="primary" link size="small" @click="viewRecordDetail(row)">查看详情</el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+
+            <div class="ps-footer-bar">
+              <span>共 {{ filteredRecords.length }} 条</span>
+              <el-pagination layout="sizes, prev, pager, next, jumper" :total="filteredRecords.length" :page-size="10" :page-sizes="[10,20,50]" background />
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab5：标注 -->
+        <div v-show="activeTab === 'mark'" class="ps-pane">
+          <div class="ps-pane-body column">
+            <div class="ps-filter-bar right">
+              <el-input v-model="markQuery" placeholder="请输入" clearable class="ps-f-name" :prefix-icon="Search" />
+              <el-button type="primary" @click="onMarkSearch">搜索</el-button>
+              <el-button @click="onMarkReset">重置</el-button>
+            </div>
+
+            <div class="ps-mark-grid">
+              <div v-for="m in filteredMarks" :key="m.id" class="ps-mark-card">
+                <div class="ps-mark-name">{{ m.name }}</div>
+                <div class="ps-mark-desc">{{ m.desc }}</div>
+                <div class="ps-mark-time">{{ m.createdAt }}</div>
+                <div class="ps-policy-actions">
+                  <span class="ps-act blue" @click="openMarkEdit(m)">编辑</span>
+                  <span class="ps-act red" @click="delMark(m)">删除</span>
+                </div>
+              </div>
+              <el-empty v-if="filteredMarks.length === 0" description="暂无标注" />
             </div>
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- 弹窗：政策配置规则 -->
+    <el-dialog v-model="configVisible" title="规则配置" width="720px" destroy-on-close>
+      <el-form :model="configForm" label-width="90px" class="ps-form">
+        <el-form-item label="政策名称" required>
+          <el-input v-model="configForm.name" placeholder="自动带入当前政策名，可改" />
+        </el-form-item>
+        <el-form-item label="政策分类">
+          <el-cascader
+            v-model="configForm.category"
+            :options="categoryOptions"
+            :props="{ label: 'label', value: 'id' }"
+            placeholder="请选择"
+            clearable
+            style="width:100%"
+          />
+        </el-form-item>
+        <el-form-item label="政策条件" required>
+          <el-input v-model="configForm.condition" type="textarea" :rows="3" placeholder="请输入政策条件" />
+        </el-form-item>
+        <el-form-item label="补贴对象" required>
+          <el-select v-model="configForm.target" placeholder="请选择" style="width:100%">
+            <el-option label="个人" value="个人" />
+            <el-option label="企业" value="企业" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="政策文件">
+          <el-button type="primary" plain @click="configFileInput.click()">上传</el-button>
+          <input ref="configFileInput" type="file" accept=".doc,.docx,.pdf" style="display:none" @change="onConfigFile" />
+          <span v-if="configFileName" class="ps-file-name">📄 {{ configFileName }} ✓</span>
+        </el-form-item>
+      </el-form>
+
+      <div class="ps-rule-head">
+        <span>匹配规则</span>
+        <el-button size="small" type="primary" plain @click="configRules.push({ type: '必须满足', desc: '' })">＋ 添加规则</el-button>
+      </div>
+      <div class="ps-rule-list">
+        <div v-for="(r, i) in configRules" :key="i" class="ps-rule-card">
+          <el-select v-model="r.type" size="small" class="ps-rule-type">
+            <el-option label="必须满足" value="必须满足" />
+            <el-option label="可达条件" value="可达条件" />
+          </el-select>
+          <el-input v-model="r.desc" size="small" class="ps-rule-desc" />
+          <span class="ps-rule-tag">已生效</span>
+          <el-icon class="ps-del" @click="configRules.splice(i, 1)"><Delete /></el-icon>
+        </div>
+      </div>
+
       <template #footer>
-        <el-button @click="detailDialog.visible = false">关闭</el-button>
-        <el-button type="primary" @click="pushToTarget(detailDialog.data)">推送该人员</el-button>
+        <el-button @click="configVisible = false">取消</el-button>
+        <el-button type="primary" @click="saveConfig">确定</el-button>
       </template>
     </el-dialog>
-    <!-- 推送弹窗 -->
-    <el-dialog v-model="pushDialog.visible" title="推送确认" width="500px" :close-on-click-modal="false">
-      <el-form :model="pushDialog.form" label-width="100px" size="small">
-        <el-form-item label="推送对象">
-          <el-input :model-value="pushDialog.targetName" disabled />
+
+    <!-- 弹窗：新建批次 -->
+    <el-dialog v-model="newBatchVisible" title="新增匹配批次" width="520px" destroy-on-close>
+      <el-form :model="newBatchForm" label-width="90px">
+        <el-form-item label="政策名称" required>
+          <el-input v-model="newBatchForm.name" placeholder="请输入政策名称" />
         </el-form-item>
-        <el-form-item label="推送渠道">
-          <el-select v-model="pushDialog.form.channel" style="width:100%">
-            <el-option label="短信通知" value="sms" />
-            <el-option label="微信服务号" value="wechat" />
-            <el-option label="APP推送" value="app" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="推送模板">
-          <el-select v-model="pushDialog.form.template" style="width:100%">
-            <el-option label="就业补贴通知模板" value="subsidy" />
-            <el-option label="社保减免通知模板" value="social" />
-          </el-select>
+        <el-form-item label="对象" required>
+          <el-radio-group v-model="newBatchForm.target">
+            <el-radio value="个人">个人</el-radio>
+            <el-radio value="企业">企业</el-radio>
+          </el-radio-group>
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="pushDialog.visible = false">取消</el-button>
-        <el-button type="primary" @click="confirmPush">确认推送</el-button>
+        <el-button @click="newBatchVisible = false">取消</el-button>
+        <el-button type="primary" @click="createBatch">创建并匹配</el-button>
       </template>
     </el-dialog>
-  </div>
+
+    <!-- 弹窗：匹配结果明细 -->
+    <el-dialog v-model="matchResultVisible" :title="matchResultTitle" width="860px" destroy-on-close>
+      <div class="ps-filter-bar">
+        <el-select v-model="resultFilter" placeholder="请选择" clearable class="ps-f-target">
+          <el-option label="完全满足" value="完全满足" />
+          <el-option label="部分满足" value="部分满足" />
+        </el-select>
+        <el-button type="primary" size="small">搜索</el-button>
+        <el-button size="small" @click="resultFilter = ''">重置</el-button>
+      </div>
+      <el-table :data="matchPersons" stripe border class="ps-table" max-height="400">
+        <el-table-column prop="id" label="编号" width="200" />
+        <el-table-column prop="name" label="姓名" width="90" />
+        <el-table-column prop="idCard" label="身份证" width="130" />
+        <el-table-column prop="edu" label="学历" width="100" />
+        <el-table-column prop="gradTime" label="毕业时间" width="110" />
+        <el-table-column prop="employ" label="就业方式" min-width="130" />
+        <el-table-column prop="phone" label="联系方式" width="120" />
+        <el-table-column prop="type" label="人员类型" min-width="120" />
+        <el-table-column prop="result" label="匹配结果" width="90" />
+        <el-table-column label="原因" min-width="220">
+          <template #default="{ row }">
+            <span class="ps-reason" @click="showReason(row)">{{ row.resultHint }}</span>
+          </template>
+        </el-table-column>
+      </el-table>
+      <div class="ps-footer-bar">
+        <span>共 26755 条</span>
+        <el-pagination layout="sizes, prev, pager, next, jumper" :total="26755" :page-size="10" :page-sizes="[10,20,50]" background />
+      </div>
+    </el-dialog>
+
+    <!-- 弹窗：政策推送 -->
+    <el-dialog v-model="pushVisible" title="政策推送" width="900px" destroy-on-close>
+      <el-table :data="pushPersons" stripe border class="ps-table" max-height="280" size="small">
+        <el-table-column prop="id" label="编号" width="190" />
+        <el-table-column prop="name" label="姓名" width="80" />
+        <el-table-column prop="idCard" label="身份证" width="120" />
+        <el-table-column prop="edu" label="学历" width="100" />
+        <el-table-column prop="gradTime" label="毕业时间" width="110" />
+        <el-table-column prop="employ" label="就业方式" min-width="120" />
+        <el-table-column prop="phone" label="联系方式" width="120" />
+        <el-table-column prop="type" label="人员类型" min-width="110" />
+        <el-table-column prop="result" label="匹配结果" width="90" />
+      </el-table>
+
+      <div class="ps-rule-head">筛选匹配结果</div>
+      <div class="ps-filter-bar">
+        <el-select v-model="pushFilter.result" placeholder="请选择" clearable class="ps-f-target">
+          <el-option label="完全满足" value="完全满足" />
+          <el-option label="部分满足" value="部分满足" />
+        </el-select>
+        <el-select v-model="pushFilter.edu" placeholder="请选择" clearable class="ps-f-target">
+          <el-option label="大专" value="大专" />
+          <el-option label="本科" value="本科" />
+          <el-option label="初级中学" value="初级中学" />
+        </el-select>
+        <el-select v-model="pushFilter.employ" placeholder="请选择" clearable class="ps-f-target">
+          <el-option label="单位就业" value="单位就业" />
+          <el-option label="灵活就业" value="灵活就业" />
+        </el-select>
+        <el-button type="primary" size="small">筛选</el-button>
+      </div>
+      <el-table v-if="pushedFiltered.length" :data="pushedFiltered" stripe border class="ps-table" max-height="200" size="small">
+        <el-table-column prop="name" label="姓名" width="90" />
+        <el-table-column prop="edu" label="学历" width="90" />
+        <el-table-column prop="employ" label="就业方式" min-width="120" />
+        <el-table-column prop="phone" label="联系方式" width="120" />
+        <el-table-column prop="result" label="匹配结果" width="90" />
+      </el-table>
+      <el-empty v-else description="暂无数据" :image-size="60" />
+
+      <div class="ps-push-actions">
+        <el-button size="small" type="primary" plain>推送</el-button>
+        <el-button size="small" type="primary" plain @click="aiWrite">AI撰写</el-button>
+        <el-button type="primary" @click="doPush">政策推送</el-button>
+      </div>
+    </el-dialog>
+
+    <!-- 抽屉：批次详情 -->
+    <el-drawer v-model="batchDetailVisible" title="批次详情" size="520px">
+      <template v-if="batchDetail">
+        <div class="ps-detail-row"><label>政策名称</label><span>{{ batchDetail.name }}</span></div>
+        <div class="ps-detail-row"><label>批次号</label><span>{{ batchDetail.batchNo }}</span></div>
+        <div class="ps-detail-row"><label>对象</label><span>{{ batchDetail.target }}</span></div>
+        <div class="ps-detail-row"><label>匹配结果</label><span>{{ batchDetail.matchCount }} 条</span></div>
+        <div class="ps-detail-row"><label>匹配进度</label><span>{{ batchDetail.progress }}</span></div>
+        <div class="ps-detail-row"><label>匹配时间</label><span>{{ batchDetail.matchTime }}</span></div>
+        <div class="ps-detail-title">匹配规则</div>
+        <div v-for="(r, i) in batchDetailRules" :key="i" class="ps-detail-rule">{{ i + 1 }}. 【{{ r.type }}】{{ r.desc }}</div>
+      </template>
+    </el-drawer>
+
+    <!-- 抽屉：推送详情 -->
+    <el-drawer v-model="recordDetailVisible" title="推送详情" size="560px">
+      <template v-if="recordDetail">
+        <div class="ps-detail-row"><label>政策名称</label><span>{{ recordDetail.name }}</span></div>
+        <div class="ps-detail-row"><label>对象</label><span>{{ recordDetail.target }}</span></div>
+        <div class="ps-detail-row"><label>推送数量</label><span>{{ recordDetail.count }} 条</span></div>
+        <div class="ps-detail-row"><label>推送状态</label><span>{{ recordDetail.status }}</span></div>
+        <div class="ps-detail-row"><label>推送时间</label><span>{{ recordDetail.time }}</span></div>
+        <div class="ps-detail-row"><label>推送文案</label>
+          <div class="ps-sms">{{ recordDetail.sms }}</div>
+        </div>
+        <div class="ps-detail-title">接收明细</div>
+        <el-table :data="recordDetail.list" size="small" border max-height="260">
+          <el-table-column prop="name" label="姓名" width="90" />
+          <el-table-column prop="phone" label="联系方式" width="130" />
+          <el-table-column prop="channel" label="渠道" width="80" />
+          <el-table-column prop="status" label="发送状态" width="90" />
+        </el-table>
+      </template>
+    </el-drawer>
+
+    <!-- 抽屉：发放记录 -->
+    <el-drawer v-model="grantVisible" title="发放记录" size="560px">
+      <template v-if="grantDetail">
+        <div class="ps-detail-row"><label>政策名称</label><span>{{ grantDetail.name }}</span></div>
+        <div class="ps-detail-row"><label>对象</label><span>{{ grantDetail.target }}</span></div>
+        <el-table :data="grantList" size="small" border>
+          <el-table-column type="index" label="序号" width="60" />
+          <el-table-column prop="name" label="姓名" width="110" />
+          <el-table-column prop="amount" label="补贴金额" width="120" />
+          <el-table-column prop="time" label="发放时间" width="150" />
+          <el-table-column prop="status" label="状态" width="90" />
+        </el-table>
+      </template>
+    </el-drawer>
+
+    <!-- 弹窗：标注编辑 -->
+    <el-dialog v-model="markEditVisible" :title="markEditForm.id ? '编辑标注' : '新增标注'" width="560px" destroy-on-close>
+      <el-form :model="markEditForm" label-width="90px">
+        <el-form-item label="字段名称" required>
+          <el-input v-model="markEditForm.name" placeholder="请输入字段名称" />
+        </el-form-item>
+        <el-form-item label="解释" required>
+          <el-input v-model="markEditForm.desc" type="textarea" :rows="4" placeholder="请输入字段解释说明" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="markEditVisible = false">取消</el-button>
+        <el-button type="primary" @click="saveMark">确定</el-button>
+      </template>
+    </el-dialog>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick } from 'vue'
-import { ElMessage } from 'element-plus'
-import { List, Clock, Search, Document } from '@element-plus/icons-vue'
-import * as echarts from 'echarts'
+import { ref, computed, watch } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Search, UserFilled, Finished, Collection, Document, HomeFilled, Menu, Delete, Fold } from '@element-plus/icons-vue'
 
-const activeTab = ref('engine')
-const taskSearch = ref('')
-const selectedService = ref('')
-const activeTask = ref<any>(null)
+/* ========== Tab ========== */
+const innerTabs = ref([
+  { key: 'policyLib', label: 'AI政策库', icon: Collection },
+  { key: 'parse', label: '政策解析', icon: Document },
+  { key: 'person', label: '政策找人', icon: UserFilled },
+  { key: 'record', label: '推送记录', icon: Finished },
+  { key: 'mark', label: '标注', icon: Collection },
+])
+const activeTab = ref('policyLib')
 
-const serviceList = [
-  { value: 'subsidy', label: '就业补贴资格审核服务' },
-  { value: 'loan', label: '创业担保贷款审核服务' },
-  { value: 'training', label: '技能培训补贴审核服务' },
-  { value: 'pension', label: '养老待遇认证服务' },
-]
+/* ========== Tab1 AI政策库 ========== */
+const treeCollapsed = ref(false)
+const treeSearch = ref('')
+const treeRef = ref()
+watch(treeSearch, (v) => { treeRef.value?.filter(v) })
+const categoryTree = ref([
+  { id: '1', label: '一、就业创业补贴', children: [
+    { id: '1-1', label: '1.就业见习补贴' },
+    { id: '1-2', label: '2.社会保险补贴', children: [
+      { id: '1-2-1', label: '(1) 高校毕业生社会保险补贴' },
+      { id: '1-2-2', label: '(2) 就业困难人员社会保险补贴' },
+    ]},
+  ]},
+  { id: '2', label: '二、培训服务补贴', children: [
+    { id: '2-1', label: '1.外出务工奖励补助' },
+  ]},
+  { id: '3', label: '三、求职帮扶补贴', children: [
+    { id: '3-1', label: '1.一次性求职补贴' },
+    { id: '3-2', label: '2.公益性岗位补贴及社会保险补贴' },
+  ]},
+  { id: '4', label: '四、创业担保贷款' },
+  { id: '5', label: '五、纺织服装四项补贴', children: [
+    { id: '5-1', label: '1.新招录新疆籍职工补贴' },
+    { id: '5-2', label: '2.纺织服装个人社保补贴' },
+    { id: '5-3', label: '3.南疆人才引进补贴' },
+  ]},
+])
 
-const tasks = [
-  { id: 1, name: '2026年7月就业补贴匹配', status: '进行中', time: '2026-07-15' },
-  { id: 2, name: '2026年6月社保减免匹配', status: '已完成', time: '2026-06-20' },
-  { id: 3, name: '创业担保贷款资格筛查', status: '已完成', time: '2026-06-10' },
-  { id: 4, name: '培训补贴人员匹配', status: '进行中', time: '2026-07-12' },
-  { id: 5, name: '养老待遇认证提醒', status: '待开始', time: '2026-07-01' },
-]
+const policies = ref([
+  { id: 1, name: '高校毕业生灵活就业社保补贴', target: '个人', count: 6, createdAt: '2026-07-07 20:57:58', category: '1-2-1' },
+  { id: 2, name: '单位吸纳就业困难人员社会保险补贴', target: '企业', count: 8, createdAt: '2026-07-13 16:35:53', category: '1-2-2' },
+  { id: 3, name: '就业困难人员灵活就业社保补贴', target: '个人', count: 7, createdAt: '2026-07-13 14:40:57', category: '1-2-2' },
+  { id: 4, name: '小微企业吸纳高校毕业生社保补贴', target: '企业', count: 8, createdAt: '2026-07-07 21:07:04', category: '1-2-1' },
+])
 
-const filteredTasks = computed(() =>
-  tasks.filter(t => t.name.includes(taskSearch.value))
-)
+const libQuery = ref({ name: '', target: '' })
+const selectedCategory = ref<string | null>(null)
 
-const matchConfig = ref({
-  service: '',
-  dimension: 'comprehensive',
-  batch: '202607',
-  policyType: 'all',
-  threshold: 70,
-})
+const categoryOptions = computed(() => categoryTree.value.map((n: any) => ({ id: n.id, label: n.label })))
 
-const mockData = [
-  { name: '张三', idCard: '320101********0012', age: 35, household: '本市城镇', employment: '灵活就业', matchedPolicies: ['就业困难人员社保补贴', '灵活就业社会保险补贴'], matchRate: 92, basis: ['年龄35岁符合就业困难认定范围', '灵活就业状态符合补贴条件', '本市户籍城镇户口'] },
-  { name: '李四', idCard: '320101********0034', age: 28, household: '本市农村', employment: '失业登记', matchedPolicies: ['失业人员职业培训补贴', '农村劳动力转移就业补贴'], matchRate: 85, basis: ['失业登记状态', '农村户籍', '年龄28岁'] },
-  { name: '王五', idCard: '320102********0056', age: 45, household: '本省外市', employment: '企业职工', matchedPolicies: ['职业技能提升补贴', '企业职工岗位技能培训'], matchRate: 78, basis: ['企业职工身份', '年龄45岁'] },
-  { name: '赵六', idCard: '320103********0078', age: 52, household: '本市城镇', employment: '就业困难人员', matchedPolicies: ['就业困难人员社保补贴', '公益性岗位安置', '灵活就业社会保险补贴'], matchRate: 95, basis: ['就业困难人员认定', '年龄52岁', '长期失业登记'] },
-  { name: '钱七', idCard: '320104********0090', age: 22, household: '外省户籍', employment: '高校毕业生', matchedPolicies: ['高校毕业生就业补贴', '小微企业吸纳高校毕业生社保补贴'], matchRate: 88, basis: ['毕业两年内高校毕业生', '外省户籍来本地就业'] },
-]
-
-const matchResults = ref<any[]>([])
-
-function runMatch() {
-  if (!matchConfig.value.service) {
-    ElMessage.warning('请选择服务/任务')
-    return
-  }
-  ElMessage.success('匹配完成，共匹配 ' + mockData.length + ' 人')
-  matchResults.value = mockData.map((d, i) => ({ ...d, id: i + 1 }))
+function filterTree(val: string, data: any) {
+  if (!val) return true
+  return data.label.includes(val)
 }
 
-function resetMatchConfig() {
-  matchConfig.value = { service: '', dimension: 'comprehensive', batch: '202607', policyType: 'all', threshold: 70 }
-  matchResults.value = []
-}
-
-function viewMatchDetail(row: any) {
-  detailDialog.value = { visible: true, title: '匹配详情 - ' + row.name, data: row }
-}
-
-function pushToTarget(row: any) {
-  pushDialog.value = { visible: true, targetName: row.name, form: { channel: 'sms', template: '' }, data: row }
-}
-
-function batchPush() {
-  ElMessage.success('已创建批量推送任务，共 ' + matchResults.value.length + ' 人')
-}
-
-function exportMatchResult() {
-  ElMessage.success('匹配结果导出成功')
-}
-
-const pushConfig = ref({
-  channel: 'sms',
-  template: '',
-  time: null as any,
-  target: 'all',
-  limit: 1000,
-})
-
-const pushTasks = [
-  { id: 1, name: '就业补贴推送任务-7月', channel: '短信', target: '匹配度≥80%人员', total: 1250, succeed: 1180, failed: 70, status: '已完成' },
-  { id: 2, name: '社保减免推送任务-6月', channel: '微信服务号', target: '全部匹配人员', total: 3200, succeed: 2980, failed: 220, status: '已完成' },
-  { id: 3, name: '创业扶持推送任务', channel: '综合推送', target: '匹配度≥90%人员', total: 580, succeed: 520, failed: 60, status: '进行中' },
-  { id: 4, name: '培训补贴推送任务', channel: '短信', target: '指定人员', total: 150, succeed: 0, failed: 0, status: '待开始' },
-]
-
-function createPushTask() {
-  if (!pushConfig.value.channel || !pushConfig.value.template) {
-    ElMessage.warning('请完善推送配置')
-    return
-  }
-  ElMessage.success('推送任务创建成功')
-}
-
-function resetPushConfig() {
-  pushConfig.value = { channel: 'sms', template: '', time: null, target: 'all', limit: 1000 }
-}
-
-function viewPushDetail(row: any) {
-  ElMessage.success('查看推送详情：' + row.name)
-}
-
-function cancelPush(row: any) {
-  ElMessage.success('已取消推送任务：' + row.name)
-}
-
-function retryPush(row: any) {
-  ElMessage.success('已重新推送：' + row.name)
-}
-
-const pushHistory = [
-  { id: 1, name: '就业补贴推送', target: '短信-1250人', time: '2026-07-15 10:30', status: '成功' },
-  { id: 2, name: '社保减免推送', target: '微信-3200人', time: '2026-06-20 14:00', status: '部分成功' },
-  { id: 3, name: '创业扶持推送', target: '综合-580人', time: '2026-06-15 09:00', status: '成功' },
-  { id: 4, name: '培训补贴推送', target: '短信-150人', time: '2026-06-10 16:00', status: '失败' },
-]
-
-function viewHistory(h: any) {
-  ElMessage.success('查看推送历史：' + h.name)
-}
-
-const pushDetails = [
-  { name: '就业补贴推送-7月', channel: '短信', time: '2026-07-15 10:30:00', total: 1250, reach: 1180, read: 856, convert: 312, rate: 24.96 },
-  { name: '社保减免推送-6月', channel: '微信', time: '2026-06-20 14:00:00', total: 3200, reach: 2980, read: 2145, convert: 689, rate: 21.53 },
-  { name: '创业扶持推送', channel: '综合', time: '2026-06-15 09:00:00', total: 580, reach: 520, read: 385, convert: 156, rate: 26.90 },
-  { name: '培训补贴推送', channel: '短信', time: '2026-06-10 16:00:00', total: 150, reach: 120, read: 78, convert: 23, rate: 15.33 },
-]
-
-function viewTrackDetail(row: any) {
-  ElMessage.success('查看推送详情：' + row.name)
-}
-
-const supportQuery = ref({ batch: '202607', type: 'subsidy', minMatch: 80 })
-const supportResults = ref<any[]>([])
-
-function querySupportResults() {
-  supportResults.value = mockData.map((d, i) => ({ ...d, id: i + 1, policy: d.matchedPolicies[0] }))
-}
-
-function resetSupportQuery() {
-  supportQuery.value = { batch: '202607', type: 'subsidy', minMatch: 80 }
-  supportResults.value = []
-}
-
-function viewSupportMaterial(row: any) {
-  ElMessage.success('查看支撑材料：' + row.name)
-}
-
-function exportSupport(row: any) {
-  ElMessage.success('导出成功：' + row.name)
-}
-
-const detailDialog = ref({ visible: false, title: '', data: null as any })
-const pushDialog = ref({ visible: false, targetName: '', form: { channel: 'sms', template: '' }, data: null as any })
-
-function confirmPush() {
-  ElMessage.success('推送成功')
-  pushDialog.value.visible = false
-}
-
-const channelChartRef = ref<HTMLElement | null>(null)
-const trendChartRef = ref<HTMLElement | null>(null)
-
-onMounted(() => {
-  nextTick(() => {
-    if (channelChartRef.value) {
-      const chart = echarts.init(channelChartRef.value)
-      chart.setOption({
-        tooltip: { trigger: 'axis' },
-        legend: { data: ['触达率', '点击率', '转化率'] },
-        xAxis: { type: 'category', data: ['短信', '微信', 'APP', '电话外呼'] },
-        yAxis: { type: 'value', max: 100, axisLabel: { formatter: '{value}%' } },
-        series: [
-          { name: '触达率', type: 'bar', data: [94.4, 93.1, 89.5, 76.8], itemStyle: { color: '#2563eb' } },
-          { name: '点击率', type: 'bar', data: [72.5, 72.0, 65.3, 48.2], itemStyle: { color: '#60a5fa' } },
-          { name: '转化率', type: 'bar', data: [24.9, 21.5, 18.6, 12.3], itemStyle: { color: '#93c5fd' } },
-        ]
-      })
-    }
-    if (trendChartRef.value) {
-      const chart = echarts.init(trendChartRef.value)
-      chart.setOption({
-        tooltip: { trigger: 'axis' },
-        legend: { data: ['推送数', '触达数', '转化数'] },
-        xAxis: { type: 'category', data: ['1月', '2月', '3月', '4月', '5月', '6月', '7月'] },
-        yAxis: { type: 'value' },
-        series: [
-          { name: '推送数', type: 'line', smooth: true, data: [1800, 2200, 2600, 3100, 3500, 4200, 4800], itemStyle: { color: '#2563eb' }, areaStyle: { color: 'rgba(37,99,235,0.1)' } },
-          { name: '触达数', type: 'line', smooth: true, data: [1650, 2050, 2400, 2880, 3250, 3920, 4500], itemStyle: { color: '#60a5fa' }, areaStyle: { color: 'rgba(96,165,250,0.1)' } },
-          { name: '转化数', type: 'line', smooth: true, data: [320, 450, 520, 680, 780, 920, 1100], itemStyle: { color: '#10b981' }, areaStyle: { color: 'rgba(16,185,129,0.1)' } },
-        ]
-      })
-    }
+const filteredPolicies = computed(() => {
+  return policies.value.filter(p => {
+    if (libQuery.value.name && !p.name.includes(libQuery.value.name)) return false
+    if (libQuery.value.target && p.target !== libQuery.value.target) return false
+    if (selectedCategory.value && p.category !== selectedCategory.value) return false
+    return true
   })
 })
+
+function onTreeClick(node: any) {
+  selectedCategory.value = node.id
+}
+function onLibSearch() {}
+function onLibReset() {
+  libQuery.value = { name: '', target: '' }
+  selectedCategory.value = null
+}
+function goParse() { activeTab.value = 'parse' }
+
+/* 配置弹窗 */
+const configVisible = ref(false)
+const configForm = ref({ id: 0, name: '', category: [] as any, condition: '', target: '', file: '' })
+const configRules = ref<{ type: string; desc: string }[]>([])
+const configFileName = ref('')
+const configFileInput = ref<any>(null)
+
+function openConfig(p: any) {
+  configForm.value = { id: p.id, name: p.name, category: [], condition: '补贴对象：符合条件人员；补贴条件：实现灵活就业并缴纳社会保险费', target: p.target, file: '' }
+  configRules.value = [
+    { type: '必须满足', desc: '个人状态生存状态为"生存"' },
+    { type: '必须满足', desc: '人员为2024年届和2025年届的高校毕业生' },
+  ]
+  configFileName.value = ''
+  configVisible.value = true
+}
+function onConfigFile(e: any) {
+  const f = e.target.files[0]
+  if (f) configFileName.value = f.name
+}
+function saveConfig() {
+  const p = policies.value.find(x => x.id === configForm.value.id)
+  if (p) {
+    p.name = configForm.value.name
+    p.target = configForm.value.target
+  }
+  configVisible.value = false
+  ElMessage.success('规则配置已保存')
+}
+
+/* 删除政策 */
+function delPolicy(p: any) {
+  ElMessageBox.confirm('确认删除该政策？此操作不可恢复', '删除确认', { type: 'warning' })
+    .then(() => {
+      policies.value = policies.value.filter(x => x.id !== p.id)
+      ElMessage.success('删除成功')
+    }).catch(() => {})
+}
+
+/* 发放记录 */
+const grantVisible = ref(false)
+const grantDetail = ref<any>(null)
+const grantList = ref([
+  { name: '李*明', amount: '¥3,200', time: '2026-07-01 10:20:00', status: '已发放' },
+  { name: '王*华', amount: '¥1,800', time: '2026-07-03 09:11:22', status: '已发放' },
+  { name: '张*强', amount: '¥2,400', time: '2026-07-05 14:30:45', status: '已发放' },
+])
+function viewGrant(p: any) {
+  grantDetail.value = p
+  grantVisible.value = true
+}
+
+/* ========== Tab2 政策解析 ========== */
+const parseSteps = [
+  { key: 'upload', label: '政策上传' },
+  { key: 'parse', label: '条件解析' },
+  { key: 'rule', label: '生成检索规则' },
+]
+const parseStep = ref(0)
+const parseForm = ref({ name: '', target: '', category: [] as any, condition: '', file: '' })
+const parseFileName = ref('')
+const parseFileInput = ref<any>(null)
+const parseConditions = ref<{ text: string }[]>([
+  { text: '个人状态生存状态为"生存"' },
+  { text: '人员为2024年届和2025年届的高校毕业生' },
+  { text: '实现灵活就业并缴纳社会保险费' },
+])
+const genRules = ref<{ type: string; desc: string }[]>([
+  { type: '必须满足', desc: '个人状态生存状态为"生存"' },
+  { type: '必须满足', desc: '参训人员须为"五类人员"或符合条件的企业职工' },
+])
+
+function onParseFile(e: any) {
+  const f = e.target.files[0]
+  if (f) parseFileName.value = f.name
+}
+function goParseStep2() {
+  if (!parseForm.value.name || !parseForm.value.target || !parseForm.value.condition) {
+    ElMessage.warning('请填写所有必填项')
+    return
+  }
+  parseStep.value = 1
+}
+function finishParse() {
+  parseStep.value = 0
+  parseForm.value = { name: '', target: '', category: [], condition: '', file: '' }
+  parseFileName.value = ''
+  parseConditions.value = []
+  activeTab.value = 'policyLib'
+  ElMessage.success('政策创建成功')
+}
+
+/* ========== Tab3 政策找人 ========== */
+const personQuery = ref({ target: '', name: '', progress: '' })
+const batches = ref([
+  { id: 1, batchNo: 'PM202609092134186413', name: '职业培训补贴（项目制培训）', target: '个人', matchCount: 26755, progress: '已匹配', matchTime: '2026-09-10 00:09:52' },
+  { id: 2, batchNo: 'PM202608310913312652', name: '企业社保补贴', target: '企业', matchCount: 245578, progress: '已匹配', matchTime: '2026-08-31 10:50:49' },
+  { id: 3, batchNo: 'PM202608291809231245', name: '职工培训补贴', target: '个人', matchCount: 2997, progress: '已匹配', matchTime: '2026-08-29 19:01:57' },
+  { id: 4, batchNo: 'PM202608291807250200', name: '一次性求职补贴', target: '个人', matchCount: 58, progress: '已匹配', matchTime: '2026-08-29 18:12:09' },
+  { id: 5, batchNo: 'PM202608281910382871', name: '公益性岗位补贴及社会保险补贴', target: '企业', matchCount: 22821, progress: '已匹配', matchTime: '2026-08-28 19:21:08' },
+  { id: 6, batchNo: 'PM202608281907577426', name: '个人社保补贴', target: '个人', matchCount: 7004, progress: '已匹配', matchTime: '2026-08-28 19:43:54' },
+  { id: 7, batchNo: 'PM202608281904583315', name: '南疆人才引进补贴', target: '个人', matchCount: 31, progress: '已匹配', matchTime: '2026-08-28 19:06:48' },
+  { id: 8, batchNo: 'PM202608271424058388', name: '小微企业创业担保贷款', target: '企业', matchCount: 6445, progress: '已匹配', matchTime: '2026-08-27 17:06:08' },
+  { id: 9, batchNo: 'PM202608270952090867', name: '一次性新增就业补贴（企业补贴）', target: '企业', matchCount: 42647, progress: '已匹配', matchTime: '2026-08-27 11:17:39' },
+  { id: 10, batchNo: 'PM202608261841432726', name: '南疆人才引进补贴', target: '个人', matchCount: 31, progress: '已匹配', matchTime: '2026-08-26 18:43:06' },
+  { id: 11, batchNo: 'PM202608261824016324', name: '个人创业担保贷款', target: '个人', matchCount: 163984, progress: '已匹配', matchTime: '2026-08-26 19:03:59' },
+])
+const selBatches = ref<any[]>([])
+
+const filteredBatches = computed(() => {
+  return batches.value.filter(b => {
+    if (personQuery.value.target && b.target !== personQuery.value.target) return false
+    if (personQuery.value.name && !b.name.includes(personQuery.value.name)) return false
+    if (personQuery.value.progress && b.progress !== personQuery.value.progress) return false
+    return true
+  })
+})
+function onPersonSearch() {}
+function onPersonReset() { personQuery.value = { target: '', name: '', progress: '' } }
+
+/* 新增批次 */
+const newBatchVisible = ref(false)
+const newBatchForm = ref({ name: '', target: '个人' })
+function openNewBatch() { newBatchVisible.value = true }
+function createBatch() {
+  if (!newBatchForm.value.name) { ElMessage.warning('请输入政策名称'); return }
+  const now = Date.now()
+  batches.value.unshift({
+    id: now,
+    batchNo: 'PM' + now,
+    name: newBatchForm.value.name,
+    target: newBatchForm.value.target,
+    matchCount: Math.floor(Math.random() * 5000) + 100,
+    progress: '匹配中',
+    matchTime: new Date().toLocaleString('zh-CN', { hour12: false }).replace(/\//g, '-').replace(' ', ' ') + '',
+  })
+  newBatchVisible.value = false
+  ElMessage.success('批次已创建，开始匹配')
+}
+
+/* 匹配结果弹窗 */
+const matchResultVisible = ref(false)
+const matchResultTitle = ref('')
+const resultFilter = ref('')
+const matchPersons = ref([
+  { id: '875b9735-4e34-11f1-ac12-286ed489875f', name: '李*明', idCard: '3412*******031', edu: '初级中学', gradTime: '', employ: '居家从事种养殖农牧民', phone: '15099278832', type: '居家从事种养殖农牧民', result: '完全满足', resultHint: '全部满足。七项规则全部满足，符合申请资格。' },
+  { id: '9a4b2c11-5f20-4a61-bc35-286ed489875f', name: '王*华', idCard: '5123*******412', edu: '大专', gradTime: '2024-06-30', employ: '单位就业', phone: '13999823321', type: '城镇登记失业人员', result: '完全满足', resultHint: '全部满足。七项规则全部满足，符合申请资格。' },
+  { id: 'b1c3d4e5-6f70-4a81-bc92-286ed489875f', name: '张*强', idCard: '4121*******078', edu: '高中', gradTime: '', employ: '灵活就业', phone: '13711809332', type: '就业困难人员', result: '部分满足', resultHint: '部分满足，其中【必须满足】个人状态不符合。（待进一步确认）' },
+  { id: 'e2f3g4h5-i6j7-4k81-l9m0-286ed489875f', name: '刘*燕', idCard: '3201*******556', edu: '本科', gradTime: '2025-06-30', employ: '单位就业', phone: '18855237011', type: '毕业年度高校毕业生', result: '完全满足', resultHint: '全部满足。七项规则全部满足，符合申请资格。' },
+])
+
+function showReason(row: any) {
+  ElMessageBox.alert(
+    row.result === '完全满足'
+      ? '全部满足。七项规则全部满足，符合申请资格。\n\n判断明细如下：\n一、符合规则：【必须满足】个人状态生存状态为"生存"。\n二、符合规则：【必须满足】企业状态必须在营。\n三、符合规则：【必须满足】参训人员须为"五类人员"。\n四、符合规则：【必须满足】培训须采用"四位一体"模式开展。\n五、符合规则：【必须满足】承办机构须为定点培训机构。\n六、符合规则：【可达条件】已领取过急需紧缺鼓励性政策补贴。\n七、符合规则：【必须满足】参训人员须取得规定证书。'
+      : row.resultHint,
+    '判断明细', { confirmButtonText: '关闭' }
+  )
+}
+function openMatchResult(row: any) {
+  matchResultTitle.value = row.name
+  matchResultVisible.value = true
+}
+
+/* 政策推送弹窗 */
+const pushVisible = ref(false)
+const pushFilter = ref({ result: '', edu: '', employ: '' })
+const pushPersons = ref([
+  { id: 'a1b2c3d4-5e6f-4a78-9b0c-286ed489875f', name: '俞*', idCard: '3301*******223', edu: '大专(高级工)', gradTime: '', employ: '单位就业', phone: '18399565520', type: '民营企业从业', result: '完全满足' },
+  { id: 'b2c3d4e5-f6a7-4b89-9c0d-286ed489875f', name: '艾*尔', idCard: '6529*******118', edu: '大专', gradTime: '2017-06-30', employ: '灵活就业', phone: '13912345678', type: '灵活就业人员', result: '完全满足' },
+  { id: 'c3d4e5f6-a7b8-4c90-8d0e-286ed489875f', name: '阿*班', idCard: '6531*******336', edu: '小学', gradTime: '', employ: '灵活就业', phone: '13150281361', type: '灵活就业人员', result: '部分满足' },
+  { id: 'd4e5f6a7-b8c9-4d01-9e1f-286ed489875f', name: '阿*提', idCard: '6523*******004', edu: '初级中学', gradTime: '', employ: '灵活就业', phone: '13999232406', type: '灵活就业人员', result: '完全满足' },
+])
+
+const pushedFiltered = computed(() => {
+  return pushPersons.value.filter(p => {
+    if (pushFilter.value.result && p.result !== pushFilter.value.result) return false
+    if (pushFilter.value.edu && !p.edu.includes(pushFilter.value.edu)) return false
+    if (pushFilter.value.employ && p.employ !== pushFilter.value.employ) return false
+    return true
+  })
+})
+function openPush(row: any) {
+  pushFilter.value = { result: '', edu: '', employ: '' }
+  pushVisible.value = true
+}
+function aiWrite() {
+  ElMessage.success('AI 已生成推送文案')
+}
+function doPush() {
+  pushVisible.value = false
+  ElMessage.success('政策推送成功，已写入推送记录')
+}
+
+/* 导出 */
+function exportBatch(row: any) {
+  const csv = '\ufeff' + '批次号,政策名称,匹配结果\n' + `${row.batchNo},${row.name},${row.matchCount}\n`
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = `${row.batchNo}-匹配结果.csv`
+  a.click()
+  URL.revokeObjectURL(a.href)
+  ElMessage.success('导出成功')
+}
+
+/* 批次详情 */
+const batchDetailVisible = ref(false)
+const batchDetail = ref<any>(null)
+const batchDetailRules = ref<{ type: string; desc: string }[]>([])
+function openBatchDetail(row: any) {
+  batchDetail.value = row
+  batchDetailRules.value = [
+    { type: '必须满足', desc: '个人状态生存状态为"生存"' },
+    { type: '必须满足', desc: '参训人员须为"五类人员"或符合条件的企业职工' },
+    { type: '必须满足', desc: '培训须采用"四位一体"培训模式开展' },
+  ]
+  batchDetailVisible.value = true
+}
+
+/* ========== Tab4 推送记录 ========== */
+const recordQuery = ref({ target: '', name: '' })
+const records = ref([
+  { id: 1, name: '单位吸纳就业困难人员社会保险补贴', target: '企业', count: 142, status: '成功', time: '2026-07-31 16:55:30', sms: '【人社局】您符合单位吸纳就业困难人员社保补贴申领条件，请于本月内携带相关材料到经办窗口办理，详询12333。', list: [
+    { name: '某商贸有限公司', phone: '0991-****', channel: '短信', status: '成功' },
+    { name: '某人力资源公司', phone: '0991-****', channel: '短信', status: '成功' },
+  ]},
+  { id: 2, name: '高校毕业生灵活就业社保补贴', target: '个人', count: 3829, status: '成功', time: '2026-07-31 14:24:58', sms: '【人社局】您已具备高校毕业生灵活就业社保补贴申领资格，详情请登录人社服务大厅查询办理。', list: [
+    { name: '李*明', phone: '15099278832', channel: '短信', status: '成功' },
+    { name: '王*华', phone: '13999823321', channel: '短信', status: '失败' },
+  ]},
+])
+const filteredRecords = computed(() => {
+  return records.value.filter(r => {
+    if (recordQuery.value.target && r.target !== recordQuery.value.target) return false
+    if (recordQuery.value.name && !r.name.includes(recordQuery.value.name)) return false
+    return true
+  })
+})
+function onRecordSearch() {}
+function onRecordReset() { recordQuery.value = { target: '', name: '' } }
+const recordDetailVisible = ref(false)
+const recordDetail = ref<any>(null)
+function viewRecordDetail(row: any) {
+  recordDetail.value = row
+  recordDetailVisible.value = true
+}
+
+/* ========== Tab5 标注 ========== */
+const markQuery = ref('')
+const marks = ref([
+  { id: 1, name: '享受补贴对象', desc: '【召回】享受补贴对象类型：1-本人（就业困难人员本人）2-家庭成员 3-用人单位（吸纳就业的企业/单位）4-其他', createdAt: '2026-07-09 17:15:00' },
+  { id: 2, name: '人力资源类型', desc: '【召回】判断人员生存状态时，非死亡人员=生存', createdAt: '2026-07-09 17:15:00' },
+  { id: 3, name: '企业类型', desc: '【召回】企业类型的判断，包含小微企业等等，从从业人员=期末平均人数；营业收入=主营业务收入；资产总额=资产总计', createdAt: '2026-07-04 17:20:23' },
+  { id: 4, name: '参保身份', desc: '【召回】参保身份：1-企业职工基本养老保险（在职）2-机关事业单位养老保险 3-城乡居民养老保险 4-灵活就业人员养老保险 5-未参保 6-已退休（领取养老金）7-其他', createdAt: '2026-07-09 17:15:00' },
+  { id: 5, name: '城镇企业职工养老保险', desc: '【召回】参保身份：1-城镇企业职工养老保险（单位在职职工）2-机关事业单位养老保险 3-城乡居民养老保险 4-灵活就业人员养老保险 5-未参加基本养老保险 6-已退休（按月领取养老金）7-其他', createdAt: '2026-07-09 17:15:00' },
+  { id: 6, name: '就业方式', desc: '【召回】employment_mode INT：1-单位就业（签订劳动合同）2-灵活就业（无固定单位）3-自主创业（含个体工商户）4-新就业形态（平台就业）', createdAt: '2026-07-04 17:20:23' },
+  { id: 7, name: '参保状态', desc: '【召回】参保状态：1-正常参保 2-暂停 3-终止（未参保）', createdAt: '2026-07-09 17:15:00' },
+  { id: 8, name: '失业保险金申领状态', desc: '【召回】失业保险金申领状态：1-申领中 2-已发放 3-已停发', createdAt: '2026-07-09 17:15:00' },
+  { id: 9, name: '毕业时间', desc: '【召回】毕业时间：YYYY-MM-DD 格式，用于判断毕业年度与离校时间', createdAt: '2026-07-09 17:15:00' },
+])
+const filteredMarks = computed(() => {
+  if (!markQuery.value) return marks.value
+  return marks.value.filter(m => m.name.includes(markQuery.value) || m.desc.includes(markQuery.value))
+})
+function onMarkSearch() {}
+function onMarkReset() { markQuery.value = '' }
+const markEditVisible = ref(false)
+const markEditForm = ref({ id: 0 as number, name: '', desc: '' })
+function openMarkEdit(m: any) {
+  markEditForm.value = { id: m.id, name: m.name, desc: m.desc }
+  markEditVisible.value = true
+}
+function saveMark() {
+  if (!markEditForm.value.name || !markEditForm.value.desc) { ElMessage.warning('请填写完整'); return }
+  if (markEditForm.value.id) {
+    const m = marks.value.find(x => x.id === markEditForm.value.id)
+    if (m) { m.name = markEditForm.value.name; m.desc = markEditForm.value.desc }
+    ElMessage.success('标注已更新')
+  } else {
+    marks.value.unshift({ id: Date.now(), name: markEditForm.value.name, desc: markEditForm.value.desc, createdAt: '2026-09-14 14:30:00' })
+    ElMessage.success('标注已新增')
+  }
+  markEditVisible.value = false
+}
+function delMark(m: any) {
+  ElMessageBox.confirm('确认删除该标注？', '删除确认', { type: 'warning' })
+    .then(() => { marks.value = marks.value.filter(x => x.id !== m.id); ElMessage.success('删除成功') })
+    .catch(() => {})
+}
+
+/* 保留 Fold 引用避免未使用告警 */
+void Fold
 </script>
 
 <style scoped>
-.policy-service-page {
-  display: flex; height: 100%; background: #f8f9fa; border-radius: 12px; overflow: hidden;
+.ps-root {
+  background: #f5f6fa;
+  min-height: calc(100vh - 120px);
+  border-radius: 12px;
 }
-.ps-sidebar {
-  width: 280px; min-width: 280px; background: #fff; border-right: 1px solid #e5e7eb;
-  display: flex; flex-direction: column; overflow-y: auto;
+.ps-layout {
+  display: flex;
+  height: 100%;
+  min-height: calc(100vh - 120px);
 }
-.ps-sidebar-section {
+.ps-main {
+  flex: 1;
+  min-width: 0;
+  padding: 16px 20px;
+  overflow: auto;
+}
+.ps-tabs {
+  display: flex;
+  gap: 6px;
+  background: #fff;
+  border-radius: 10px;
+  padding: 6px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 3px rgba(15,23,42,.04);
+}
+.ps-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 7px;
+  cursor: pointer;
+  color: #6b7280;
+  font-size: 14px;
+  transition: all .2s;
+}
+.ps-tab:hover { background: #f5f6fa; }
+.ps-tab.active { background: #3370FF; color: #fff; }
+.ps-pane { min-height: 200px; }
+.ps-pane-body {
+  display: flex;
+  gap: 16px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+}
+.ps-pane-body.column { flex-direction: column; }
+
+/* 树 */
+.ps-tree-panel {
+  width: 260px;
+  flex-shrink: 0;
+  border-right: 1px solid #eef0f4;
+  padding-right: 16px;
+}
+.ps-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 600;
+  font-size: 15px;
+  margin-bottom: 12px;
+}
+.ps-fold-btn { cursor: pointer; color: #6b7280; }
+.ps-tree-search { margin-bottom: 10px; }
+.ps-tree { font-size: 13px; }
+.ps-tree-node { font-size: 13px; }
+
+.ps-policy-area { flex: 1; min-width: 0; }
+.ps-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.ps-filter-bar.right { justify-content: flex-end; }
+.ps-f-name { width: 200px; }
+.ps-f-target { width: 130px; }
+
+/* 政策卡片 */
+.ps-policy-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+.ps-policy-card {
+  border: 1px solid #eef0f4;
+  border-radius: 10px;
   padding: 16px;
+  transition: box-shadow .2s;
 }
-.ps-sidebar-section + .ps-sidebar-section {
-  border-top: 1px solid #e5e7eb;
+.ps-policy-card:hover { box-shadow: 0 4px 12px rgba(15,23,42,.08); }
+.ps-policy-title { font-weight: 600; font-size: 15px; margin-bottom: 10px; }
+.ps-policy-meta { display: flex; gap: 16px; margin-bottom: 8px; font-size: 13px; color: #6b7280; }
+.ps-meta-item b { color: #1f2937; }
+.ps-policy-time { font-size: 12px; color: #99a1b3; margin-bottom: 12px; }
+.ps-policy-actions { display: flex; justify-content: flex-end; gap: 12px; }
+.ps-act { font-size: 13px; cursor: pointer; }
+.ps-act.green { color: #10b981; }
+.ps-act.blue { color: #3370FF; }
+.ps-act.red { color: #ef4444; }
+
+/* 底部 */
+.ps-footer-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 16px;
+  color: #6b7280;
+  font-size: 13px;
 }
-.ps-sidebar-title {
-  display: flex; align-items: center; gap: 6px; font-weight: 600; font-size: 14px;
-  color: #1f2937; margin-bottom: 12px;
+
+/* 步骤条 */
+.ps-steps {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
 }
-.ps-sidebar-title .el-icon { color: #2563eb; }
-.ps-task-list, .ps-history-list {
-  max-height: 320px; overflow-y: auto;
+.ps-step { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.ps-step-dot {
+  width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: #e5e7eb; color: #6b7280; font-weight: 600; font-size: 14px;
 }
-.ps-task-item, .ps-history-item {
-  padding: 10px 12px; border-radius: 8px; cursor: pointer; transition: all 0.2s;
-  margin-bottom: 4px; border: 1px solid transparent;
+.ps-step.active .ps-step-dot { background: #3370FF; color: #fff; }
+.ps-step.done .ps-step-dot { background: #3370FF; color: #fff; }
+.ps-step.active .ps-step-label { color: #3370FF; font-weight: 600; }
+.ps-step-label { font-size: 14px; color: #6b7280; }
+.ps-step:not(:last-child)::after {
+  content: '———';
+  color: #d1d5db;
+  margin-left: 8px;
 }
-.ps-task-item:hover, .ps-history-item:hover { background: #e8f0fe; }
-.ps-task-item.active { background: #e8f0fe; border-color: #2563eb; }
-.ps-task-name { font-size: 13px; font-weight: 500; color: #1f2937; margin-bottom: 4px; }
-.ps-task-meta, .ps-history-meta { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #9ca3af; }
-.ps-history-item { display: flex; flex-direction: column; gap: 4px; }
-.ps-history-name { font-size: 13px; font-weight: 500; color: #1f2937; }
-.ps-empty { text-align: center; color: #9ca3af; font-size: 13px; padding: 20px 0; }
-.ps-main { flex: 1; overflow-y: auto; padding: 0; }
-.ps-tabs { height: 100%; }
-.ps-tabs :deep(.el-tabs__header) { margin: 0; padding: 0 20px; background: #fff; border-bottom: 1px solid #e5e7eb; }
-.ps-tabs :deep(.el-tabs__content) { padding: 20px; }
-.ps-tab-content { min-height: 400px; }
-.ps-config-section {
-  background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 16px; border: 1px solid #e5e7eb;
+.ps-step-panel { background: #fff; border-radius: 12px; padding: 24px; }
+.ps-step-tip { color: #6b7280; font-size: 14px; margin-bottom: 16px; }
+.ps-form { max-width: 640px; }
+.ps-step-actions { display: flex; justify-content: center; gap: 12px; margin-top: 20px; }
+.ps-file-name { margin-left: 10px; color: #10b981; font-size: 13px; }
+
+/* 解析与规则 */
+.ps-parse-list, .ps-rule-list { display: flex; flex-direction: column; gap: 10px; max-width: 720px; }
+.ps-parse-item { display: flex; align-items: center; gap: 10px; }
+.ps-rule-card {
+  display: flex; align-items: center; gap: 10px;
+  border: 1px solid #eef0f4; border-radius: 8px; padding: 10px 12px;
+  position: relative;
 }
-.ps-section-title {
-  font-size: 15px; font-weight: 600; color: #1f2937; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
+.ps-rule-type { width: 130px; }
+.ps-rule-desc { flex: 1; }
+.ps-rule-tag { color: #10b981; font-size: 12px; background: #e6f7ef; padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
+.ps-del { color: #ef4444; cursor: pointer; }
+.ps-rule-head {
+  display: flex; align-items: center; justify-content: space-between;
+  font-weight: 600; font-size: 15px; margin: 16px 0 12px;
 }
-.ps-result-count { font-size: 12px; font-weight: 400; color: #9ca3af; }
-.ps-result-section {
-  background: #fff; border-radius: 12px; padding: 20px; border: 1px solid #e5e7eb;
+
+/* 表格 */
+.ps-table { margin-bottom: 4px; }
+.ps-reason { color: #3370FF; cursor: pointer; }
+
+/* 推送 */
+.ps-push-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; }
+
+/* 抽屉 */
+.ps-detail-row { display: flex; margin-bottom: 14px; font-size: 14px; }
+.ps-detail-row label { width: 90px; color: #6b7280; flex-shrink: 0; }
+.ps-detail-row span { color: #1f2937; }
+.ps-detail-title { font-weight: 600; margin: 16px 0 12px; font-size: 15px; }
+.ps-detail-rule { font-size: 13px; color: #374151; margin-bottom: 8px; line-height: 1.6; }
+.ps-sms { background: #f5f6fa; border-radius: 8px; padding: 10px; color: #374151; font-size: 13px; line-height: 1.7; flex: 1; }
+
+/* 标注卡片 */
+.ps-mark-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
 }
-.ps-match-actions {
-  margin-top: 16px; display: flex; gap: 12px; justify-content: flex-end;
+.ps-mark-card {
+  border: 1px solid #eef0f4;
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
-.ps-empty-state {
-  text-align: center; padding: 80px 20px; color: #9ca3af;
-}
-.ps-empty-icon { font-size: 48px; color: #d1d5db; margin-bottom: 16px; }
-.ps-empty-desc { font-size: 13px; color: #d1d5db; margin-top: 8px; }
-.ps-stats-row { margin-bottom: 0; }
-.ps-stat-card {
-  background: #fff; border-radius: 12px; padding: 20px; border: 1px solid #e5e7eb; text-align: center;
-}
-.ps-stat-label { font-size: 13px; color: #6b7280; margin-bottom: 8px; }
-.ps-stat-value { font-size: 28px; font-weight: 700; color: #1f2937; }
-.ps-stat-trend { font-size: 12px; margin-top: 4px; }
-.ps-stat-trend.up { color: #10b981; }
-.ps-stat-trend.down { color: #ef4444; }
-.ps-chart-card {
-  background: #fff; border-radius: 12px; padding: 20px; border: 1px solid #e5e7eb;
-}
-.ps-match-policy-item {
-  display: flex; align-items: center; gap: 6px; padding: 6px 0; color: #2563eb; font-size: 13px;
-}
-.ps-basis-list { display: flex; flex-direction: column; gap: 6px; }
-.ps-basis-item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #4b5563; }
-.ps-basis-dot { width: 6px; height: 6px; border-radius: 50%; background: #2563eb; flex-shrink: 0; }
+.ps-mark-name { font-weight: 600; font-size: 15px; }
+.ps-mark-desc { font-size: 13px; color: #4b5563; line-height: 1.7; min-height: 60px; }
+.ps-mark-time { font-size: 12px; color: #99a1b3; }
 </style>
