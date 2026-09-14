@@ -92,3 +92,5 @@ logs/
 
 # CodeGraph index
 .codegraph
+# local git credentials (secret)
+.git-credentials
