@@ -117,7 +117,16 @@
 
         <!-- 消息列表 -->
         <div v-for="(msg, idx) in messages" :key="idx" class="message-item" :class="msg.role">
-          <div v-if="msg.role === 'user'" class="user-bubble">{{ msg.content }}</div>
+          <div v-if="msg.role === 'user'" class="user-bubble">
+              <div v-if="msg.content">{{ msg.content }}</div>
+              <div v-if="msg.files && msg.files.length" class="bubble-files">
+                <div v-for="(f, fi) in msg.files" :key="fi" class="bubble-file">
+                  <img v-if="f.url" :src="f.url" class="bf-thumb" alt="" @click.stop />
+                  <el-icon v-else><Document /></el-icon>
+                  <span class="bf-name">{{ f.name }}</span>
+                </div>
+              </div>
+            </div>
           <div v-else class="ai-bubble">
             <div class="ai-time">{{ msg.time }}</div>
             <div v-if="msg.typing" class="typing-dots">
@@ -162,8 +171,20 @@
           @keyup.enter.ctrl="onSendChat"
         />
         <div class="input-actions">
-          <el-button text :icon="Paperclip" size="small">附件</el-button>
-          <el-button type="primary" :icon="Promotion" size="small" @click="onSendChat" :disabled="!chatInput.trim()">发送</el-button>
+          <el-button text :icon="Paperclip" size="small" @click="pickChatFile">附件</el-button>
+          <el-button type="primary" :icon="Promotion" size="small" @click="onSendChat" :disabled="!chatInput.trim() && chatFiles.length === 0">发送</el-button>
+        </div>
+        <input ref="chatFileInput" type="file" multiple style="display:none" @change="onChatFileChange" accept=".doc,.docx,.pdf,.xls,.xlsx,.csv,.txt,.png,.jpg,.jpeg" />
+        <div v-if="chatFiles.length > 0" class="chat-files">
+          <div v-for="f in chatFiles" :key="f.id" class="chat-file-item">
+            <img v-if="f.url" :src="f.url" class="cf-thumb" alt="" />
+            <el-icon v-else><Document /></el-icon>
+            <div class="cf-info">
+              <div class="cf-name">{{ f.name }}</div>
+              <div class="cf-size">{{ f.size }}</div>
+            </div>
+            <el-icon class="cf-del" @click="removeChatFile(f.id)"><Close /></el-icon>
+          </div>
         </div>
         <div class="input-hint">AI 生成内容仅供参考，请结合实际情况审核使用</div>
       </div>
@@ -196,7 +217,7 @@
 import { ElMessage } from 'element-plus'
 import {
   Document, Clock, MagicStick, Calendar, Folder, Star, Setting,
-  Upload, Download, ArrowDown, DataAnalysis, Paperclip, Promotion,
+  Upload, Download, ArrowDown, DataAnalysis, Paperclip, Promotion, Close,
   School, User, Briefcase, Collection
 } from '@element-plus/icons-vue'
 import dayjs from 'dayjs'
@@ -221,12 +242,21 @@ interface ReportData {
   sections: { title: string; content: string }[]
 }
 
+interface MsgFile {
+  id: number
+  name: string
+  size: string
+  type: string
+  url?: string
+}
+
 interface Msg {
   role: 'user' | 'ai'
   content: string
   time?: string
   typing?: boolean
   report?: ReportData
+  files?: MsgFile[]
 }
 
 interface HistoryItem {
@@ -291,6 +321,38 @@ function onFileUpload(file: any) {
 
 const outputFormats = ref<string[]>(['word'])
 const additionalContent = ref<string[]>(['chart', 'suggestion'])
+
+// ====== 附件 ======
+const chatFiles = ref<MsgFile[]>([])
+const chatFileInput = ref<HTMLInputElement>()
+function pickChatFile() {
+  chatFileInput.value?.click()
+}
+function onChatFileChange(e: Event) {
+  const input = e.target as HTMLInputElement
+  if (!input.files) return
+  Array.from(input.files).forEach((file) => {
+    const isImg = file.type.startsWith('image/')
+    chatFiles.value.push({
+      id: Date.now() + Math.random(),
+      name: file.name,
+      size: formatFileSize(file.size),
+      type: file.type || 'file',
+      url: isImg ? URL.createObjectURL(file) : undefined,
+    })
+  })
+  input.value = ''
+}
+function removeChatFile(id: number) {
+  const f = chatFiles.value.find((x) => x.id === id)
+  if (f && f.url) URL.revokeObjectURL(f.url)
+  chatFiles.value = chatFiles.value.filter((x) => x.id !== id)
+}
+function formatFileSize(bytes: number) {
+  if (bytes < 1024) return bytes + ' B'
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
+}
 
 // ====== 生成 ======
 const generating = ref(false)
@@ -364,15 +426,20 @@ function onGenerate() {
   }, 2000)
 }
 
-// ====== 对话 ======
+// ====== 对话 / 附件 ======
 const chatInput = ref('')
 
 function onSendChat() {
   const text = chatInput.value.trim()
-  if (!text) return
+  if (!text && chatFiles.value.length === 0) return
   chatInput.value = ''
 
-  messages.value.push({ role: 'user', content: text })
+  const userMsg: Msg = { role: 'user', content: text }
+  if (chatFiles.value.length > 0) {
+    userMsg.files = chatFiles.value.map((f) => ({ ...f }))
+  }
+  messages.value.push(userMsg)
+  chatFiles.value = []
 
   const aiTyping: Msg = { role: 'ai', content: '', time: dayjs().format('HH:mm'), typing: true }
   messages.value.push(aiTyping)
@@ -799,6 +866,104 @@ function onExport(cmd: string, report: ReportData) {
   color: #9ca3af;
   text-align: center;
   margin-top: 6px;
+}
+
+/* 输入区已选附件列表 */
+.chat-files {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+  max-height: 96px;
+  overflow: auto;
+}
+.chat-file-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f3f6fc;
+  border: 1px solid #e3eaf8;
+  border-radius: 8px;
+  padding: 6px 30px 6px 8px;
+  max-width: 220px;
+}
+.cf-thumb {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+.cf-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  background: #e8f0fe;
+  color: #2563eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.cf-name {
+  font-size: 12px;
+  color: #1f2937;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cf-del {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  color: #9ca3af;
+  cursor: pointer;
+  font-size: 14px;
+}
+.cf-del:hover { color: #ef4444; }
+
+/* 消息气泡内附件 */
+.bubble-files {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+.bubble-file {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f3f6fc;
+  border: 1px solid #e3eaf8;
+  border-radius: 8px;
+  padding: 6px 10px;
+  max-width: 220px;
+}
+.bf-thumb {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+.bf-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background: #e8f0fe;
+  color: #2563eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.bf-name {
+  font-size: 12px;
+  color: #1f2937;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* 历史抽屉 */
