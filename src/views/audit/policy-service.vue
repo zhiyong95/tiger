@@ -168,42 +168,92 @@
 
           <!-- Step2 条件解析 -->
           <div v-else-if="parseStep === 1" class="ps-step-panel">
-            <p class="ps-step-tip">AI 已自动解析政策条件，可编辑、删除或手动补充条件条目。</p>
+            <div class="ps-ai-assist">
+              <div class="ps-ai-head">
+                <span class="ps-ai-avatar">AI</span>
+                <span class="ps-ai-name">政策 AI 助手</span>
+              </div>
+              <div class="ps-ai-box" :class="{ loading: parseLoading }">
+                <span v-if="parseLoading" class="ps-spinner" />
+                <span>{{ parseLoading ? '正在读取条件…' : '已完成条件解析' }}</span>
+              </div>
+            </div>
+            <h4 class="ps-cond-title">条件解析结果</h4>
             <div class="ps-parse-list">
               <div v-for="(c, i) in parseConditions" :key="i" class="ps-parse-item">
-                <el-input v-model="c.text" size="small" />
+                <span class="ps-rule-badge" :class="c.rule === '必须满足' ? 'need' : 'reach'">{{ c.rule }}</span>
+                <span class="ps-cond-text">{{ c.text }}</span>
                 <el-icon class="ps-del" @click="parseConditions.splice(i, 1)"><Delete /></el-icon>
               </div>
-              <el-button size="small" type="primary" plain @click="parseConditions.push({ text: '' })">
+              <el-button size="small" type="primary" plain @click="parseConditions.push({ rule: '必须满足', text: '' })">
                 ＋ 手动补充
               </el-button>
             </div>
             <div class="ps-step-actions">
               <el-button @click="parseStep = 0">上一步</el-button>
-              <el-button type="primary" @click="parseStep = 2">下一步</el-button>
+              <el-button type="primary" @click="goParseStep3">下一步</el-button>
             </div>
           </div>
 
           <!-- Step3 生成规则 -->
           <div v-else class="ps-step-panel">
-            <p class="ps-step-tip">AI 已生成匹配规则，可继续编辑与补充。</p>
-            <div class="ps-rule-list">
-              <div v-for="(r, i) in genRules" :key="i" class="ps-rule-card">
-                <el-select v-model="r.type" size="small" class="ps-rule-type">
-                  <el-option label="必须满足" value="必须满足" />
-                  <el-option label="可达条件" value="可达条件" />
-                </el-select>
-                <el-input v-model="r.desc" size="small" class="ps-rule-desc" />
-                <span class="ps-rule-tag">已生效</span>
-                <el-icon class="ps-del" @click="genRules.splice(i, 1)"><Delete /></el-icon>
+            <div class="ps-ai-assist">
+              <div class="ps-ai-head">
+                <span class="ps-ai-avatar">AI</span>
+                <span class="ps-ai-name">政策 AI 助手</span>
               </div>
-              <el-button size="small" type="primary" plain @click="genRules.push({ type: '必须满足', desc: '' })">
+              <div class="ps-ai-box" :class="{ loading: genLoading }">
+                <span v-if="genLoading" class="ps-spinner" />
+                <span>{{ genLoading ? '正在读取条件…' : '已完成检索规则生成' }}</span>
+              </div>
+            </div>
+
+            <div class="ps-rule-list">
+              <div v-for="(r, i) in genFlow" :key="i" class="ps-flow-item">
+                <span class="ps-rule-badge" :class="r.rule === '必须满足' ? 'need' : 'reach'">{{ r.rule }}</span>
+                <span class="ps-cond-text">{{ r.desc }}</span>
+              </div>
+              <div v-for="(s, k) in genSqlShown" :key="'k' + k" class="ps-sql-block">
+                <pre class="ps-sql"><code v-html="highlightSql(s.text)"></code></pre>
+              </div>
+              <el-button
+                v-if="genDone"
+                size="small"
+                type="primary"
+                plain
+                @click="genRulesPush"
+              >
                 ＋ 添加规则
               </el-button>
+              <el-button
+                v-if="genDone"
+                size="small"
+                type="primary"
+                plain
+                class="ps-rule-edit"
+                @click="editGenerated"
+              >
+                编辑规则
+              </el-button>
             </div>
+
             <div class="ps-step-actions">
               <el-button @click="parseStep = 1">上一步</el-button>
-              <el-button type="primary" @click="finishParse">完成</el-button>
+              <el-button
+                v-if="!genDone"
+                class="ps-gen-btn"
+                @click="startGen"
+              >
+                <span v-if="!genLoading" class="ps-gen-icon" /> 生成中
+              </el-button>
+              <el-button
+                v-else
+                type="primary"
+                class="ps-gen-done"
+                @click="finishParse"
+              >
+                <el-icon class="ps-gen-ok"><CircleCheck /></el-icon> 完成
+              </el-button>
             </div>
           </div>
         </div>
@@ -222,9 +272,11 @@
                 <el-option label="匹配中" value="匹配中" />
                 <el-option label="已匹配" value="已匹配" />
               </el-select>
-              <el-button type="primary" @click="openNewBatch">新增</el-button>
               <el-button type="primary" @click="onPersonSearch">搜索</el-button>
               <el-button @click="onPersonReset">重置</el-button>
+            </div>
+            <div class="ps-toolbar">
+              <el-button type="primary" @click="openNewBatch">新增</el-button>
             </div>
 
             <el-table :data="filteredBatches" stripe border class="ps-table" @selection-change="selBatches = $event">
@@ -684,15 +736,47 @@ const parseStep = ref(0)
 const parseForm = ref({ name: '', target: '', category: [] as any, condition: '', file: '' })
 const parseFileName = ref('')
 const parseFileInput = ref<any>(null)
-const parseConditions = ref<{ text: string }[]>([
-  { text: '个人状态生存状态为"生存"' },
-  { text: '人员为2024年届和2025年届的高校毕业生' },
-  { text: '实现灵活就业并缴纳社会保险费' },
+const parseLoading = ref(false)
+const parseConditions = ref<{ rule: string; text: string }[]>([
+  { rule: '必须满足', text: '个人状态生存状态为"生存"' },
+  { rule: '必须满足', text: '人员为2024年届和2025年届的高校毕业生' },
+  { rule: '可达成条件', text: '实现灵活就业并缴纳社会保险费' },
 ])
 const genRules = ref<{ type: string; desc: string }[]>([
   { type: '必须满足', desc: '个人状态生存状态为"生存"' },
   { type: '必须满足', desc: '参训人员须为"五类人员"或符合条件的企业职工' },
 ])
+
+/* ---- Step3 流式生成 ---- */
+const genLoading = ref(false)
+const genDone = ref(false)
+const genFlow = ref<{ rule: string; desc: string }[]>([])
+const genSqlShown = ref<{ text: string }[]>([])
+const FULL_SQL_1 =
+  "SELECT insured_identity FROM tenant_650000_data.ads_insured_info_49 WHERE insured_identity = '514158100' "
+const FULL_SQL_2 =
+  `SELECT t1.id_card
+FROM tenant_650000_data.per_account_info_49 t1
+WHERE DATEDIFF(NOW(), CAST(t1.graduate_time AS DATE)) < 730
+  AND t1.id_card = 'query_id'
+UNION ALL
+SELECT t2.id_card
+FROM tenant_650000_data.edi_ads_jy_subsidy_detail_49 t2
+WHERE DATEDIFF(NOW(), t2.graduate_time) < 730
+  AND t2.id_card = 'query_id'`
+
+function highlightSql(sql: string): string {
+  const esc = (v: string) => v.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  let s = esc(sql)
+  const ph = '__PH__'
+  s = s.replace(/'(?:[^']*)'/g, (m) => `${ph}${m}${ph}`) // string literals
+  s = s.replace(/\b(UNION ALL|SELECT|FROM|WHERE|AND|OR|AS|DATE)\b/g, '<span class="k">$1</span>')
+  s = s.replace(/\b(NOW|DATEDIFF|CAST)\b/g, '<span class="f">$1</span>')
+  s = s.replace(/\b(tenant_\w+\.\w+|\w+_info_\w+|\w+_subsidy_\w+|\w+_info_\w+)\b/g, '<span class="tb">$1</span>')
+  s = s.replace(/\b(\d+)\b/g, '<span class="n">$1</span>')
+  s = s.replace(new RegExp(ph + "('(?:[^']*)')" + ph, 'g'), '<span class="s">$1</span>')
+  return s
+}
 
 function onParseFile(e: any) {
   const f = e.target.files[0]
@@ -712,6 +796,49 @@ function finishParse() {
   parseConditions.value = []
   activeTab.value = 'policyLib'
   ElMessage.success('政策创建成功')
+}
+
+const GEN_DATA = [
+  { rule: '必须满足', desc: '名下无营业执照', sql: "SELECT insured_identity FROM tenant_650000_data.ads_insured_info_49 WHERE insured_identity = '5...'" },
+  { rule: '必须满足', desc: '离校时间至签订就业见习协议的时间小于2年（以毕业证书签章日期为准）', sql: "SELECT t1.id_card\nFROM tenant_650000_data.per_account_info_49 t1\nWHERE DATEDIFF(NOW(), CAST(t1.graduate_time AS DATE)) < 730\n  AND t1.id_card = 'query_id'\nUNION ALL\nSELECT t2.id_card\nFROM tenant_650000_data.edi_ads_jy_subsidy_detail_49 t2\nWHERE DATEDIFF(NOW(), t2.graduate_time) < 730\n  AND t2.id_card = 'query_id'" }
+] as { rule: string; desc: string; sql: string }[]
+let genIdx = 0
+const genTimers: number[] = []
+function genRulesPush() {
+  if (genIdx >= GEN_DATA.length) return
+  const it = GEN_DATA[genIdx++]
+  genFlow.value.push({ rule: it.rule, desc: it.desc })
+  genSqlShown.value.push({ text: it.sql })
+}
+function startGen() {
+  genLoading.value = true
+  genDone.value = false
+  genFlow.value = []
+  genSqlShown.value = []
+  genTimers.forEach(clearTimeout as any)
+  genTimers.length = 0
+  // 延迟 1 秒后逐条追加（各间隔约 0.6s）
+  const genData = [
+    { rule: '必须满足', desc: '名下无营业执照', sql: "SELECT insured_identity FROM tenant_650000_data.ads_insured_info_49 WHERE insured_identity = '5…'" },
+    { rule: '必须满足', desc: '离校时间至签订就业见习协议的时间小于2年（以毕业证书签章日期为准）', sql: "SELECT t1.id_card FROM tenant_650000_data.per_account_info_49 t1 WHERE DATEDIFF(NOW(), CAST(t1.graduate_time AS DATE)) < 730 AND t1.id_card = 'query_id' UNION ALL SELECT t2.id_card FROM tenant_650000_data.edi_ads_jy_subsidy_detail_49 t2 WHERE DATEDIFF(NOW(), t2.graduate_time) < 730 AND t2.id_card = 'query_id'" }
+  ]
+  for (let i = 0; i < genData.length; i++) {
+    genTimers.push(window.setTimeout(() => {
+      genRulesPush()
+      if (i === genData.length - 1) {
+        genLoading.value = false
+        genDone.value = true
+      }
+    }, 1000 + i * 600))
+  }
+}
+function goParseStep3() {
+  parseStep.value = 2
+  startGen()
+}
+function editGenerated() {
+  const item = genFlow.value[genFlow.value.length - 1]
+  if (item) ElMessage.info('已选中规则：' + item.rule + (item.desc ? ' · ' + item.desc : ''))
 }
 
 /* ========== Tab3 政策找人 ========== */
@@ -1112,4 +1239,59 @@ void Fold
 .ps-mark-name { font-weight: 600; font-size: 15px; }
 .ps-mark-desc { font-size: 13px; color: #4b5563; line-height: 1.7; min-height: 60px; }
 .ps-mark-time { font-size: 12px; color: #99a1b3; }
+/* ===== 政策解析 · AI助手 ===== */
+.ps-ai-wrap { margin-bottom: 16px; }
+.ps-ai-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.ps-ai-avatar {
+  width: 48px; height: 48px; border-radius: 50%;
+  background: #e8ebff; color: #4a6cff; font-weight: 600;
+  font-size: 18px; display: flex; align-items: center; justify-content: center;
+}
+.ps-ai-name { font-weight: 700; color: #111827; font-size: 15px; }
+.ps-ai-box {
+  border-radius: 12px; background: #fff; padding: 12px 16px;
+  border: 1px solid transparent;
+  border-image: linear-gradient(90deg, #b06cff, #e569b0, #3370ff) 1;
+}
+.ps-ai-box-inner { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #1f2329; }
+.ps-spinner {
+  width: 14px; height: 14px; border: 2px solid #c7d2fe; border-top-color: #3370ff;
+  border-radius: 50%; animation: ps-spin 1s linear infinite; flex-shrink: 0;
+}
+@keyframes ps-spin { to { transform: rotate(360deg); } }
+/* ===== 条件解析卡片 ===== */
+.ps-rule-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 8px; }
+.ps-section-title { font-weight: 700; color: #111827; margin: 4px 0 12px; }
+.ps-flow-item { transition: opacity .3s ease-out, transform .3s ease-out; }
+.ps-cond-row {
+  width: 100%; background: #f5f6f7; border-radius: 8px; min-height: 44px;
+  display: flex; align-items: center; gap: 8px; padding: 0 16px; box-sizing: border-box;
+}
+.ps-rule-badge {
+  color: #fff; border-radius: 4px; padding: 2px 8px; font-size: 12px; flex-shrink: 0;
+}
+.ps-rule-badge.must { background: #3370ff; }
+.ps-rule-badge.may { background: #8f959e; }
+.ps-cond-text { font-size: 14px; color: #1f2329; }
+.ps-cond-delete { margin-left: auto; color: #ef4444; cursor: pointer; font-size: 13px; flex-shrink: 0; }
+/* ===== SQL 代码块 ===== */
+.ps-sql-block {
+  background: #1e1e1e; border-radius: 8px; padding: 16px 20px; margin: 8px 0 14px;
+  overflow-x: auto; white-space: pre; font-family: Consolas, Menlo, monospace;
+  font-size: 13px; line-height: 1.6; color: #d4d4d4;
+}
+.ps-sql-title { color: #6a737d; font-size: 12px; margin: 2px 0 6px; }
+/* 语法高亮占位（实际高亮由 highlightSql 输出 HTML 内联样式） */
+/* ===== 生成中 / 完成按钮 ===== */
+.ps-gen-btn {
+  display: inline-flex; align-items: center; gap: 8px; color: #fff;
+  border-radius: 6px; padding: 8px 24px; font-size: 14px; border: none; cursor: pointer;
+  background: #52c41a; transition: background .3s ease;
+}
+.ps-gen-btn.blue { background: #3370ff; }
+.ps-gen-icon { display: inline-block; animation: ps-gen-spin 1s linear infinite; }
+@keyframes ps-gen-spin { to { transform: rotate(360deg); } }
+.ps-gen-ok { color: #fff; }
+.ps-step-actions { display: flex; justify-content: center; gap: 12px; margin-top: 20px; }
+.ps-step-actions.space { justify-content: space-between; }
 </style>
