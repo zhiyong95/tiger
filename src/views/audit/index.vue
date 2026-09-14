@@ -75,10 +75,13 @@
                   <table class="g-tbl">
                     <thead><tr><th>字段名</th><th>类型</th><th>说明</th></tr></thead>
                     <tbody>
-                      <tr v-for="c in filteredCols" :key="c.name">
-                        <td><span class="mono">{{ c.name }}</span> <span v-if="c.key" class="tag key">主键</span></td>
+                      <tr v-for="c in filteredCols" :key="c.en">
+                        <td>
+                          <div class="fname">{{ c.name }}<span v-if="c.key" class="tag key">主键</span></div>
+                          <div class="fen">{{ c.en }}</div>
+                        </td>
                         <td><span class="tag type">{{ c.type }}</span></td>
-                        <td>{{ c.label }}</td>
+                        <td class="fdesc">{{ c.desc }}</td>
                       </tr>
                     </tbody>
                   </table>
@@ -91,10 +94,10 @@
                   </div>
                   <div class="tbl-scroll">
                     <table class="g-tbl">
-                      <thead><tr><th v-for="c in displayCols" :key="c">{{ c }}</th></tr></thead>
+                      <thead><tr><th v-for="c in displayCols" :key="c.en">{{ c.name }}</th></tr></thead>
                       <tbody>
                         <tr v-for="(row, ri) in filteredData" :key="ri">
-                          <td v-for="c in displayCols" :key="c">{{ row[c] }}</td>
+                          <td v-for="c in displayCols" :key="c.en">{{ row[c.en] }}</td>
                         </tr>
                       </tbody>
                     </table>
@@ -451,50 +454,210 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { User, Wallet, OfficeBuilding, Present, Coin, DataAnalysis, Lock } from '@element-plus/icons-vue'
 
 /* ============ 类型 ============ */
-interface Column { name: string; type: string; label: string; key?: boolean }
+interface Column { name: string; en: string; type: string; desc: string; key?: boolean }
 interface TableDef { id: number; name: string; code: string; category: string; rows: number; serviceIds: number[]; columns: Column[]; sample: Record<string, string>[] }
-interface ServiceDef { id: number; name: string; icon: any; color: string; desc: string }
+interface ServiceDef { id: number; name: string; icon: any; color: string; desc: string; focus: string[] }
 interface RuleDef { id: number; desc: string; type: string; configStatus: string; creator: string; createTime: string; enable: boolean; weight?: number; priority?: number }
 interface TaskDef { id: number; name: string; count: number; desc: string; createTime: string; status: string }
 
-/* ============ 16 张数据表 ============ */
-function ct(list: string[], key: string): Column[] {
-  const types: Record<string, string> = { NAME: 'varchar', ID_CARD: 'varchar', GENDER: 'char', STATUS: 'char', AMOUNT: 'decimal', AGE: 'int' }
-  return list.map((n) => ({ name: n, type: types[n] || 'varchar', label: n.toLowerCase(), key: n === key }))
-}
-function sample(n: number) {
+/* ============ 字段定义（中文显示名 / 英文列名对照 / 字段说明） ============ */
+function F(name: string, en: string, type: string, desc: string, key?: boolean): Column { return { name, en, type, desc, key } }
+function genSample(columns: Column[]) {
   const rows: Record<string, string>[] = []
-  for (let i = 0; i < n; i++) rows.push({ ID_CARD: '6542241990' + (100100 + i), NAME: '测试' + (i + 1), GENDER: i % 2 ? '男' : '女', STATUS: '有效', AMOUNT: String(3000 + i * 100), AGE: String(20 + i) })
+  for (let i = 0; i < 8; i++) {
+    const r: Record<string, string> = {}
+    for (const c of columns) {
+      const nm = c.name
+      if (/身份证/.test(nm)) r[c.en] = '6542241990' + (100100 + i)
+      else if (/姓名|法人/.test(nm)) r[c.en] = '张' + (i + 1)
+      else if (/性别/.test(nm)) r[c.en] = i % 2 ? '男' : '女'
+      else if (/日期/.test(nm)) r[c.en] = '2026-0' + ((i % 6) + 1) + '-15'
+      else if (/状态|形势|类型|性质|民族|学历|原因|险种/.test(nm)) r[c.en] = '正常'
+      else if (/金额|比例|人数|月|编号|标识|电话|地址|工种|名称|收入|缴费|实收|征缴/.test(nm)) r[c.en] = String(2000 + i * 100)
+      else r[c.en] = '示例' + (i + 1)
+    }
+    rows.push(r)
+  }
   return rows
 }
 const allTables: TableDef[] = [
-  { id: 1, name: '灵活就业补贴申请人员信息表', code: 'APPLICANTS_FOR_FLEXIBLE_EMPLOYMENT_SUBSIDIES', category: '业务表', rows: 1240, serviceIds: [1], columns: ct(['ID_CARD', 'NAME', 'GENDER', 'EMPLOYMENT_STATUS', 'APPLY_DATE'], 'ID_CARD'), sample: sample(8) },
-  { id: 2, name: '法人信息表', code: 'LEGAL_PERSON_INFO', category: '基础表', rows: 862, serviceIds: [2, 4, 5], columns: ct(['LEGAL_PERSON_ID', 'LEGAL_PERSON_NAME', 'ID_CARD', 'UNIT_ID', 'CONTACT'], 'LEGAL_PERSON_ID'), sample: sample(8) },
-  { id: 3, name: '股东信息表', code: 'SHAREHOLDER_INFO', category: '基础表', rows: 1543, serviceIds: [2, 3], columns: ct(['SHAREHOLDER_ID', 'NAME', 'ID_CARD', 'UNIT_ID', 'SHARE_RATE'], 'SHAREHOLDER_ID'), sample: sample(8) },
-  { id: 4, name: '单位基本信息表', code: 'UNIT_BASIC_INFO', category: '基础表', rows: 698, serviceIds: [2, 3, 5], columns: ct(['UNIT_ID', 'UNIT_NAME', 'UNIT_TYPE', 'REG_ADDR', 'STATUS'], 'UNIT_ID'), sample: sample(8) },
-  { id: 5, name: '单位参保情况表', code: 'UNIT_INSURANCE_STATUS', category: '业务表', rows: 698, serviceIds: [3], columns: ct(['UNIT_ID', 'INSURANCE_TYPE', 'COVERAGE', 'PAY_MONTH'], 'UNIT_ID'), sample: sample(8) },
-  { id: 6, name: '单位征缴明细表', code: 'UNIT_COLLECTION_DETAIL', category: '明细表', rows: 8360, serviceIds: [3], columns: ct(['COLLECT_ID', 'UNIT_ID', 'EMPLOYEE_ID', 'AMOUNT', 'PERIOD'], 'COLLECT_ID'), sample: sample(8) },
-  { id: 7, name: '人员基本信息表', code: 'PERSON_BASIC_INFO', category: '基础表', rows: 52480, serviceIds: [2, 4, 6], columns: ct(['ID_CARD', 'NAME', 'GENDER', 'BIRTH_DATE', 'NATION'], 'ID_CARD'), sample: sample(8) },
-  { id: 8, name: '个人参保关系表', code: 'PERSON_INSURANCE_RELATION', category: '业务表', rows: 48230, serviceIds: [2, 5, 7], columns: ct(['ID_CARD', 'INSURANCE_TYPE', 'STATUS', 'UNIT_ID', 'JOIN_DATE'], 'ID_CARD'), sample: sample(8) },
-  { id: 9, name: '个人信息_基础表', code: 'PERSON_INFO_BASIC', category: '基础表', rows: 52480, serviceIds: [2], columns: ct(['ID_CARD', 'NAME', 'ADDRESS', 'PHONE', 'EDU_LEVEL'], 'ID_CARD'), sample: sample(8) },
-  { id: 10, name: '企业社保(岗位)补贴申请人员花名册', code: 'ENTERPRISE_SUBSIDY_APPLICANT_ROSTER', category: '业务表', rows: 1860, serviceIds: [2, 3], columns: ct(['ROSTER_ID', 'UNIT_ID', 'ID_CARD', 'NAME', 'SUBSIDY_TYPE'], 'ROSTER_ID'), sample: sample(8) },
-  { id: 11, name: '失业登记信息表', code: 'UNEMPLOYMENT_REGISTRATION', category: '业务表', rows: 4210, serviceIds: [6, 7], columns: ct(['REGISTRATION_ID', 'ID_CARD', 'NAME', 'REASON', 'REG_DATE'], 'REGISTRATION_ID'), sample: sample(8) },
-  { id: 12, name: '就业登记信息表', code: 'EMPLOYMENT_REGISTRATION', category: '业务表', rows: 5380, serviceIds: [4, 6], columns: ct(['ID_CARD', 'NAME', 'EMPLOY_TYPE', 'UNIT_ID', 'EMP_DATE'], 'ID_CARD'), sample: sample(8) },
-  { id: 13, name: '就业困难人员认定信息表', code: 'DIFFICULT_PERSON_APPROVAL', category: '业务表', rows: 2410, serviceIds: [4], columns: ct(['APPROVAL_ID', 'ID_CARD', 'NAME', 'DIFFICULT_TYPE', 'APPROVE_DATE'], 'APPROVAL_ID'), sample: sample(8) },
-  { id: 14, name: '人员基础信息表', code: 'PERSON_BASIC_FOUNDATION', category: '基础表', rows: 52480, serviceIds: [5, 6, 7], columns: ct(['ID_CARD', 'NAME', 'GENDER', 'BIRTH_DATE', 'STATUS'], 'ID_CARD'), sample: sample(8) },
-  { id: 15, name: '人员参保关系', code: 'PERSON_SOCIAL_SECURITY_RELATION', category: '业务表', rows: 48230, serviceIds: [3, 5, 7], columns: ct(['ID_CARD', 'INSURANCE_TYPE', 'STATUS', 'UNIT_ID', 'JOIN_DATE'], 'ID_CARD'), sample: sample(8) },
-  { id: 16, name: '养老保险人员实收明细', code: 'PENSION_RECEIVED_DETAIL', category: '明细表', rows: 28640, serviceIds: [5, 7], columns: ct(['PENSION_ID', 'ID_CARD', 'UNIT_ID', 'AMOUNT', 'PERIOD'], 'PENSION_ID'), sample: sample(8) }
+  {
+    id: 1, name: '灵活就业补贴申请人员信息表', code: 'APPLICANTS_FOR_FLEXIBLE_EMPLOYMENT_SUBSIDIES', category: '业务表', rows: 1240, serviceIds: [1],
+    columns: [
+      F('身份证号码', 'ID_CARD', 'varchar', '居民身份证号，18位数字/字母，公民唯一身份标识，用于人员身份核验。示例：6542241990090XXXXX'),
+      F('姓名', 'NAME', 'varchar', '申请人姓名，支持“·”分隔，2-50个字符。示例：张三'),
+      F('性别', 'GENDER', 'char', '申请人性别，取值：男/女。'),
+      F('就业状态', 'EMPLOYMENT_STATUS', 'varchar', '就业登记状态，取值：单位就业/灵活就业/失业等（待业务确认）。用于核查灵活就业登记情况。'),
+      F('就业单位编号', 'UNIT_ID', 'varchar', '单位就业时的用工企业编号；灵活就业可为空。'),
+      F('补贴类型', 'SUBSIDY_TYPE', 'varchar', '所申领补贴类别，如灵活就业社会保险补贴。'),
+      F('申请日期', 'APPLY_DATE', 'date', '补贴申请提交日期，yyyy-MM-dd，不得晚于当前日期。'),
+      F('数据状态', 'STATUS', 'char', '数据有效性标识，取值：有效/无效/待复核。')
+    ], sample: []
+  },
+  {
+    id: 2, name: '法人信息表', code: 'LEGAL_PERSON_INFO', category: '基础表', rows: 862, serviceIds: [2, 4, 5],
+    columns: [
+      F('法人唯一标识', 'LEGAL_PERSON_ID', 'varchar', '法人信息主键，19位数字流水号。'),
+      F('法人姓名', 'LEGAL_PERSON_NAME', 'varchar', '法定代表人姓名，2-50个字符。示例：李国强'),
+      F('法人身份证号', 'ID_CARD', 'varchar', '法定代表人居民身份证号，18位数字/字母，用于身份核验。'),
+      F('所属单位编号', 'UNIT_ID', 'varchar', '法人对应的经营单位编号，关联单位基本信息表。'),
+      F('法人联系电话', 'CONTACT', 'varchar', '法定代表人联系电话，11位手机号，按运营商规则校验。')
+    ], sample: []
+  },
+  {
+    id: 3, name: '股东信息表', code: 'SHAREHOLDER_INFO', category: '基础表', rows: 1543, serviceIds: [2, 3],
+    columns: [
+      F('股东标识', 'SHAREHOLDER_ID', 'varchar', '股东信息主键，19位数字流水号。'),
+      F('股东姓名', 'NAME', 'varchar', '自然人股东姓名，2-50个字符。示例：王芳'),
+      F('股东身份证号', 'ID_CARD', 'varchar', '自然人股东居民身份证号，18位数字/字母，用于核查股东身份与企业关联。'),
+      F('持股单位编号', 'UNIT_ID', 'varchar', '股东所持股的企业编号，关联单位基本信息表。'),
+      F('持股比例', 'SHARE_RATE', 'decimal', '股东持股比例，取值范围0%-100%，用于核查股东身份与贷款担保关联。示例：30%。')
+    ], sample: []
+  },
+  {
+    id: 4, name: '单位基本信息表', code: 'UNIT_BASIC_INFO', category: '基础表', rows: 698, serviceIds: [2, 3, 5],
+    columns: [
+      F('单位编号', 'UNIT_ID', 'varchar', '单位内部唯一编号，主键。'),
+      F('单位名称', 'UNIT_NAME', 'varchar', '单位规范名称，与统一社会信用代码对应，不得仅填行政区划或纯数字。示例：新疆XX商贸有限公司。'),
+      F('单位类型', 'UNIT_TYPE', 'char', '取值：国企/非国企/机关/事业单位/社会团体/民办非企/个体工商户(家庭农场)/农村合作社。'),
+      F('注册地址', 'REG_ADDR', 'varchar', '单位注册地，新疆为省-市-县-街道-社区/村，非新疆为省-市-县-街道。'),
+      F('所属行业', 'INDUSTRY', 'varchar', '单位所属行业，取行业字典（与德生行业字典不一致，口径待业务确认）。'),
+      F('统一社会信用代码', 'TAX_NO', 'varchar', '统一社会信用代码，18位数字/字母，用于企业资质与纳税核验。'),
+      F('单位状态', 'STATUS', 'char', '取值：正常/注销/未经营。用于核查企业是否在营。')
+    ], sample: []
+  },
+  {
+    id: 5, name: '单位参保情况表', code: 'UNIT_INSURANCE_STATUS', category: '业务表', rows: 698, serviceIds: [3],
+    columns: [
+      F('单位编号', 'UNIT_ID', 'varchar', '参保单位编号，关联单位基本信息表。'),
+      F('参保险种', 'INSURANCE_TYPE', 'varchar', '单位参保险种，取值：城镇职工养老保险/医疗保险/失业保险/工伤保险/生育保险。'),
+      F('参保人数', 'COVERAGE', 'int', '单位实际参保职工人数，正整数，不大于6位。用于核查企业吸纳就业情况。'),
+      F('缴费月份', 'PAY_MONTH', 'varchar', '参保缴费所属月份，yyyy-MM。示例：2026-06。')
+    ], sample: []
+  },
+  {
+    id: 6, name: '单位征缴明细表', code: 'UNIT_COLLECTION_DETAIL', category: '明细表', rows: 8360, serviceIds: [3],
+    columns: [
+      F('征缴记录标识', 'COLLECT_ID', 'varchar', '单位征缴明细主键，19位数字流水号。'),
+      F('单位编号', 'UNIT_ID', 'varchar', '征缴单位编号，关联单位基本信息表。'),
+      F('员工标识', 'EMPLOYEE_ID', 'varchar', '参保员工身份标识，可关联人员参保关系。'),
+      F('征缴金额', 'AMOUNT', 'decimal', '本期征缴金额（元），用于核查纳税缴费情况。示例：3500.00。'),
+      F('征缴期间', 'PERIOD', 'char', '征缴所属账期，如 2026-01~2026-06，用于核查连续缴费情况。')
+    ], sample: []
+  },
+  {
+    id: 7, name: '人员基本信息表', code: 'PERSON_BASIC_INFO', category: '基础表', rows: 52480, serviceIds: [2, 4, 6],
+    columns: [
+      F('身份证号码', 'ID_CARD', 'varchar', '居民身份证号，18位数字/字母，人员唯一身份标识，用于人员身份核验。'),
+      F('姓名', 'NAME', 'varchar', '人员姓名，支持“·”分隔，2-50个字符。示例：李强'),
+      F('性别', 'GENDER', 'char', '人员性别，取值：男/女。'),
+      F('出生日期', 'BIRTH_DATE', 'date', '人员出生日期，yyyy-MM-dd，与身份证号一致，用于年龄计算。'),
+      F('民族', 'NATION', 'char', '人员民族，取值如汉族、维吾尔族等（取民族字典）。')
+    ], sample: []
+  },
+  {
+    id: 8, name: '个人参保关系表', code: 'PERSON_INSURANCE_RELATION', category: '业务表', rows: 48230, serviceIds: [2, 5, 7],
+    columns: [
+      F('身份证号码', 'ID_CARD', 'varchar', '参保人居民身份证号，18位数字/字母。'),
+      F('参保险种', 'INSURANCE_TYPE', 'varchar', '参保险种，取值：城镇职工养老保险/医疗保险/失业保险/工伤保险/生育保险。'),
+      F('参保状态', 'STATUS', 'char', '取值：参保/停保/暂停缴费。用于核查参保状态及待遇领取资格。'),
+      F('参保单位编号', 'UNIT_ID', 'varchar', '参保单位编号，关联单位基本信息表。'),
+      F('参保日期', 'JOIN_DATE', 'date', '参保起始日期，yyyy-MM-dd，不得晚于当前日期。')
+    ], sample: []
+  },
+  {
+    id: 9, name: '个人信息_基础表', code: 'PERSON_INFO_BASIC', category: '基础表', rows: 52480, serviceIds: [2],
+    columns: [
+      F('身份证号码', 'ID_CARD', 'varchar', '居民身份证号，18位数字/字母，人员唯一身份标识。'),
+      F('姓名', 'NAME', 'varchar', '人员姓名，2-50个字符。示例：赵敏'),
+      F('常住地址', 'ADDRESS', 'varchar', '人员常住地地址，行政区划+详细地址。'),
+      F('联系电话', 'PHONE', 'varchar', '人员联系电话，11位手机号，按运营商规则校验。'),
+      F('学历', 'EDU_LEVEL', 'varchar', '人员最高学历，取值如博士研究生/大学本科等（学历字典，具体口径待业务确认）。')
+    ], sample: []
+  },
+  {
+    id: 10, name: '企业社保(岗位)补贴申请人员花名册', code: 'ENTERPRISE_SUBSIDY_APPLICANT_ROSTER', category: '业务表', rows: 1860, serviceIds: [2, 3],
+    columns: [
+      F('花名册标识', 'ROSTER_ID', 'varchar', '花名册记录主键，19位数字流水号。'),
+      F('单位编号', 'UNIT_ID', 'varchar', '申领补贴企业编号，关联单位基本信息表。'),
+      F('人员身份证号', 'ID_CARD', 'varchar', '申领补贴人员居民身份证号，18位数字/字母。'),
+      F('人员姓名', 'NAME', 'varchar', '申领补贴人员姓名，2-50个字符。'),
+      F('补贴类型', 'SUBSIDY_TYPE', 'varchar', '企业申领补贴类别，取值：岗位补贴/社会保险补贴。用于核查吸纳就业与补贴申领。'),
+      F('用工开始日期', 'EMPLOY_START', 'date', '该人员在该企业的用工起始日期，yyyy-MM-dd。')
+    ], sample: []
+  },
+  {
+    id: 11, name: '失业登记信息表', code: 'UNEMPLOYMENT_REGISTRATION', category: '业务表', rows: 4210, serviceIds: [6, 7],
+    columns: [
+      F('登记标识', 'REGISTRATION_ID', 'varchar', '失业登记记录主键，19位数字流水号。'),
+      F('身份证号码', 'ID_CARD', 'varchar', '登记人居民身份证号，18位数字/字母。'),
+      F('姓名', 'NAME', 'varchar', '登记人姓名，2-50个字符。'),
+      F('失业原因', 'REASON', 'varchar', '失业原因，按失业原因字典取值（待业务确认）。'),
+      F('登记日期', 'REG_DATE', 'date', '失业登记日期，yyyy-MM-dd。用于核查就失业状态。')
+    ], sample: []
+  },
+  {
+    id: 12, name: '就业登记信息表', code: 'EMPLOYMENT_REGISTRATION', category: '业务表', rows: 5380, serviceIds: [4, 6],
+    columns: [
+      F('身份证号码', 'ID_CARD', 'varchar', '登记就业人员居民身份证号，18位数字/字母。'),
+      F('姓名', 'NAME', 'varchar', '登记就业人员姓名，2-50个字符。'),
+      F('就业形式', 'EMPLOY_TYPE', 'char', '取值：单位就业/灵活就业/自主创业/公益性岗位安置。用于核查灵活就业登记情况。'),
+      F('就业单位编号', 'UNIT_ID', 'varchar', '单位就业时的用工企业编号（灵活就业可为空）。'),
+      F('就业日期', 'EMP_DATE', 'date', '就业起始日期，yyyy-MM-dd，不得晚于当前日期。')
+    ], sample: []
+  },
+  {
+    id: 13, name: '就业困难人员认定信息表', code: 'DIFFICULT_PERSON_APPROVAL', category: '业务表', rows: 2410, serviceIds: [4],
+    columns: [
+      F('认定标识', 'APPROVAL_ID', 'varchar', '就业困难人员认定记录主键，19位数字流水号。'),
+      F('身份证号码', 'ID_CARD', 'varchar', '被认定人居民身份证号，18位数字/字母。'),
+      F('姓名', 'NAME', 'varchar', '被认定人姓名，2-50个字符。'),
+      F('困难类型', 'DIFFICULT_TYPE', 'varchar', '就业困难人员类别（困难类型字典，具体口径待业务确认）。'),
+      F('认定日期', 'APPROVE_DATE', 'date', '困难人员认定日期，yyyy-MM-dd。用于核查困难人员认定资格。')
+    ], sample: []
+  },
+  {
+    id: 14, name: '人员基础信息表', code: 'PERSON_BASIC_FOUNDATION', category: '基础表', rows: 52480, serviceIds: [5, 6, 7],
+    columns: [
+      F('身份证号码', 'ID_CARD', 'varchar', '居民身份证号，18位数字/字母，人员唯一身份标识。'),
+      F('姓名', 'NAME', 'varchar', '人员姓名，2-50个字符。示例：陈曦'),
+      F('性别', 'GENDER', 'char', '人员性别，取值：男/女。'),
+      F('出生日期', 'BIRTH_DATE', 'date', '人员出生日期，yyyy-MM-dd。'),
+      F('人员状态', 'STATUS', 'char', '取值：正常/死亡/其他。用于核查生存状态。')
+    ], sample: []
+  },
+  {
+    id: 15, name: '人员参保关系', code: 'PERSON_SOCIAL_SECURITY_RELATION', category: '业务表', rows: 48230, serviceIds: [3, 5, 7],
+    columns: [
+      F('身份证号码', 'ID_CARD', 'varchar', '参保人居民身份证号，18位数字/字母。'),
+      F('参保险种', 'INSURANCE_TYPE', 'varchar', '参保人参保险种，取值：城镇职工养老保险/医疗保险/失业保险/工伤保险/生育保险。'),
+      F('参保状态', 'STATUS', 'char', '取值：参保/停保/暂停缴费。用于核查参保状态及待遇领取资格。'),
+      F('参保单位编号', 'UNIT_ID', 'varchar', '参保单位编号，关联单位基本信息表。'),
+      F('参保日期', 'JOIN_DATE', 'date', '参保起始日期，yyyy-MM-dd。')
+    ], sample: []
+  },
+  {
+    id: 16, name: '养老保险人员实收明细', code: 'PENSION_RECEIVED_DETAIL', category: '明细表', rows: 28640, serviceIds: [5, 7],
+    columns: [
+      F('实收标识', 'PENSION_ID', 'varchar', '养老待遇实收明细主键，19位数字流水号。'),
+      F('身份证号码', 'ID_CARD', 'varchar', '领取养老待遇人员居民身份证号，18位数字/字母。'),
+      F('参保单位编号', 'UNIT_ID', 'varchar', '养老金计发单位编号，可空。'),
+      F('实收金额', 'AMOUNT', 'decimal', '当期实收养老金金额（元），用于核查待遇领取与数据比对结果。示例：4200.00。'),
+      F('领取期间', 'PERIOD', 'char', '待遇领取所属月份，yyyy-MM。示例：2026-08。')
+    ], sample: []
+  }
 ]
+allTables.forEach((t) => { t.sample = genSample(t.columns) })
 
-/* ============ 7 个业务服务 ============ */
+/* ============ 7 个业务服务（含关注维度） ============ */
 const services: ServiceDef[] = [
-  { id: 1, name: '就业补贴资格审核服务', icon: User, color: 'blue', desc: '对就业补贴申请人员的资格条件进行AI智能审核' },
-  { id: 2, name: '个人创业担保贷款放贷资格审核', icon: Wallet, color: 'purple', desc: '对个人申请创业担保贷款的资格进行AI审核' },
-  { id: 3, name: '小微企业创业担保贷款资格审核', icon: OfficeBuilding, color: 'green', desc: '对小微企业申请创业担保贷款的资格进行AI审核' },
-  { id: 4, name: '技能培训补贴使用资格审核', icon: Present, color: 'cyan', desc: '对技能培训补贴使用资格进行AI审核' },
-  { id: 5, name: '职业技能培训补贴资金审核', icon: Coin, color: 'orange', desc: '对职业技能培训补贴资金进行AI审核' },
-  { id: 6, name: '劳动力信息采集费用准确性核查', icon: DataAnalysis, color: 'amber', desc: '对劳动力信息采集费用准确性进行核查' },
-  { id: 7, name: '养老待遇认证AI审查服务', icon: Lock, color: 'red', desc: '对养老待遇认证进行AI审查' }
+  { id: 1, name: '就业补贴资格审核', icon: User, color: 'blue', desc: '对就业补贴申请人员的资格条件进行AI智能审核', focus: ['人员身份', '就业登记', '参保状态', '单位用工', '补贴申领'] },
+  { id: 2, name: '个人创业担保贷款放贷资格审核', icon: Wallet, color: 'purple', desc: '对个人申请创业担保贷款的资格进行AI审核', focus: ['个人身份', '经营实体', '贷款申请', '征信', '担保方式'] },
+  { id: 3, name: '小微企业创业担保贷款资格审核', icon: OfficeBuilding, color: 'green', desc: '对小微企业申请创业担保贷款的资格进行AI审核', focus: ['企业资质', '营业执照', '吸纳就业', '纳税情况', '贷款申请'] },
+  { id: 4, name: '灵活就业困难人员社会保险补贴资格核查', icon: Present, color: 'cyan', desc: '对灵活就业困难人员社会保险补贴资格进行核查', focus: ['困难人员认定', '灵活就业登记', '参保缴费', '补贴申领'] },
+  { id: 5, name: '机构培训开班申请审批核查', icon: Coin, color: 'orange', desc: '对机构培训开班申请审批进行AI核查', focus: ['机构资质', '培训项目', '招生人数', '师资', '课程安排', '补贴标准'] },
+  { id: 6, name: '劳动力信息采集费用准确性核查', icon: DataAnalysis, color: 'amber', desc: '对劳动力信息采集费用准确性进行核查', focus: ['采集人数', '信息字段完整度', '重复/异常数据标记', '费用标准', '结算明细'] },
+  { id: 7, name: '养老待遇静默认证审查', icon: Lock, color: 'red', desc: '对养老待遇领取人员进行静默认证AI审查', focus: ['人员身份', '参保险种', '参保状态', '单位编号', '待遇领取', '生存状态', '数据比对结果'] }
 ]
 
 /* ============ 各服务规则/任务 ============ */
@@ -553,11 +716,11 @@ const shownTables = computed(() => {
   const pool = tableFull.value ? allTables : serviceTables.value
   return tableSearch.value ? pool.filter((t) => t.name.includes(tableSearch.value)) : pool
 })
-const displayCols = computed(() => { const c = activeTableObj.value.columns.map((x) => x.name); return c.slice(0, 4) })
-const filteredCols = computed(() => activeTableObj.value.columns.filter((c) => !colSearch.value || c.name.includes(colSearch.value) || c.label.includes(colSearch.value)))
+const displayCols = computed(() => activeTableObj.value.columns.slice(0, 4))
+const filteredCols = computed(() => activeTableObj.value.columns.filter((c: any) => !colSearch.value || c.name.includes(colSearch.value) || c.en.includes(colSearch.value.toUpperCase()) || c.desc.includes(colSearch.value)))
 const filteredData = computed(() => {
   let d = activeTableObj.value.sample
-  if (dataSearch.value) d = d.filter((r) => r.ID_CARD?.includes(dataSearch.value) || r.NAME?.includes(dataSearch.value))
+  if (dataSearch.value) d = d.filter((r: any) => (r.ID_CARD || '').includes(dataSearch.value) || (r.NAME || '').includes(dataSearch.value))
   return d
 })
 function viewTable(id: number) { activeTable.value = id; dataSearch.value = ''; colSearch.value = '' }
