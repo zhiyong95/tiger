@@ -43,13 +43,13 @@
               :class="{ active: selectedTemplate?.id === t.id }"
               @click="selectTemplate(t)"
             >
-              <div class="template-icon" :style="{ background: t.bg }">
-                <el-icon :size="18"><component :is="t.icon" /></el-icon>
+              <div class="template-icon" :style="{ background: cardBg(t) }">
+                <el-icon :size="18"><component :is="cardIcon(t)" /></el-icon>
               </div>
               <div class="template-info">
                 <div class="template-name">
                   {{ t.name }}
-                  <el-tag v-if="t.tag" size="small" :type="t.tagType as any" effect="plain">{{ t.tag }}</el-tag>
+                  <el-tag v-if="t.cardTag" size="small" :type="cardTagType(t.cardTag)" effect="plain">{{ t.cardTag }}</el-tag>
                   <el-icon v-if="selectedTemplate?.id === t.id" class="template-check"><CircleCheck /></el-icon>
                 </div>
                 <div class="template-desc">{{ t.desc }}</div>
@@ -244,8 +244,8 @@ import dayjs from 'dayjs'
 import { ElMessage } from 'element-plus'
 import { isWorkflowConfigured, queryReportHistoryList, queryReportHistoryDetail } from '@/api/cozeWorkflow'
 import { exportElementToPdf, exportHtmlToWord } from '@/utils/reportExport'
-import { getDataReportTemplates } from '@/api/reportTemplates'
-import type { ReportTemplate } from '@/api/reportTemplates'
+import { useTemplateStore, CARD_ICON_MAP, CARD_BG_MAP } from '@/api/templateStore'
+import type { GovTemplate } from '@/api/templateStore'
 import TutuEmpty from '@/components/TutuEmpty.vue'
 
 const overviewStats = ref([
@@ -280,12 +280,30 @@ function handleDrop(e: DragEvent) {
   }
 }
 
-// 报告模板（取自公文模板管理，仅已发布且归属智能报告/数据分析报告）
-const reportTemplates = ref<ReportTemplate[]>(getDataReportTemplates())
-const selectedTemplate = ref<ReportTemplate | null>(null)
+// 报告模板：实时读取公文模板管理中「归属数据分析报告 + 已发布」的模板
+const tplStore = useTemplateStore()
+interface TemplateCard extends GovTemplate {}
+const reportTemplates = computed<TemplateCard[]>(() =>
+  tplStore.getPublishedTemplatesByModule('智能报告/数据分析报告'),
+)
+const selectedTemplate = ref<TemplateCard | null>(null)
 
-function selectTemplate(t: ReportTemplate) {
+function selectTemplate(t: TemplateCard) {
   selectedTemplate.value = t
+}
+
+// 卡片图标 / 背景：由模板配置的 cardIcon 决定
+function cardIcon(t: TemplateCard) {
+  return CARD_ICON_MAP[t.cardIcon || 'doc']
+}
+function cardBg(t: TemplateCard) {
+  return CARD_BG_MAP[t.cardIcon || 'doc']
+}
+function cardTagType(tag?: string): 'danger' | 'success' | 'warning' | 'info' {
+  if (tag === '热门') return 'danger'
+  if (tag === '常用') return 'success'
+  if (tag === '重点') return 'warning'
+  return 'info'
 }
 
 // 对比模式

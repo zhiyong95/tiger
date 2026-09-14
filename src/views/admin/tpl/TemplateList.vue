@@ -81,7 +81,7 @@
   </div>
 </template>
 
-<script setup lang="ts" generic="T extends { id: string; name: string; type: string; system: boolean; scope: string; usage: number; desc: string; org: string; status: string; updatedAt: string }">
+<script setup lang="ts" generic="T extends { id: string; name: string; type: string; system?: boolean; scope: string; usage: number; desc: string; org: string; status: string; updatedAt: string }">
 import { ref, computed, watch } from 'vue'
 import { Document } from '@element-plus/icons-vue'
 

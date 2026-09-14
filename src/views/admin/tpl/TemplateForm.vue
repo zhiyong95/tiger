@@ -49,11 +49,44 @@
           <el-radio value="live">已发布</el-radio>
         </el-radio-group>
       </el-form-item>
+      <el-form-item label="模板归属模块">
+        <el-checkbox-group v-model="form.modules">
+          <el-checkbox v-for="m in TEMPLATE_MODULES" :key="m" :value="m">{{ m }}</el-checkbox>
+        </el-checkbox-group>
+      </el-form-item>
+
+      <!-- 勾选「智能报告/数据分析报告」时配置页面卡片展示信息 -->
+      <template v-if="form.modules.includes('智能报告/数据分析报告')">
+        <el-divider content-position="left">数据分析报告页卡片配置</el-divider>
+        <el-row :gutter="16">
+          <el-col :span="12">
+            <el-form-item label="卡片图标">
+              <el-select v-model="form.cardIcon" style="width:100%">
+                <el-option v-for="k in CARD_ICONS" :key="k" :label="iconLabelMap[k]" :value="k">
+                  <el-icon style="vertical-align:middle;margin-right:6px;color:#2563eb">
+                    <component :is="CARD_ICON_MAP[k]" />
+                  </el-icon>{{ iconLabelMap[k] }}
+                </el-option>
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="卡片标签">
+              <el-select v-model="form.cardTag" style="width:100%" clearable placeholder="无标签">
+                <el-option label="热门" value="热门" />
+                <el-option label="常用" value="常用" />
+                <el-option label="重点" value="重点" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
+      </template>
+
       <el-form-item label="简要说明">
         <el-input v-model="form.desc" type="textarea" :rows="2" placeholder="描述该模板的用途、适用场景" />
       </el-form-item>
       <el-form-item label="正文内容">
-        <el-input v-model="form.body" type="textarea" :rows="10" placeholder="支持HTML格式公文正文内容" />
+        <el-input v-model="form.body" type="textarea" :rows="10" placeholder="保留【占位符】风格，如【事项】【政策依据】" />
       </el-form-item>
     </el-form>
     <div class="form-footer">
@@ -65,6 +98,16 @@
 
 <script setup lang="ts">
 import { ref, reactive, watch } from 'vue'
+import { TEMPLATE_MODULES, CARD_ICONS, CARD_ICON_MAP } from '@/api/templateStore'
+import type { CardIconKey } from '@/api/templateStore'
+
+const iconLabelMap: Record<CardIconKey, string> = {
+  trend: '趋势图',
+  analysis: '数据分析',
+  money: '资金',
+  user: '人群',
+  doc: '文档',
+}
 
 interface Props {
   template: null | {
@@ -78,6 +121,9 @@ interface Props {
     desc: string
     body: string
     status: string
+    modules?: string[]
+    cardIcon?: CardIconKey
+    cardTag?: string
   }
   currentUser: { id: string }
 }
@@ -98,6 +144,9 @@ const form = reactive({
   desc: '',
   body: '',
   status: 'draft',
+  modules: [] as string[],
+  cardIcon: 'trend' as CardIconKey,
+  cardTag: '',
 })
 
 watch(() => props.template, (tpl) => {
@@ -111,6 +160,9 @@ watch(() => props.template, (tpl) => {
     form.desc = tpl.desc || ''
     form.body = tpl.body || ''
     form.status = tpl.status || 'draft'
+    form.modules = tpl.modules ? [...tpl.modules] : []
+    form.cardIcon = tpl.cardIcon || 'trend'
+    form.cardTag = tpl.cardTag || ''
   } else {
     form.name = ''
     form.type = '通知'
@@ -121,11 +173,14 @@ watch(() => props.template, (tpl) => {
     form.desc = ''
     form.body = ''
     form.status = 'draft'
+    form.modules = []
+    form.cardIcon = 'trend'
+    form.cardTag = ''
   }
 }, { immediate: true, deep: true })
 
 function doSave() {
-  emit('save', { ...form })
+  emit('save', { ...form, modules: [...form.modules] })
 }
 </script>
 

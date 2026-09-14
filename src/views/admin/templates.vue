@@ -90,7 +90,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import TemplateList from './tpl/TemplateList.vue'
 import TemplateForm from './tpl/TemplateForm.vue'
@@ -99,7 +99,8 @@ import DeptPermissions from './tpl/DeptPermissions.vue'
 import DocTypes from './tpl/DocTypes.vue'
 import UsageStats from './tpl/UsageStats.vue'
 import PermHelp from './tpl/PermHelp.vue'
-import { useAppStore } from '@/stores/app'
+import { useTemplateStore } from '@/api/templateStore'
+import type { GovTemplate } from '@/api/templateStore'
 
 interface DemoUser {
   id: string
@@ -118,26 +119,10 @@ interface Department {
   manager: string
 }
 
-interface Template {
-  id: string
-  name: string
-  type: string
-  system: boolean
-  scope: 'public' | 'department' | 'private'
-  createdBy: string
-  createdDept: string
-  createdAt: string
-  updatedAt: string
-  usage: number
-  status: 'draft' | 'live'
-  org: string
-  docNo: string
-  title: string
-  desc: string
-  body: string
-}
+type Template = GovTemplate
 
-const appStore = useAppStore()
+const tplStore = useTemplateStore()
+
 const activeTab = ref('list')
 const currentIdentity = ref('u1')
 const dialogVisible = ref(false)
@@ -170,7 +155,7 @@ const demoUsers: DemoUser[] = [
   { id: 'u6', name: '陈静', dept: 'd4', deptName: '社会保险科', role: 'manager', roleName: '科室管理员', title: '社保科科长' },
 ]
 
-const allTemplates = ref<Template[]>([])
+const allTemplates = tplStore.templates
 
 const currentUser = computed(() => demoUsers.find(u => u.id === currentIdentity.value)!)
 
@@ -217,7 +202,7 @@ function handleCreate() {
 }
 
 const filteredTemplates = computed(() => {
-  return allTemplates.value.filter(tpl => {
+  return allTemplates.filter(tpl => {
     if (!canView(currentUser.value, tpl)) return false
     if (searchKeyword.value) {
       const kw = searchKeyword.value.toLowerCase()
@@ -262,8 +247,9 @@ function handleCopy(tpl: Template) {
     usage: 0,
     status: 'draft',
     scope: 'private',
+    modules: [...(tpl.modules || [])],
   }
-  allTemplates.value.unshift(newTpl)
+  tplStore.upsertTemplate(newTpl)
   ElMessage.success('已复制模板到我的草稿')
 }
 
@@ -277,32 +263,33 @@ function handleDelete(tpl: Template) {
     cancelButtonText: '取消',
     type: 'warning',
   }).then(() => {
-    allTemplates.value = allTemplates.value.filter(t => t.id !== tpl.id)
+    tplStore.removeTemplate(tpl.id)
     ElMessage.success('模板已删除')
   }).catch(() => {})
 }
 
 function handleSave(data: Partial<Template>) {
+  const now = new Date().toISOString().slice(0, 16).replace('T', ' ')
   if (isEditing.value && editingTemplate.value) {
-    const idx = allTemplates.value.findIndex(t => t.id === editingTemplate.value!.id)
-    if (idx !== -1) {
-      allTemplates.value[idx] = {
-        ...allTemplates.value[idx],
+    const origin = allTemplates.find(t => t.id === editingTemplate.value!.id)
+    if (origin) {
+      tplStore.upsertTemplate({
+        ...origin,
         ...data,
-        updatedAt: new Date().toISOString().slice(0, 16).replace('T', ' '),
-      }
+        updatedAt: now,
+      } as Template)
     }
   } else {
-    allTemplates.value.unshift({
+    tplStore.upsertTemplate({
       id: 'tpl-' + Date.now(),
       name: data.name || '',
       type: data.type || '通知',
       system: false,
-      scope: (data.scope as 'public' | 'department' | 'private') || 'private',
+      scope: (data.scope as Template['scope']) || 'private',
       createdBy: currentUser.value.id,
       createdDept: currentUser.value.dept,
-      createdAt: new Date().toISOString().slice(0, 16).replace('T', ' '),
-      updatedAt: new Date().toISOString().slice(0, 16).replace('T', ' '),
+      createdAt: now,
+      updatedAt: now,
       usage: 0,
       status: data.status || 'draft',
       org: data.org || '',
@@ -310,115 +297,15 @@ function handleSave(data: Partial<Template>) {
       title: data.title || '',
       desc: data.desc || '',
       body: data.body || '',
-    })
+      modules: data.modules || [],
+      cardIcon: data.cardIcon,
+      cardTag: data.cardTag || '',
+    } as Template)
   }
   dialogVisible.value = false
   ElMessage.success(isEditing.value ? '模板已更新' : '模板已创建')
 }
 
-// 初始化模拟数据
-function initMockData() {
-  const now = new Date()
-  const dateStr = (d: Date) => d.toISOString().slice(0, 16).replace('T', ' ')
-  const d = (offset: number) => { const x = new Date(now); x.setDate(x.getDate() - offset); return dateStr(x) }
-
-  allTemplates.value = [
-    {
-      id: 'tpl-001', name: '关于XX工作的请示', type: '请示', system: true,
-      scope: 'public', createdBy: 'u1', createdDept: 'sys',
-      createdAt: d(30), updatedAt: d(10), usage: 28, status: 'live',
-      org: 'XX市人力资源和社会保障局', docNo: 'X人社〔2026〕XX号',
-      title: '关于XX工作的请示',
-      desc: '用于向上级机关请示工作事项的标准模板',
-      body: '<h2>关于【事项】工作的请示</h2><p>市政府：</p><p>根据【政策依据】要求，结合我市实际，现将【事项】有关情况请示如下：</p><p>一、【背景与缘由】</p><p>【详细说明背景、必要性等内容】</p><p>二、【请示事项】</p><p>【具体请示内容】</p><p>三、【建议方案】</p><p>【提出建议方案】</p><p>妥否，请批示。</p><p>XX市人力资源和社会保障局</p><p>2026年XX月XX日</p>'
-    },
-    {
-      id: 'tpl-002', name: '会议通知（通用）', type: '通知', system: true,
-      scope: 'public', createdBy: 'u1', createdDept: 'sys',
-      createdAt: d(25), updatedAt: d(5), usage: 45, status: 'live',
-      org: 'XX市人力资源和社会保障局', docNo: 'X人社办〔2026〕XX号',
-      title: '关于召开【会议名称】的通知',
-      desc: '召开各类会议的通用通知模板',
-      body: '<h2>关于召开【会议名称】的通知</h2><p>各县（市、区）人力资源和社会保障局，局机关各科室、局属各单位：</p><p>经研究，定于【时间】召开【会议名称】。现将有关事项通知如下：</p><p>一、会议时间</p><p>【日期】上午/下午【具体时间】</p><p>二、会议地点</p><p>【地点】</p><p>三、参会人员</p><p>【参会人员范围】</p><p>四、会议内容</p><p>【会议议程】</p><p>五、有关要求</p><p>【注意事项】</p><p>联系人：【姓名】 联系电话：【电话】</p><p>XX市人力资源和社会保障局办公室</p><p>2026年XX月XX日</p>'
-    },
-    {
-      id: 'tpl-003', name: 'XX年度工作总结报告', type: '报告', system: true,
-      scope: 'public', createdBy: 'u1', createdDept: 'sys',
-      createdAt: d(20), updatedAt: d(3), usage: 36, status: 'live',
-      org: 'XX市人力资源和社会保障局', docNo: 'X人社〔2026〕XX号',
-      title: 'XX年度工作总结报告',
-      desc: '年度工作总结报告标准模板',
-      body: '<h2>XX年度工作总结报告</h2><p>一、年度工作总体情况</p><p>【总体情况概述】</p><p>二、主要工作成效</p><p>（一）【重点工作一】</p><p>【详细内容】</p><p>（二）【重点工作二】</p><p>【详细内容】</p><p>三、存在问题与不足</p><p>【问题分析】</p><p>四、下一步工作计划</p><p>【计划安排】</p>'
-    },
-    {
-      id: 'tpl-004', name: '关于XX事项的批复', type: '批复', system: true,
-      scope: 'public', createdBy: 'u1', createdDept: 'sys',
-      createdAt: d(15), updatedAt: d(2), usage: 18, status: 'live',
-      org: 'XX市人力资源和社会保障局', docNo: 'X人社批〔2026〕XX号',
-      title: '关于XX事项的批复',
-      desc: '用于批复下级请示事项的模板',
-      body: '<h2>关于【事项】的批复</h2><p>【来文单位】：</p><p>你单位《关于【来文事项】的请示》（【来文字号】）收悉。经研究，现批复如下：</p><p>一、【批复意见】</p><p>【具体批复内容】</p><p>二、【其他说明】</p><p>【补充说明】</p><p>此复。</p><p>XX市人力资源和社会保障局</p><p>2026年XX月XX日</p>'
-    },
-    {
-      id: 'tpl-005', name: '关于XX的函', type: '函', system: true,
-      scope: 'public', createdBy: 'u1', createdDept: 'sys',
-      createdAt: d(12), updatedAt: d(1), usage: 22, status: 'live',
-      org: 'XX市人力资源和社会保障局', docNo: 'X人社函〔2026〕XX号',
-      title: '关于征求XX意见的函',
-      desc: '用于向有关单位征求意见或商洽工作的函件模板',
-      body: '<h2>关于征求【事项】意见的函</h2><p>【单位名称】：</p><p>根据【依据】，我局拟开展【事项】工作。现将《【文件名称】》（征求意见稿）送你单位，请研究提出修改意见，并于【日期】前书面反馈我局。</p><p>联系人：【姓名】 电话：【电话】</p><p>附件：【附件名称】</p><p>XX市人力资源和社会保障局</p><p>2026年XX月XX日</p>'
-    },
-    {
-      id: 'tpl-006', name: '办公室公文流转单', type: '审批表', createdBy: 'u3', createdDept: 'd1',
-      scope: 'department', system: false,
-      createdAt: d(8), updatedAt: d(1), usage: 15, status: 'live',
-      org: 'XX市人力资源和社会保障局办公室', docNo: '',
-      title: '公文流转审批单',
-      desc: '办公室内部公文流转审批专用',
-      body: '<h2>公文流转审批单</h2><p>来文单位：【】</p><p>收文日期：【】</p><p>文件标题：【】</p><p>拟办意见：【】</p><p>领导批示：【】</p><p>办理结果：【】</p>'
-    },
-    {
-      id: 'tpl-007', name: '人事任免审批表', type: '审批表', createdBy: 'u4', createdDept: 'd2',
-      scope: 'department', system: false,
-      createdAt: d(6), updatedAt: d(0), usage: 12, status: 'live',
-      org: 'XX市人力资源和社会保障局人事科', docNo: '',
-      title: '人事任免审批表',
-      desc: '人事科干部任免审批专用模板',
-      body: '<h2>人事任免审批表</h2><p>姓名：【】 &nbsp; 性别：【】 &nbsp; 出生年月：【】</p><p>现任职务：【】</p><p>拟任职务：【】</p><p>免去职务：【】</p><p>任免理由：【】</p><p>审批意见：【】</p>'
-    },
-    {
-      id: 'tpl-008', name: '劳动监察投诉受理告知书', type: '告知书', createdBy: 'u5', createdDept: 'd5',
-      scope: 'department', system: false,
-      createdAt: d(5), updatedAt: d(0), usage: 8, status: 'draft',
-      org: 'XX市劳动监察支队', docNo: 'X劳监告〔2026〕XX号',
-      title: '劳动保障监察投诉受理告知书',
-      desc: '劳动监察投诉受理告知书模板',
-      body: '<h2>劳动保障监察投诉受理告知书</h2><p>【投诉人】：</p><p>你于【日期】反映的【投诉事项】问题，经审查符合受理条件，我支队已依法受理。现将有关事项告知如下：</p><p>【处理流程说明】</p><p>特此告知。</p><p>XX市劳动监察支队</p><p>2026年XX月XX日</p>'
-    },
-    {
-      id: 'tpl-009', name: '社保补贴申请表', type: '审批表', createdBy: 'u6', createdDept: 'd4',
-      scope: 'department', system: false,
-      createdAt: d(3), updatedAt: d(0), usage: 6, status: 'draft',
-      org: 'XX市社会保险局', docNo: '',
-      title: '社会保险补贴申请表',
-      desc: '社保补贴申请审批表',
-      body: '<h2>社会保险补贴申请表</h2><p>申请人：【】</p><p>身份证号：【】</p><p>申请补贴类型：【】</p><p>申请金额：【】</p><p>申请理由：【】</p><p>审核意见：【】</p>'
-    },
-    {
-      id: 'tpl-010', name: '个人工作汇报模板', type: '报告', createdBy: 'u2', createdDept: 'd1',
-      scope: 'private', system: false,
-      createdAt: d(1), updatedAt: d(0), usage: 2, status: 'draft',
-      org: '', docNo: '',
-      title: '个人工作汇报',
-      desc: '个人周报/月报工作汇报模板',
-      body: '<h2>个人工作汇报</h2><p>汇报人：【】</p><p>汇报周期：【】</p><p>一、本周/本月工作完成情况</p><p>【逐项列出】</p><p>二、存在问题</p><p>【问题描述】</p><p>三、下步计划</p><p>【计划内容】</p>'
-    },
-  ]
-}
-
-onMounted(() => {
-  initMockData()
-})
 </script>
 
 <style scoped>
