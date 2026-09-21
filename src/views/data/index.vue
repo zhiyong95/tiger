@@ -51,6 +51,22 @@
       <div class="main-scroll" ref="mainScrollRef">
         <!-- 欢迎态 -->
         <div v-if="conversationMessages.length === 0 && !isThinking" class="welcome-state">
+          <!-- AI机器人 + 问候语 -->
+          <div class="welcome-header">
+            <svg class="welcome-robot" viewBox="0 0 48 48" width="46" height="46" aria-hidden="true">
+              <g fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="10" y="14" width="28" height="24" rx="9"></rect>
+                <circle cx="19" cy="26" r="2" fill="#2563eb" stroke="none"></circle>
+                <circle cx="29" cy="26" r="2" fill="#2563eb" stroke="none"></circle>
+                <path d="M18 32c1.5 1.5 3.6 2 6 2s4.5-.5 6-2"></path>
+                <line x1="24" y1="8" x2="24" y2="14"></line>
+                <circle cx="24" cy="7" r="1.6" fill="#2563eb" stroke="none"></circle>
+                <line x1="32" y1="10" x2="37" y2="13"></line>
+                <line x1="38" y1="14" x2="38" y2="18"></line>
+              </g>
+            </svg>
+            <div class="welcome-tip">今天需要我帮你做点什么吗？</div>
+          </div>
           <!-- 引导示例 -->
           <div class="guide-section">
             <div class="guide-label">你可以问我：</div>
@@ -941,6 +957,24 @@ onUnmounted(() => {
   max-width: 800px;
   margin: 0 auto;
   min-height: 0;
+}
+
+/* ====== AI机器人 + 问候语 ====== */
+.welcome-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.welcome-robot {
+  flex-shrink: 0;
+}
+
+.welcome-tip {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
 }
 
 /* ====== 引导示例区 ====== */
