@@ -249,14 +249,34 @@
             </svg>
           </button>
           <el-button
-            type="primary"
-            :loading="isThinking"
-            @click="sendQuery"
             class="send-btn"
+            :loading="isThinking"
             :disabled="(inputMode === 'voice' && !recordingText) || (inputMode === 'text' && !userInput.trim())"
-            :icon="Promotion"
+            @click="sendQuery"
             circle
-          />
+            aria-label="发送"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" class="send-plane">
+              <path d="M3.4 20.4 20.85 12.9c.6-.27.6-1.13 0-1.4L3.4 3.6c-.55-.24-1.15.2-1.1.8l.4 4.6a1 1 0 0 0 .9.9l10 1-10 1a1 1 0 0 0-.9.9l-.4 4.6c-.05.6.55 1.04 1.1.8Z" fill="currentColor"/>
+            </svg>
+          </el-button>
+        </div>
+
+        <!-- 底栏信息 -->
+        <div class="input-meta">
+          <div class="input-meta-left">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" class="meta-icon">
+              <path d="M3 17h18M5 17a2 2 0 0 1-1-3.73V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v5.27A2 2 0 0 1 19 17m-4 0v1a2 2 0 1 1-4 0v-1h4Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>数据权限：人社局就业科</span>
+          </div>
+          <div class="input-meta-right">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" class="meta-icon">
+              <path d="M12 3l7 3v5c0 4.42-2.9 8.38-7 9.5-4.1-1.12-7-5.08-7-9.5V6l7-3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+              <path d="M9.5 12l1.8 1.8 3.2-3.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>数据安全审计已开启</span>
+          </div>
         </div>
       </div>
     </div>
@@ -306,7 +326,6 @@ import {
   DataAnalysis,
   Document,
   Download,
-  Promotion,
   ArrowUp,
   ArrowDown,
   Loading,
@@ -1204,9 +1223,33 @@ onUnmounted(() => {
 
 /* ====== 底部输入区 ====== */
 .input-footer {
-  border-top: 1px solid #e5e7eb;
   background: white;
-  padding: 12px 40px 20px;
+  padding: 12px 40px 14px;
+  border-top: 1px solid #f3f4f6;
+}
+
+.input-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 720px;
+  margin: 12px auto 0;
+  padding-top: 10px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.input-meta-left,
+.input-meta-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.meta-icon {
+  color: #9ca3af;
+  flex-shrink: 0;
 }
 
 .input-bar-wrapper {
@@ -1216,16 +1259,12 @@ onUnmounted(() => {
   max-width: 720px;
   margin: 0 auto;
   background: #ffffff;
-  border: 1px solid #e5e6eb;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-  padding: 6px 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+  padding: 6px 10px;
   min-height: 56px;
-  transition: border-color 0.2s;
-}
-
-.input-bar-wrapper:focus-within {
-  border-color: #2f6bff;
+  transition: box-shadow 0.2s;
 }
 
 /* 左下角附件按钮 */
@@ -1417,27 +1456,36 @@ onUnmounted(() => {
 }
 
 .text-input :deep(.el-input__inner::placeholder) {
-  color: #999;
+  color: #9ca3af;
   font-size: 14px;
 }
 
 /* 发送按钮 */
 .send-btn {
-  width: 36px;
-  height: 36px;
-  background: #2f6bff;
-  border-color: #2f6bff;
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  background: #e8eaf0;
+  border: none;
+  color: #9ca3af;
   flex-shrink: 0;
+  margin-left: 4px;
   margin-right: 4px;
 }
 
-.send-btn:hover {
-  background: #1d4ed8;
-  border-color: #1d4ed8;
+.send-btn:hover:not(:disabled) {
+  background: #dcdfe8;
+  color: #7c8291;
 }
 
 .send-btn:disabled {
-  background: #d1d5db;
-  border-color: #d1d5db;
+  background: #e8eaf0;
+  border: none;
+  color: #b9bdc9;
+  cursor: not-allowed;
+}
+
+.send-plane {
+  color: inherit;
 }
 </style>
