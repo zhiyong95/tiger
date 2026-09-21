@@ -188,22 +188,10 @@
       <!-- 底部输入区 -->
       <div class="input-footer">
         <div class="input-bar-wrapper">
-          <!-- 左端：模式切换按钮 -->
-          <button
-            class="mode-toggle-btn"
-            :class="{ active: inputMode === 'voice' }"
-            @click="toggleInputMode"
-            :title="inputMode === 'voice' ? '切换到文字输入' : '切换到语音输入'"
-            :aria-label="inputMode === 'voice' ? '切换到文字输入' : '切换到语音输入'"
-          >
-            <svg v-if="inputMode === 'voice'" width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M20 4H4C2.9 4 2 4.9 2 6V18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V6C22 4.9 21.1 4 20 4ZM20 18H4V6H20V18Z" fill="currentColor"/>
-              <rect x="8" y="8" width="8" height="2" rx="1" fill="currentColor" opacity="0.7"/>
-              <rect x="8" y="12" width="6" height="2" rx="1" fill="currentColor" opacity="0.7"/>
-            </svg>
-            <svg v-else width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M12 15C13.66 15 15 13.66 15 12V6C15 4.34 13.66 3 12 3C10.34 3 9 4.34 9 6V12C9 13.66 10.34 15 12 15Z" fill="currentColor"/>
-              <path d="M17 12C17 14.76 14.76 17 12 17C9.24 17 7 14.76 7 12H5C5 15.53 7.61 18.43 11 18.92V21H13V18.92C16.39 18.43 19 15.53 19 12H17Z" fill="currentColor"/>
+          <!-- 左下角：附件按钮 -->
+          <button class="attach-btn" title="添加附件" aria-label="添加附件">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5a2.5 2.5 0 0 1 5 0v11.5a.5.5 0 0 1-1 0V6H11v10.5a1.5 1.5 0 0 0 3 0V5a3.5 3.5 0 1 0-7 0v12.5c0 3.04 2.46 5.5 5.5 5.5s5.5-2.46 5.5-5.5V6h-1.5Z" fill="currentColor"/>
             </svg>
           </button>
 
@@ -245,14 +233,26 @@
             <template v-else>
               <el-input
                 v-model="userInput"
-                placeholder="请输入您的问题"
+                placeholder="今天能帮你做些什么？"
                 class="text-input"
                 @keyup.enter="sendQuery"
               />
             </template>
           </div>
 
-          <!-- 右端：发送按钮 -->
+          <!-- 右下端：麦克风 + 发送按钮 -->
+          <button
+            class="mic-toggle-btn"
+            :class="{ active: inputMode === 'voice' }"
+            @click="toggleInputMode"
+            :title="inputMode === 'voice' ? '切换到文字输入' : '语音输入'"
+            aria-label="语音输入"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M17 12c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-2.08c3.39-.49 6-3.39 6-6.92h-2Z" fill="currentColor"/>
+              <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z" fill="currentColor"/>
+            </svg>
+          </button>
           <el-button
             type="primary"
             :loading="isThinking"
@@ -1239,14 +1239,15 @@ onUnmounted(() => {
 .input-bar-wrapper {
   display: flex;
   align-items: center;
-  gap: 0;
+  gap: 2px;
   max-width: 720px;
   margin: 0 auto;
   background: #ffffff;
   border: 1px solid #e5e6eb;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-  padding: 4px;
+  padding: 6px 8px;
+  min-height: 56px;
   transition: border-color 0.2s;
 }
 
@@ -1254,32 +1255,52 @@ onUnmounted(() => {
   border-color: #2f6bff;
 }
 
-/* 模式切换按钮 */
-.mode-toggle-btn {
+/* 左下角附件按钮 */
+.attach-btn {
   width: 36px;
   height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid #e5e6eb;
-  background: #f8f9fa;
+  border: none;
+  background: transparent;
   border-radius: 6px;
   cursor: pointer;
   color: #999;
   flex-shrink: 0;
   transition: all 0.2s;
-  margin-left: 4px;
+  margin-left: 2px;
 }
 
-.mode-toggle-btn:hover {
-  border-color: #2f6bff;
+.attach-btn:hover {
   color: #2f6bff;
+  background: #f5f7ff;
 }
 
-.mode-toggle-btn.active {
-  border-color: #2f6bff;
+/* 右下角麦克风切换按钮 */
+.mic-toggle-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  border-radius: 50%;
+  cursor: pointer;
+  color: #999;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+
+.mic-toggle-btn:hover {
+  color: #2f6bff;
+  background: #f5f7ff;
+}
+
+.mic-toggle-btn.active {
+  color: #2f6bff;
   background: #eef4ff;
-  color: #2f6bff;
 }
 
 /* 中间输入区域 */
@@ -1288,8 +1309,8 @@ onUnmounted(() => {
   min-width: 0;
   display: flex;
   align-items: center;
-  height: 40px;
-  margin: 0 8px;
+  height: 44px;
+  margin: 0 6px;
   position: relative;
 }
 
