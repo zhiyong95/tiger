@@ -22,36 +22,87 @@ const roleNameMap: Record<UserRole, string> = {
   auditor: '审计人员',
 }
 
+const AUTH_STORAGE_KEY = 'zheng_cu_auth_v1'
+
+interface StoredAuth {
+  token: string
+  isLoggedIn: boolean
+  userRole: UserRole
+  currentModule: 'pc' | 'admin'
+  userInfo: UserInfo
+}
+
+function persistAuth(data: Partial<StoredAuth>) {
+  try {
+    const prev = readStoredAuth()
+    const merged: StoredAuth = {
+      token: data.token ?? prev?.token ?? '',
+      isLoggedIn: data.isLoggedIn ?? prev?.isLoggedIn ?? false,
+      userRole: data.userRole ?? prev?.userRole ?? 'staff',
+      currentModule: data.currentModule ?? prev?.currentModule ?? 'pc',
+      userInfo: data.userInfo ?? prev?.userInfo ?? {
+        name: '',
+        department: '',
+        role: '',
+        roleType: '',
+        avatar: '',
+      },
+    }
+    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(merged))
+  } catch {
+    /* 存储不可用时静默降级（仍为内存登录态） */
+  }
+}
+
+function readStoredAuth(): StoredAuth | null {
+  try {
+    const raw = localStorage.getItem(AUTH_STORAGE_KEY)
+    if (!raw) return null
+    return JSON.parse(raw) as StoredAuth
+  } catch {
+    return null
+  }
+}
+
+function getInitial<T>(key: keyof StoredAuth, fallback: T): T {
+  const stored = readStoredAuth()
+  if (!stored) return fallback
+  return (stored[key] as unknown as T) ?? fallback
+}
+
 export const useAppStore = defineStore('app', () => {
+  const stored = readStoredAuth()
   const sidebarCollapsed = ref(false)
-  const currentModule = ref<'pc' | 'admin'>('pc')
-  const isLoggedIn = ref(false)
-  const token = ref('')
-  const userRole = ref<UserRole>('staff')
-  const userInfo = ref<UserInfo>({
+  const currentModule = ref<'pc' | 'admin'>(getInitial<'pc' | 'admin'>('currentModule', 'pc'))
+  const isLoggedIn = ref(getInitial<boolean>('isLoggedIn', false))
+  const token = ref(getInitial<string>('token', ''))
+  const userRole = ref<UserRole>(getInitial<UserRole>('userRole', 'staff'))
+  const userInfo = ref<UserInfo>(stored?.userInfo ?? {
     name: '',
     department: '',
     role: '',
     roleType: '',
     avatar: '',
   })
-
   const toggleSidebar = () => {
     sidebarCollapsed.value = !sidebarCollapsed.value
   }
 
   const switchModule = (module: 'pc' | 'admin') => {
     currentModule.value = module
+    persistAuth({ currentModule: module })
   }
 
   const setUserInfo = (info: UserInfo) => {
     userInfo.value = info
     userRole.value = info.roleType as UserRole
+    persistAuth({ userInfo: info, userRole: userRole.value })
   }
 
   const setToken = (t: string) => {
     token.value = t
     isLoggedIn.value = true
+    persistAuth({ token: t, isLoggedIn: true })
   }
 
   const setRole = (role: UserRole) => {
@@ -61,6 +112,7 @@ export const useAppStore = defineStore('app', () => {
     } else {
       currentModule.value = 'pc'
     }
+    persistAuth({ userRole: role, currentModule: currentModule.value })
   }
 
   const getRoleName = (role: UserRole) => roleNameMap[role] || '未知'
@@ -73,6 +125,11 @@ export const useAppStore = defineStore('app', () => {
     userInfo.value = { name: '', department: '', role: '', roleType: '', avatar: '' }
     userRole.value = 'staff'
     currentModule.value = 'pc'
+    try {
+      localStorage.removeItem(AUTH_STORAGE_KEY)
+    } catch {
+      /* 忽略存储清理失败 */
+    }
   }
 
   // 菜单层级数据（用于面包屑自动推导）
