@@ -51,35 +51,30 @@
       <div class="main-scroll" ref="mainScrollRef">
         <!-- 欢迎态 -->
         <div v-if="conversationMessages.length === 0 && !isThinking" class="welcome-state">
-          <!-- AI机器人 + 问候语 -->
-          <div class="welcome-header">
-            <svg class="welcome-robot" viewBox="0 0 48 48" width="46" height="46" aria-hidden="true">
-              <g fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="10" y="14" width="28" height="24" rx="9"></rect>
-                <circle cx="19" cy="26" r="2" fill="#2563eb" stroke="none"></circle>
-                <circle cx="29" cy="26" r="2" fill="#2563eb" stroke="none"></circle>
-                <path d="M18 32c1.5 1.5 3.6 2 6 2s4.5-.5 6-2"></path>
-                <line x1="24" y1="8" x2="24" y2="14"></line>
-                <circle cx="24" cy="7" r="1.6" fill="#2563eb" stroke="none"></circle>
-                <line x1="32" y1="10" x2="37" y2="13"></line>
-                <line x1="38" y1="14" x2="38" y2="18"></line>
-              </g>
-            </svg>
-            <div class="welcome-tip">今天需要我帮你做点什么吗？</div>
-          </div>
-          <!-- 引导示例 -->
-          <div class="guide-section">
-            <div class="guide-label">你可以问我：</div>
-            <div class="guide-list">
-              <div
-                v-for="(card, ci) in quickCards"
-                :key="ci"
-                class="guide-item"
-                @click="sendQuickQuestion(card.question)"
-              >
-                <el-icon class="guide-icon"><ChatDotRound /></el-icon>
-                <span class="guide-text">{{ card.question }}</span>
-              </div>
+          <!-- 顶部机器人图标 -->
+          <svg class="welcome-robot" viewBox="0 0 48 48" width="56" height="56" aria-hidden="true">
+            <g fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="10" y="14" width="28" height="24" rx="9"></rect>
+              <circle cx="19" cy="26" r="2" fill="#2563eb" stroke="none"></circle>
+              <circle cx="29" cy="26" r="2" fill="#2563eb" stroke="none"></circle>
+              <path d="M18 32c1.5 1.5 3.6 2 6 2s4.5-.5 6-2"></path>
+              <line x1="24" y1="8" x2="24" y2="14"></line>
+              <circle cx="24" cy="7" r="1.6" fill="#2563eb" stroke="none"></circle>
+              <line x1="32" y1="10" x2="37" y2="13"></line>
+              <line x1="38" y1="14" x2="38" y2="18"></line>
+            </g>
+          </svg>
+          <!-- 居中标题 -->
+          <div class="welcome-title">你好，今天需要我帮忙做点什么呢</div>
+          <!-- 横向示例按钮 -->
+          <div class="example-wrap">
+            <div
+              v-for="(card, ci) in quickCards"
+              :key="ci"
+              class="example-item"
+              @click="sendQuickQuestion(card.question)"
+            >
+              {{ card.question }}
             </div>
           </div>
         </div>
@@ -951,79 +946,57 @@ onUnmounted(() => {
 .welcome-state {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
   justify-content: flex-start;
-  padding-top: 40px;
-  max-width: 800px;
+  padding-top: 48px;
+  max-width: 860px;
   margin: 0 auto;
   min-height: 0;
 }
 
-/* ====== AI机器人 + 问候语 ====== */
-.welcome-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 20px;
-}
-
+/* ====== 顶部机器人图标 ====== */
 .welcome-robot {
   flex-shrink: 0;
 }
 
-.welcome-tip {
-  font-size: 16px;
+/* ====== 居中标题 ====== */
+.welcome-title {
+  margin-top: 18px;
+  font-size: 20px;
   font-weight: 600;
   color: #1f2937;
+  text-align: center;
 }
 
-/* ====== 引导示例区 ====== */
-.guide-section {
-  width: 100%;
-  max-width: 640px;
+/* ====== 横向示例按钮 ====== */
+.example-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 32px;
 }
 
-.guide-label {
+.example-item {
+  padding: 10px 18px;
+  border-radius: 20px;
+  background: #f5f7fa;
+  border: 1px solid #e5e7eb;
+  color: #1f2937;
   font-size: 14px;
-  color: #9ca3af;
-  margin-bottom: 14px;
-  font-weight: 500;
-}
-
-.guide-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.guide-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 16px;
-  border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
-  background: #f8faff;
-  border: 1px solid transparent;
+  text-align: center;
 }
 
-.guide-item:hover {
+.example-item:hover {
   background: #eef4ff;
   border-color: #2563eb;
-  transform: translateX(4px);
+  color: #2563eb;
 }
 
-.guide-icon {
-  color: #2563eb;
-  font-size: 16px;
-  flex-shrink: 0;
-}
-
-.guide-text {
-  font-size: 14px;
-  color: #2563eb;
-  line-height: 1.5;
+.example-item:not(:first-child) {
+  flex: 0 1 auto;
 }
 
 /* ====== 对话态 ====== */
