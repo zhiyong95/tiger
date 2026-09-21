@@ -51,38 +51,7 @@
       <div class="main-scroll" ref="mainScrollRef">
         <!-- 欢迎态 -->
         <div v-if="conversationMessages.length === 0 && !isThinking" class="welcome-state">
-          <!-- AI 机器人图标 -->
-          <div class="welcome-robot">
-            <svg class="robot-svg" viewBox="0 0 120 120" width="96" height="96">
-              <!-- 机器人身体 -->
-              <rect x="28" y="40" width="64" height="48" rx="10" fill="#e8f0fe" stroke="#2563eb" stroke-width="2"/>
-              <!-- 显示屏 -->
-              <rect x="38" y="50" width="44" height="22" rx="6" fill="#ffffff" stroke="#2563eb" stroke-width="1.5"/>
-              <!-- 眼睛 -->
-              <circle cx="52" cy="61" r="4" fill="#2563eb"/>
-              <circle cx="68" cy="61" r="4" fill="#2563eb"/>
-              <!-- 嘴巴 (微笑) -->
-              <path d="M50 72 Q60 80 70 72" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round"/>
-              <!-- 天线 -->
-              <line x1="60" y1="30" x2="60" y2="18" stroke="#2563eb" stroke-width="3" stroke-linecap="round"/>
-              <circle cx="60" cy="14" r="5" fill="#2563eb"/>
-              <!-- 耳朵 -->
-              <rect x="20" y="52" width="8" height="16" rx="4" fill="#2563eb" opacity="0.3"/>
-              <rect x="92" y="52" width="8" height="16" rx="4" fill="#2563eb" opacity="0.3"/>
-              <!-- 对话气泡 -->
-              <path d="M88 38 Q100 30 96 42 Q104 38 100 48" fill="white" stroke="#2563eb" stroke-width="1.5"/>
-              <text x="98" y="42" font-size="12" fill="#2563eb" text-anchor="middle" font-weight="bold">AI</text>
-            </svg>
-          </div>
-          <h1 class="welcome-title">你好，我是<span class="welcome-name">途途</span></h1>
-          <p class="welcome-subtitle">今天需要我帮你做点什么吗？</p>
-          <p class="welcome-desc">
-            欢迎进入政务智能问数系统。我可以协助您完成统计数据查询、可视化分析、政策文件解读及数据报告生成等工作。<br />
-            系统已启用政务安全模式，您的查询内容及相关数据均受严格保护，不会用于任何模型训练。
-          </p>
-          <p class="welcome-ask">请问您需要查询哪方面的数据？</p>
-
-          <!-- 引导示例 - 改为参考图片的蓝色链接样式 -->
+          <!-- 引导示例 -->
           <div class="guide-section">
             <div class="guide-label">你可以问我：</div>
             <div class="guide-list">
@@ -966,61 +935,12 @@ onUnmounted(() => {
 .welcome-state {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 70vh;
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding-top: 40px;
   max-width: 800px;
   margin: 0 auto;
-}
-
-.welcome-robot {
-  margin-bottom: 24px;
-  animation: robotFloat 3s ease-in-out infinite;
-}
-
-@keyframes robotFloat {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
-}
-
-.robot-svg {
-  display: block;
-  filter: drop-shadow(0 4px 12px rgba(37,99,235,0.15));
-}
-
-.welcome-title {
-  font-size: 32px;
-  font-weight: 700;
-  color: #1f2937;
-  margin-bottom: 6px;
-  letter-spacing: 1px;
-}
-
-.welcome-name {
-  color: #2563eb;
-}
-
-.welcome-subtitle {
-  font-size: 18px;
-  font-weight: 600;
-  color: #1f2937;
-  margin-bottom: 20px;
-}
-
-.welcome-desc {
-  font-size: 14px;
-  color: #6b7280;
-  line-height: 1.8;
-  text-align: center;
-  margin-bottom: 4px;
-  max-width: 640px;
-}
-
-.welcome-ask {
-  font-size: 14px;
-  color: #6b7280;
-  text-align: center;
-  margin-bottom: 36px;
+  min-height: 0;
 }
 
 /* ====== 引导示例区 ====== */
